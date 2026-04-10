@@ -42,7 +42,7 @@ compose:
       type: "mariadb"
       enabled:        true
     moodle:
-      version:            "4.5" # Latest LTS - Necessary for OIDC
+      version:            "5.0" # Latest LTS - Necessary for OIDC
       image:              bitnamilegacy/moodle
       name:               moodle
       min_storage:        "10GB"
