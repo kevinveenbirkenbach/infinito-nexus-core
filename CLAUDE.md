@@ -28,7 +28,7 @@ At the start of every new conversation (after reading `AGENTS.md`), you MUST rea
 ## Pushing 🚢
 
 - You MUST NOT push, directly or through wrappers that push implicitly.
-- When commits are ready to ship, you MUST instruct the operator to run `make sign-push` outside the sandbox. See [sign-push.sh](scripts/git/sign-push.sh).
+- When commits are ready to ship, you MUST instruct the operator to run `make git-sign-push` outside the sandbox. See [sign-push.sh](scripts/git/sign-push.sh).
 
 ## Configuration 🛠️
 

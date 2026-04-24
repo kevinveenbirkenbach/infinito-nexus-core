@@ -43,7 +43,7 @@
       "Bash(git push*)",
       "Bash(git reset --hard*)",
       "Bash(git send-pack*)",
-      "Bash(make sign-push*)",
+      "Bash(make git-sign-push*)",
       "Bash(sudo *)",
       "Bash(until *)",
       "Bash(while *)"

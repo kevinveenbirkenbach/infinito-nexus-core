@@ -58,7 +58,7 @@ else
 fi
 
 if [[ "${PUSH_NEEDS_UPSTREAM}" -eq 1 ]]; then
-	git push -u origin "${BRANCH}"
+	git push -u "$(git config --default origin --get remote.pushDefault)" "${BRANCH}"
 else
 	git push --force-with-lease
 fi

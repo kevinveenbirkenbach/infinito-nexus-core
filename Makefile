@@ -35,7 +35,7 @@ endif
 	deploy-fresh-kept-apps container-refresh-inventory deploy-reuse-kept-all container-purge-entity container-purge-system \
 	deploy-fresh-purged-apps deploy-reuse-kept-apps deploy-reuse-purged-apps deploy-fresh-kept-all \
 	bootstrap mark-development \
-	sign-push
+	git-setup-remotes git-sign-push
 
 # Bootstrap the local development environment.
 environment-bootstrap: wsl2-systemd-check install-python-dev install-lint apparmor-teardown dns-setup disable-ipv6
@@ -360,7 +360,13 @@ deploy-reuse-kept-all:
 deploy-reuse-purged-apps: container-purge-entity
 	@$(MAKE) deploy-reuse-kept-apps
 
+# Configure remotes for the maintainer's fork-based workflow
+# (origin=canonical, fork=personal fork, remote.pushDefault=fork).
+# Must run outside the Claude sandbox (writes .git/config).
+git-setup-remotes:
+	@bash scripts/git/setup-remotes.sh
+
 # GPG-sign every unpushed commit on the current branch and push.
 # Must run outside the Claude sandbox so gpg-agent/pinentry can reach ~/.gnupg.
-sign-push:
+git-sign-push:
 	@bash scripts/git/sign-push.sh
