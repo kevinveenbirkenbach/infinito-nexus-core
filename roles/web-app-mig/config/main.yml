@@ -22,7 +22,14 @@ compose:
     css:
       enabled: true
       shared: true
+    # noqa: email
+    email:
+      enabled: false
+      shared: false
 
+    prometheus:
+      enabled: true
+      shared: true
 server:
   csp:
     whitelist:

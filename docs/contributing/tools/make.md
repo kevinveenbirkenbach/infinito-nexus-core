@@ -53,10 +53,10 @@ For rules on how to write and structure the `Makefile` itself, see [makefile.md]
 
 | Category | Command | What it does | When to use it |
 |---|---|---|---|
-| Setup | `make setup` | Runs the repository setup step after generating `.dockerignore`. | Use this when you want the baseline project setup without installing the full dev stack. |
+| Setup | `make setup` | Runs the repository setup step after generating `.dockerignore`, currently refreshing generated role include files under `tasks/groups/`. | Use this when you want the baseline project setup without installing the full dev stack. |
 | Setup development | `make mark-development` | Creates the development setup marker. | Use this when you want to prepare a development-specific setup state. |
 | Bootstrap | `make bootstrap` | Installs dependencies and prepares the project. | Use this on a fresh machine or a new checkout. |
-| Setup clean | `make setup-clean` | Cleans ignored files and then runs setup. | Use this when you want a clean setup pass. |
+| Setup clean | `make setup-clean` | Cleans ignored files and then runs setup. | Use this when you want a clean setup pass, including regenerated role include files. |
 | Mark scripts executable | `make chmod-scripts` | Marks all `.sh` files under `scripts/` as executable. | Use this after cloning or when a script loses its executable bit. |
 | List roles | `make list` | Prints the repository role list. | Use this when you need the current role inventory. |
 | Tree view | `make tree` | Prints the repository tree. | Use this when you want a compact structural overview. |
@@ -134,9 +134,7 @@ For rules on how to write and structure the `Makefile` itself, see [makefile.md]
 
 ## Git 🔐
 
-| Category | Command | What it does | When to use it |
-|---|---|---|---|
-| Sign and push | `make sign-push` | GPG-signs every unpushed commit on the current branch via [sign-push.sh](../../../scripts/git/sign-push.sh) and pushes (force-with-lease on rebased history). Refuses to run inside the Claude sandbox and when the working tree is dirty. | Use this instead of `git push`. Direct push is denied in [settings.json](../../../.claude/settings.json) so that only the operator (with access to the GPG key in `~/.gnupg`) ever signs and ships commits. Agents MUST instruct the operator to run this target rather than pushing themselves. |
+Remote setup and signed pushes are handled by [git-maintainer-tools](https://github.com/kevinveenbirkenbach/git-maintainer-tools), installed through `make install-python-dev` (see [remotes.md](../artefact/git/remotes.md)). The tool's `git-setup-remotes` and `git-sign-push` CLIs MUST be invoked directly; there are no `make` wrappers in this repo. Direct `git push` is denied in [settings.json](../../../.claude/settings.json), and agents MUST instruct the operator to run `git-sign-push` outside the Claude sandbox.
 
 ## Notes 📝
 

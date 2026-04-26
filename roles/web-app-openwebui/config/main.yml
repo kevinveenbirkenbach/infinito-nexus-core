@@ -53,6 +53,12 @@ compose:
     ollama:
       enabled: true
       shared: true
+    email:
+      enabled: true
+      shared: true
+    prometheus:
+      enabled: true
+      shared: true
   volumes: 
     openwebui:  ai_openwebui_data
 credentials: {}
