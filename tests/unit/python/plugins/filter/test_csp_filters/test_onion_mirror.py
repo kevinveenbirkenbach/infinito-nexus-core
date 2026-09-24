@@ -63,6 +63,16 @@ class TestCspOnionMirror(unittest.TestCase):
         self.assertIn("*." + NODE, frame)
         self.assertNotIn("*." + PRIMARY, frame)
 
+    def test_role_without_tor_on_a_tor_node_keeps_its_sources(self):
+        domains = {
+            "web-svc-cdn": ["cdn." + PRIMARY, "cdn." + NODE],
+            "app1": ["app1." + PRIMARY],
+        }
+        header = self._header(None, domains=domains)
+        self.assertEqual(self._tokens(header, "frame-src"), ["'self'", "*." + PRIMARY])
+        self.assertIn("https://cdn." + PRIMARY, self._tokens(header, "connect-src"))
+        self.assertNotIn(".onion", header)
+
     def test_no_translation_without_node(self):
         apps = copy.deepcopy(self.apps)
         del apps["svc-net-tor"]
