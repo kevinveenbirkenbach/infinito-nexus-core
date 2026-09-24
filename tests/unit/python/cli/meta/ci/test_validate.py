@@ -6,7 +6,7 @@ import unittest.mock as mock
 from contextlib import redirect_stderr, redirect_stdout
 
 from cli.meta.ci import validate
-from utils.github.variant import axes
+from utils.github.variant import axes, network
 
 _ROWS = [
     {"name": "web-app-a", "variant": 0, "test_compose": True, "test_swarm": True},
@@ -90,6 +90,34 @@ class TestProblems(unittest.TestCase):
                 label="priority",
             )
         self.assertEqual((errors, warnings), ([], []))
+
+    def test_a_role_without_a_bond_may_pin_multi_when_its_deploy_pulls_tor(
+        self,
+    ) -> None:
+        rows = [
+            {
+                "name": "web-app-c",
+                "variant": 0,
+                "test_compose": True,
+                "services": [network.tor_provider()],
+            }
+        ]
+        with (
+            mock.patch.object(validate.query, "discover_rows", return_value=rows),
+            mock.patch.object(
+                validate, "get_variants", return_value={"web-app-c": [{"services": {}}]}
+            ),
+        ):
+            problems = validate.problems(
+                "web-app-c#0@compose+multi",
+                modes=("compose",),
+                network_input="auto",
+                distros=axes.DISTROS,
+                filesystems=axes.FILESYSTEMS,
+                lifecycles="",
+                label="priority",
+            )
+        self.assertEqual(problems, ([], []))
 
     def test_a_warning_still_separates_a_missing_role_from_a_present_one(self) -> None:
         _errors, warnings = _problems("web-app-a web-app-gone web-app-b")

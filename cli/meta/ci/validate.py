@@ -75,12 +75,13 @@ def problems(
     if not pins:
         return [], []
 
-    rows = {
-        (row["name"], row["variant"]): query.row_modes(row, modes)
+    discovered = {
+        (row["name"], row["variant"]): row
         for row in query.discover_rows(
             modes, whitelist=selection.names(pins), lifecycles=lifecycles
         )
     }
+    rows = {key: query.row_modes(row, modes) for key, row in discovered.items()}
     discovered_apps = {app for app, _variant in rows}
     declared = get_variants()
     errors: list[str] = []
@@ -117,7 +118,12 @@ def problems(
                     pin_network=pin.network,
                     pin_distro=pin.distro,
                     pin_filesystem=pin.filesystem,
-                    states=network.row_states(pin.app, variant, declared),
+                    states=network.row_states(
+                        pin.app,
+                        variant,
+                        declared,
+                        pulls_tor=network.row_pulls_tor(discovered[(pin.app, variant)]),
+                    ),
                     network_input=network_input,
                     distros=distros,
                     filesystems=filesystems,

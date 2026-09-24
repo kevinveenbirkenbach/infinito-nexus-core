@@ -60,31 +60,18 @@ def _tor_flag(config: Mapping[str, Any]) -> Any:
     return tor.get("enabled") if isinstance(tor, dict) else None
 
 
-def tor_capable(
+def _row_tor_flag(
     app: str,
-    variant: int | None = None,
-    variants_per_app: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
-) -> bool:
-    """Whether a matrix row may be deployed on a node that runs Tor.
-
-    Args:
-        app: application id.
-        variant: the row's variant index; ``None`` for a role declaring none.
-        variants_per_app: rendered variant configs per app; ``None`` falls back
-            to the role's base ``meta/services.yml``.
-
-    Returns:
-        ``False`` when the role has no ``tor`` bond or the covered variant pins
-        ``services.tor.enabled`` to a literal false, ``True`` otherwise. A
-        reactive Jinja flag counts as capable. Consulting the variant matters:
-        roles pin the gate ``true`` in variant 0 and ``false`` in the rest.
-    """
+    variant: int | None,
+    variants_per_app: Mapping[str, Sequence[Mapping[str, Any]]] | None,
+) -> Any:
+    """The row's ``services.tor.enabled``: the covered variant's value, else
+    the role's base ``meta/services.yml`` one; ``None`` without a Tor bond.
+    Roles pin the gate ``true`` in variant 0 and ``false`` in the rest."""
     declared = (variants_per_app or {}).get(app) or []
     if variant is None or not 0 <= variant < len(declared):
-        flag = _tor_flag({"services": _meta(app, ROLE_FILE_META_SERVICES)})
-    else:
-        flag = _tor_flag(declared[variant])
-    return flag is not None and flag is not False
+        return _tor_flag({"services": _meta(app, ROLE_FILE_META_SERVICES)})
+    return _tor_flag(declared[variant])
 
 
 def _reachability(
@@ -110,10 +97,17 @@ def tor_provider() -> str | None:
     return role if isinstance(role, str) and role else None
 
 
+def row_pulls_tor(row: Mapping[str, Any]) -> bool:
+    """Whether a discovery row's ``services`` closure takes the Tor provider in."""
+    return tor_provider() in (row.get("services") or ())
+
+
 def row_states(
     app: str,
     variant: int | None = None,
     variants_per_app: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+    *,
+    pulls_tor: bool = False,
 ) -> tuple[str, ...]:
     """Every node network mode the row's role can be served in.
 
@@ -121,15 +115,24 @@ def row_states(
         app: application id.
         variant: the row's variant index; ``None`` for a role declaring none.
         variants_per_app: rendered variant configs per app.
+        pulls_tor: the row's deploy takes the Tor provider in
+            (:func:`row_pulls_tor`).
 
     Returns:
-        ``clearnet`` alone for a row that cannot take Tor. Otherwise the modes
-        whose networks all lie inside the role's ``reachability.modes``,
+        ``clearnet`` alone when the covered variant pins the Tor gate to a
+        literal false, or when the role has no Tor bond and nothing pulls the
+        provider in. ``clearnet`` and ``multi`` for a role without a bond whose
+        deploy pulls the provider in anyway: the node then runs Tor while the
+        role stays on clearnet. Otherwise, a reactive Jinja gate included, the
+        modes whose networks all lie inside the role's ``reachability.modes``,
         without ``multi`` for a ``single_mode`` role and without ``clearnet``
         for the Tor provider, which disabling Tor would strip out of its own
         deploy.
     """
-    if not tor_capable(app, variant, variants_per_app):
+    flag = _row_tor_flag(app, variant, variants_per_app)
+    if flag is None:
+        return (CLEARNET, MULTI) if pulls_tor else (CLEARNET,)
+    if flag is False:
         return (CLEARNET,)
     modes, single_mode = _reachability(app, variant, variants_per_app)
     allowed = modes or tuple(NETWORKS)

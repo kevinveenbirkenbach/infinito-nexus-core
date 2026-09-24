@@ -61,7 +61,7 @@ The effective networks of a role are the node's networks that the role allows, w
 
 ## CI 🚀
 
-- [network.py](../../../utils/github/variant/network.py) derives the node modes a matrix row can take from the role's Tor bond and `reachability`; the `network` input (`auto`, `clearnet`, `tor`, `multi`) narrows them. See [README.md](../../../.github/workflows/README.md).
+- [network.py](../../../utils/github/variant/network.py) derives the node modes a matrix row can take from the role's Tor bond, `reachability` and whether its deploy pulls the Tor provider in; the `network` input (`auto`, `clearnet`, `tor`, `multi`) narrows them. See [README.md](../../../.github/workflows/README.md).
 - A row hands its mode to the deploy as the `network` variable, which provisioning writes into the inventory as `NETWORK_MODE` ([network_mode.py](../../../cli/administration/inventory/provision/network_mode.py)). `make compose-deploy apps=<role> network=tor` does the same locally.
 - [test-e2e-playwright](../../../roles/test-e2e-playwright/) runs the role's suite once, on the vhost of one network sibling. On a node serving the role on several networks the sibling is picked at random and kept for the flake retry, and [network-leak.spec.js](../../../roles/test-e2e-playwright/files/network-leak.spec.js) joins the run with the guest persona. The leak spec fails when a document requests a host of another network or the browser blocks mixed content; the SSO issuer is the one host every network may reach.
 

@@ -74,23 +74,28 @@ class TestResolveSweep(unittest.TestCase):
         self.assertEqual(axes.resolve_sweep(""), 0)
 
 
-class TestTorCapable(unittest.TestCase):
-    def test_a_variant_pinning_the_gate_false_is_incapable(self) -> None:
-        self.assertFalse(network.tor_capable("web-app-a", 1, _VARIANTS))
-
-    def test_a_variant_pinning_the_gate_true_is_capable(self) -> None:
-        self.assertTrue(network.tor_capable("web-app-a", 0, _VARIANTS))
-
-    def test_a_reactive_gate_counts_as_capable(self) -> None:
-        self.assertTrue(network.tor_capable("web-app-b", 0, _VARIANTS))
-
-    def test_a_role_without_a_tor_bond_is_incapable(self) -> None:
-        self.assertFalse(network.tor_capable("web-app-c", 0, _VARIANTS))
-
-
 class TestRowStates(unittest.TestCase):
     def test_a_capable_row_takes_every_network_mode(self) -> None:
         self.assertEqual(network.row_states("web-app-b", 0, _VARIANTS), _ALL)
+        self.assertEqual(network.row_states("web-app-a", 0, _VARIANTS), _ALL)
+
+    def test_a_role_without_a_bond_takes_multi_when_its_deploy_pulls_tor(self) -> None:
+        self.assertEqual(
+            network.row_states("web-app-c", 0, _VARIANTS, pulls_tor=True),
+            ("clearnet", "multi"),
+        )
+
+    def test_a_gate_pinned_false_ignores_a_pulled_in_provider(self) -> None:
+        self.assertEqual(
+            network.row_states("web-app-a", 1, _VARIANTS, pulls_tor=True),
+            ("clearnet",),
+        )
+
+    def test_the_services_closure_decides_whether_tor_is_pulled_in(self) -> None:
+        provider = network.tor_provider()
+        self.assertTrue(network.row_pulls_tor({"services": ["svc-db-x", provider]}))
+        self.assertFalse(network.row_pulls_tor({"services": ["svc-db-x"]}))
+        self.assertFalse(network.row_pulls_tor({}))
 
     def test_an_incapable_row_only_takes_clearnet(self) -> None:
         self.assertEqual(network.row_states("web-app-a", 1, _VARIANTS), ("clearnet",))
@@ -412,6 +417,23 @@ class TestAssign(unittest.TestCase):
         rows = [_row("web-app-a", 1, ("compose", "host"))]
         self.assertEqual(
             _assign(rows, sweep=0, network_input="multi", variants_per_app=_VARIANTS),
+            [],
+        )
+
+    def test_a_row_without_a_bond_rides_the_multi_node_its_deploy_pulls_tor_into(
+        self,
+    ) -> None:
+        provider = network.tor_provider()
+        pulling = [_row("web-app-c", 0, ("compose",), services=[provider])]
+        entries = _assign(
+            pulling, sweep=0, network_input="multi", variants_per_app=_VARIANTS
+        )
+        self.assertEqual(
+            [(e["network"], e["disable"]) for e in entries], [("multi", "")]
+        )
+        plain = [_row("web-app-c", 0, ("compose",))]
+        self.assertEqual(
+            _assign(plain, sweep=0, network_input="multi", variants_per_app=_VARIANTS),
             [],
         )
 

@@ -127,8 +127,9 @@ A 3-variant role offering compose and swarm therefore becomes
 
 An explicit `network` input still wins over the full coverage: `clearnet`,
 `tor` and `multi` are operator narrowings. A variant that pins
-`services.tor.enabled` to false, or a role without a `tor` bond, only ever runs
-on clearnet regardless.
+`services.tor.enabled` to false only ever runs on clearnet regardless, and so
+does a role without a `tor` bond unless its deploy pulls the Tor provider in,
+which adds `multi`.
 
 ### Selection tokens
 
@@ -172,9 +173,11 @@ demand, failing the retrigger on the very condition the fallback absorbs.
 
 A row deploys its node in one network mode, handed to the inventory as
 `NETWORK_MODE`. The modes a row can take follow its role
-([network_modes.md](../../docs/contributing/design/network_modes.md)): a role
-without a `tor` bond, or a variant that pins `services.tor.enabled` false, only
-takes `clearnet`; `reachability.modes` drops every mode that needs a network
+([network_modes.md](../../docs/contributing/design/network_modes.md)): a
+variant that pins `services.tor.enabled` false only takes `clearnet`; a role
+without a `tor` bond takes `clearnet`, plus `multi` when the `services` closure
+of its discovery row names the Tor provider, where the node runs Tor and the
+role stays on clearnet; `reachability.modes` drops every mode that needs a network
 the role excludes; `reachability.single_mode` drops `multi`; the Tor provider
 never takes `clearnet`. The `network` input decides what the axis is allowed
 to do at all:

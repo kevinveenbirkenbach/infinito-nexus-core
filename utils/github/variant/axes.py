@@ -49,6 +49,7 @@ from utils.github.variant.network import (
     combinations,
     disabled_services,
     network_states,
+    row_pulls_tor,
     row_states,
 )
 from utils.github.variant.pools import DISTROS, FILESYSTEMS, rotate
@@ -290,7 +291,8 @@ def assign(
 
     Args:
         rows: discovery rows, each carrying ``name``, ``variant``, ``modes``
-            (the offered subset) and ``priority``, in global query order.
+            (the offered subset), ``priority`` and the ``services`` closure
+            (:func:`row_pulls_tor`), in global query order.
             ``pin_mode``/``pin_network``/``pin_distro``/``pin_filesystem``,
             when a selection token set them, pin that axis: the priority line
             then covers only the combinations that match, and the regular line
@@ -332,7 +334,9 @@ def assign(
         app = row["name"]
         variant = row.get("variant")
         priority = bool(row.get("priority"))
-        states = row_states(app, variant, variants_per_app)
+        states = row_states(
+            app, variant, variants_per_app, pulls_tor=row_pulls_tor(row)
+        )
         offered = tuple(row["modes"])
         variant_csv = "" if variant is None else str(variant)
         pin_mode = row.get("pin_mode")
