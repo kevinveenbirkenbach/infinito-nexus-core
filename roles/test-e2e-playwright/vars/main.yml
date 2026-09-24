@@ -26,7 +26,7 @@ TEST_E2E_PLAYWRIGHT_SHARED_PERSONAS: "{{ TEST_E2E_PLAYWRIGHT_SHARED_DIR }}/perso
 TEST_E2E_PLAYWRIGHT_PERSONAS_ARCHIVE: "/tmp/infinito-playwright-personas.tar"
 TEST_E2E_PLAYWRIGHT_SHARED_STAMP: "{{ TEST_E2E_PLAYWRIGHT_SHARED_DIR }}/.installed-version"
 
-TEST_E2E_PLAYWRIGHT_IS_ONION: "{{ lookup('tls', application_id, 'url.base') is search('\\.onion') }}"
+TEST_E2E_PLAYWRIGHT_IS_ONION: "{{ (_playwright_pass_domain | network_of) == 'tor' }}"
 TEST_E2E_PLAYWRIGHT_PROXY: "{{ ('socks5://' ~ lookup('tor_socks', '127.0.0.1' if DEPLOYMENT_MODE == 'swarm' else 'host.docker.internal')) if (TEST_E2E_PLAYWRIGHT_IS_ONION
   | bool) else '' }}"
 
