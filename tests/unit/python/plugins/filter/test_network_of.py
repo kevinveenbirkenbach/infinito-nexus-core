@@ -1,8 +1,10 @@
 import unittest
 
 from plugins.filter.network_of import FilterModule
+from utils.domains.default_primary import default_domain_primary
 
 ONION = "abc123def456ghij789klmno000pqrstuvwx111yz222abc333def444gh.onion"
+DOMAIN = default_domain_primary()
 
 
 class TestNetworkFilters(unittest.TestCase):
@@ -11,13 +13,11 @@ class TestNetworkFilters(unittest.TestCase):
 
     def test_network_of_is_the_registry_lookup(self):
         self.assertEqual(self.filters["network_of"]("x.abc.onion"), "tor")
-        self.assertEqual(self.filters["network_of"]("x.infinito.test"), "clearnet")
+        self.assertEqual(self.filters["network_of"](f"x.{DOMAIN}"), "clearnet")
 
     def test_network_sibling_translates_the_primary(self):
         self.assertEqual(
-            self.filters["network_sibling"](
-                "infinito.test", "tor", "infinito.test", ONION
-            ),
+            self.filters["network_sibling"](DOMAIN, "tor", DOMAIN, ONION),
             ONION,
         )
 
@@ -32,18 +32,16 @@ class TestNetworkFilters(unittest.TestCase):
         self.assertEqual(self.filters["network_suffixes"](["clearnet"]), {})
 
     def test_in_network_keeps_the_domains_of_one_network(self):
-        domains = ["a.infinito.test", f"a.{ONION}", "b.infinito.test"]
+        domains = [f"a.{DOMAIN}", f"a.{ONION}", f"b.{DOMAIN}"]
         self.assertEqual(
             self.filters["in_network"](domains, "clearnet"),
-            ["a.infinito.test", "b.infinito.test"],
+            [f"a.{DOMAIN}", f"b.{DOMAIN}"],
         )
         self.assertEqual(self.filters["in_network"](domains, "tor"), [f"a.{ONION}"])
 
     def test_network_sibling_is_empty_without_a_node(self):
         self.assertEqual(
-            self.filters["network_sibling"](
-                "infinito.test", "tor", "infinito.test", ""
-            ),
+            self.filters["network_sibling"](DOMAIN, "tor", DOMAIN, ""),
             "",
         )
 

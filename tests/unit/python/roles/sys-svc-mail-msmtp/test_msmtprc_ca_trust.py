@@ -19,6 +19,7 @@ import unittest
 from jinja2 import Environment, StrictUndefined
 
 from utils.cache.files import read_text
+from utils.domains.default_primary import default_domain_primary
 
 from . import PROJECT_ROOT
 
@@ -27,14 +28,15 @@ TEMPLATE = (
 )
 CA_CONTAINER = "/tmp/infinito/ca/root-ca.crt"  # nocheck: S108 - CA_TRUST.inject_cert_container, a container path
 CA_BUNDLE_CONTAINER = "/tmp/infinito/ca/ca-bundle.crt"  # nocheck: S108 - CA_TRUST.inject_bundle_container, a container path
+DOMAIN = default_domain_primary()
 EMAIL = {
     "timeout": 30,
     "auth_mechanism": "PLAIN",
     "start_tls": True,
     "tls": True,
-    "host": "mail.infinito.test",
+    "host": f"mail.{DOMAIN}",
     "port": 587,
-    "from": "no-reply@infinito.test",
+    "from": f"no-reply@{DOMAIN}",
     "auth": False,
 }
 

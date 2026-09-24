@@ -2,9 +2,10 @@ import copy
 import unittest
 
 from plugins.filter.csp_filters import FilterModule
+from utils.domains.default_primary import default_domain_primary
 
 NODE = "ndck3kzcxbcem2oskbhytxwevvpzwn7j5dj6q36vbijyrnw3rjf2heqd.onion"
-PRIMARY = "infinito.test"
+PRIMARY = default_domain_primary()
 
 
 class TestCspOnionMirror(unittest.TestCase):

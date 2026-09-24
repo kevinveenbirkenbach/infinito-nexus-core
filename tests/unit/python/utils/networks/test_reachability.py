@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 
+from utils.domains.default_primary import default_domain_primary
 from utils.networks.reachability import (
     CLEARNET,
     MULTI,
@@ -19,6 +20,7 @@ from utils.networks.reachability import (
 )
 
 ONION = "abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvw.onion"
+DOMAIN = default_domain_primary()
 
 
 def _cfg(**reachability) -> dict:
@@ -33,11 +35,11 @@ class TestNetworkOf(unittest.TestCase):
         self.assertEqual(network_of(f"Wazuh.{ONION.upper()}."), TOR)
 
     def test_everything_else_is_clearnet(self) -> None:
-        self.assertEqual(network_of("wazuh.infinito.test"), CLEARNET)
+        self.assertEqual(network_of(f"wazuh.{DOMAIN}"), CLEARNET)
 
     def test_is_network(self) -> None:
         self.assertTrue(is_network(ONION, TOR))
-        self.assertFalse(is_network("infinito.test", TOR))
+        self.assertFalse(is_network(DOMAIN, TOR))
 
     def test_reserved_network_is_refused(self) -> None:
         with self.assertRaises(ValueError):
@@ -51,34 +53,30 @@ class TestNetworkOf(unittest.TestCase):
 class TestSiblingDomain(unittest.TestCase):
     def test_clearnet_subdomain_to_tor(self) -> None:
         self.assertEqual(
-            sibling_domain("wazuh.infinito.test", TOR, "infinito.test", ONION),
+            sibling_domain(f"wazuh.{DOMAIN}", TOR, DOMAIN, ONION),
             f"wazuh.{ONION}",
         )
 
     def test_apex_to_tor_is_the_node_onion(self) -> None:
-        self.assertEqual(
-            sibling_domain("infinito.test", TOR, "infinito.test", ONION), ONION
-        )
+        self.assertEqual(sibling_domain(DOMAIN, TOR, DOMAIN, ONION), ONION)
 
     def test_tor_subdomain_to_clearnet(self) -> None:
         self.assertEqual(
-            sibling_domain(f"wazuh.{ONION}", CLEARNET, "infinito.test", ONION),
-            "wazuh.infinito.test",
+            sibling_domain(f"wazuh.{ONION}", CLEARNET, DOMAIN, ONION),
+            f"wazuh.{DOMAIN}",
         )
 
     def test_same_network_returns_itself(self) -> None:
         self.assertEqual(
-            sibling_domain("wazuh.infinito.test", CLEARNET, "infinito.test", ONION),
-            "wazuh.infinito.test",
+            sibling_domain(f"wazuh.{DOMAIN}", CLEARNET, DOMAIN, ONION),
+            f"wazuh.{DOMAIN}",
         )
 
     def test_foreign_domain_has_no_sibling(self) -> None:
-        self.assertIsNone(sibling_domain("example.org", TOR, "infinito.test", ONION))
+        self.assertIsNone(sibling_domain("example.org", TOR, DOMAIN, ONION))
 
     def test_no_node_address_has_no_sibling(self) -> None:
-        self.assertIsNone(
-            sibling_domain("wazuh.infinito.test", TOR, "infinito.test", "")
-        )
+        self.assertIsNone(sibling_domain(f"wazuh.{DOMAIN}", TOR, DOMAIN, ""))
 
 
 class TestResolveNodeMode(unittest.TestCase):

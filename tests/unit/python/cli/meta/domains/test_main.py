@@ -8,7 +8,10 @@ from unittest.mock import patch
 
 import cli.meta.domains.__main__ as mod
 from utils.cache.yaml import dump_yaml_str
+from utils.domains.default_primary import default_domain_primary
 from utils.roles.mapping import ROLE_FILE_META_DOMAINS, ROLE_FILE_VARS_MAIN
+
+DOMAIN = default_domain_primary()
 
 
 class TestCliMetaApplicationsDomains(TestCase):
@@ -60,7 +63,7 @@ class TestCliMetaApplicationsDomains(TestCase):
                 code, out, err = self._run(
                     [
                         "--domain-primary",
-                        "infinito.test",
+                        DOMAIN,
                         "--alias",
                         "--www",
                     ]
@@ -71,12 +74,12 @@ class TestCliMetaApplicationsDomains(TestCase):
         self.assertEqual(
             out.strip().splitlines(),
             [
-                "alias.infinito.test",
-                "dashboard.infinito.test",
-                "test.infinito.test",
-                "www.alias.infinito.test",
-                "www.dashboard.infinito.test",
-                "www.test.infinito.test",
+                f"alias.{DOMAIN}",
+                f"dashboard.{DOMAIN}",
+                f"test.{DOMAIN}",
+                f"www.alias.{DOMAIN}",
+                f"www.dashboard.{DOMAIN}",
+                f"www.test.{DOMAIN}",
             ],
         )
 

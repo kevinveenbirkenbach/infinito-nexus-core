@@ -19,9 +19,12 @@ from unittest.mock import patch
 from utils.cache import _reset_cache_for_tests
 from utils.cache import domains as cache_domains
 from utils.cache.base import _RENDER_GUARD
+from utils.domains.default_primary import default_domain_primary
 from utils.roles.mapping import ROLE_FILE_META_SERVICES, ROLE_FILE_META_USERS
 
 from . import PROJECT_ROOT
+
+DOMAIN = default_domain_primary()
 
 
 def _write(path: Path, content: str) -> None:
@@ -65,7 +68,7 @@ class TestMissingPrimaryDomain(unittest.TestCase):
                 return_value={},
             ):
                 result = cache_domains.get_merged_domains(
-                    variables={"SYSTEM_EMAIL_DOMAIN": "infinito.test"},
+                    variables={"SYSTEM_EMAIL_DOMAIN": DOMAIN},
                     roles_dir=roles,
                     templar=None,
                 )
@@ -84,12 +87,12 @@ class TestCachingPerVariablesSignature(unittest.TestCase):
                 return_value={},
             ) as mocked:
                 first = cache_domains.get_merged_domains(
-                    variables={"DOMAIN_PRIMARY": "infinito.test"},
+                    variables={"DOMAIN_PRIMARY": DOMAIN},
                     roles_dir=roles,
                     templar=None,
                 )
                 second = cache_domains.get_merged_domains(
-                    variables={"DOMAIN_PRIMARY": "infinito.test"},
+                    variables={"DOMAIN_PRIMARY": DOMAIN},
                     roles_dir=roles,
                     templar=None,
                 )
@@ -120,7 +123,7 @@ class TestCachingPerVariablesSignature(unittest.TestCase):
         map must not answer a later read; it may still serve the render."""
         with tempfile.TemporaryDirectory() as tmp:
             roles = _seed_minimal_role(Path(tmp))
-            variables = {"DOMAIN_PRIMARY": "infinito.test"}
+            variables = {"DOMAIN_PRIMARY": DOMAIN}
             with patch(
                 "utils.cache.applications.get_merged_applications",
                 return_value={},
@@ -157,7 +160,7 @@ class TestResetClearsDomainsCache(unittest.TestCase):
                 return_value={},
             ):
                 cache_domains.get_merged_domains(
-                    variables={"DOMAIN_PRIMARY": "infinito.test"},
+                    variables={"DOMAIN_PRIMARY": DOMAIN},
                     roles_dir=roles,
                     templar=None,
                 )
@@ -220,9 +223,9 @@ class TestNetworkSiblingInjection(unittest.TestCase):
 
     def _inject(self, apps, node_mode, *, domains=None, deployed=("web-app-x",)):
         return cache_domains._inject_network_siblings(
-            {"web-app-x": domains if domains is not None else ["x.infinito.test"]},
+            {"web-app-x": domains if domains is not None else [f"x.{DOMAIN}"]},
             apps,
-            "infinito.test",
+            DOMAIN,
             self.ONION,
             node_mode,
             deployed=list(deployed),
@@ -231,7 +234,7 @@ class TestNetworkSiblingInjection(unittest.TestCase):
     def test_multi_appends_onion_after_clearnet(self):
         self.assertEqual(
             self._inject(self._apps(), "multi"),
-            ["x.infinito.test", f"x.{self.ONION}"],
+            [f"x.{DOMAIN}", f"x.{self.ONION}"],
         )
 
     def test_tor_mode_replaces_clearnet(self):
@@ -239,12 +242,12 @@ class TestNetworkSiblingInjection(unittest.TestCase):
 
     def test_clearnet_mode_is_untouched(self):
         self.assertEqual(
-            self._inject(self._apps(enabled=False), "clearnet"), ["x.infinito.test"]
+            self._inject(self._apps(enabled=False), "clearnet"), [f"x.{DOMAIN}"]
         )
 
     def test_clearnet_mode_never_renders_the_tor_flag(self):
         apps = self._apps(enabled="{{ 'svc-net-tor' in group_names }}")
-        self.assertEqual(self._inject(apps, "clearnet"), ["x.infinito.test"])
+        self.assertEqual(self._inject(apps, "clearnet"), [f"x.{DOMAIN}"])
 
     def test_tor_only_role_on_clearnet_node_fails_loudly(self):
         with self.assertRaisesRegex(ValueError, "web-app-x"):
@@ -257,17 +260,17 @@ class TestNetworkSiblingInjection(unittest.TestCase):
 
     def test_clearnet_only_role_on_multi_stays_clearnet(self):
         self.assertEqual(
-            self._inject(self._apps(modes=["clearnet"]), "multi"), ["x.infinito.test"]
+            self._inject(self._apps(modes=["clearnet"]), "multi"), [f"x.{DOMAIN}"]
         )
 
     def test_disabled_tor_bond_on_multi_stays_clearnet(self):
         self.assertEqual(
-            self._inject(self._apps(enabled=False), "multi"), ["x.infinito.test"]
+            self._inject(self._apps(enabled=False), "multi"), [f"x.{DOMAIN}"]
         )
 
     def test_role_without_tor_bond_is_exempt_on_tor_node(self):
         apps = {"web-app-x": {"services": {}}}
-        self.assertEqual(self._inject(apps, "tor"), ["x.infinito.test"])
+        self.assertEqual(self._inject(apps, "tor"), [f"x.{DOMAIN}"])
 
     def test_deployed_mismatch_fails_loudly(self):
         with self.assertRaisesRegex(ValueError, "web-app-x"):
@@ -276,24 +279,24 @@ class TestNetworkSiblingInjection(unittest.TestCase):
     def test_undeployed_mismatch_keeps_domains(self):
         self.assertEqual(
             self._inject(self._apps(modes=["clearnet"]), "tor", deployed=()),
-            ["x.infinito.test"],
+            [f"x.{DOMAIN}"],
         )
 
     def test_bare_primary_domain_maps_to_node_onion(self):
         self.assertEqual(
-            self._inject(self._apps(), "multi", domains=["infinito.test"]),
-            ["infinito.test", self.ONION],
+            self._inject(self._apps(), "multi", domains=[DOMAIN]),
+            [DOMAIN, self.ONION],
         )
 
     def test_named_canonicals_gain_onion_keys_after_clearnet(self):
         self.assertEqual(
-            self._inject(self._apps(), "multi", domains={"api": "api.infinito.test"}),
-            {"api": "api.infinito.test", "api_onion": f"api.{self.ONION}"},
+            self._inject(self._apps(), "multi", domains={"api": f"api.{DOMAIN}"}),
+            {"api": f"api.{DOMAIN}", "api_onion": f"api.{self.ONION}"},
         )
 
     def test_named_canonicals_in_tor_mode_swap_values(self):
         self.assertEqual(
-            self._inject(self._apps(), "tor", domains={"api": "api.infinito.test"}),
+            self._inject(self._apps(), "tor", domains={"api": f"api.{DOMAIN}"}),
             {"api": f"api.{self.ONION}"},
         )
 
@@ -336,9 +339,9 @@ class TestTorFlagsAreRendered(unittest.TestCase):
 
     def _inject(self, templar, **variables):
         return cache_domains._inject_network_siblings(
-            {"web-app-x": ["x.infinito.test"]},
+            {"web-app-x": [f"x.{DOMAIN}"]},
             {"web-app-x": {"services": {"tor": {"enabled": self.JINJA_ON}}}},
-            "infinito.test",
+            DOMAIN,
             self.ONION,
             "multi",
             templar=templar,
@@ -349,14 +352,14 @@ class TestTorFlagsAreRendered(unittest.TestCase):
         variables = {"group_names": ["svc-net-tor", "web-app-x"]}
         self.assertEqual(
             self._inject(self._templar(**variables), **variables),
-            ["x.infinito.test", f"x.{self.ONION}"],
+            [f"x.{DOMAIN}", f"x.{self.ONION}"],
         )
 
     def test_a_templated_flag_resolving_false_leaves_the_clearnet_domain(self):
         variables = {"group_names": ["web-app-x"]}
         self.assertEqual(
             self._inject(self._templar(**variables), **variables),
-            ["x.infinito.test"],
+            [f"x.{DOMAIN}"],
         )
 
     def test_a_flag_that_cannot_be_rendered_is_an_error(self):

@@ -5,6 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from utils.domains.default_primary import default_domain_primary
+
 from . import PROJECT_ROOT
 
 ROLE_FILES = PROJECT_ROOT / "roles/sys-ctl-hlth-csp/files/python"
@@ -55,6 +57,7 @@ class TestExtractDomainsFromFilenames(unittest.TestCase):
 
 
 SUFFIX = ".onion"
+DOMAIN = default_domain_primary()
 
 
 def _vhosts(*domains: str) -> dict[str, Path]:
@@ -80,8 +83,8 @@ class TestCollectVhosts(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             for protocol, domain in (
-                ("http", "app.infinito.test"),
-                ("https", "app.infinito.test"),
+                ("http", f"app.{DOMAIN}"),
+                ("https", f"app.{DOMAIN}"),
                 ("http", "app.abc123.onion"),
             ):
                 (Path(tmp) / protocol).mkdir(exist_ok=True)
@@ -89,7 +92,7 @@ class TestCollectVhosts(unittest.TestCase):
 
             vhosts = script.collect_vhosts(tmp)
 
-        self.assertEqual(vhosts["app.infinito.test"].parent.name, "https")
+        self.assertEqual(vhosts[f"app.{DOMAIN}"].parent.name, "https")
         self.assertEqual(vhosts["app.abc123.onion"].parent.name, "http")
 
     def test_missing_directories_return_none(self) -> None:
@@ -101,11 +104,11 @@ class TestSplitProxiedDomains(unittest.TestCase):
     def test_splits_families(self) -> None:
         domains = [
             "auth.abc123.onion",
-            "app.infinito.test",
+            f"app.{DOMAIN}",
             "matomo.abc123.onion",
         ]
         clearnet, onion = script.split_proxied_domains(domains, SUFFIX)
-        self.assertEqual(clearnet, ["app.infinito.test"])
+        self.assertEqual(clearnet, [f"app.{DOMAIN}"])
         self.assertEqual(onion, ["auth.abc123.onion", "matomo.abc123.onion"])
 
     def test_clearnet_only(self) -> None:
@@ -122,12 +125,12 @@ class TestSplitProxiedDomains(unittest.TestCase):
 
 class TestIsSkippedDomain(unittest.TestCase):
     def _skipped(self, domain: str) -> bool:
-        skip_set = {"mirror.infinito.test"}
+        skip_set = {f"mirror.{DOMAIN}"}
         labels = {d.split(".", 1)[0] for d in skip_set}
         return script.is_skipped_domain(domain, skip_set, labels, SUFFIX)
 
     def test_explicit_clearnet_domain_is_skipped(self) -> None:
-        self.assertTrue(self._skipped("mirror.infinito.test"))
+        self.assertTrue(self._skipped(f"mirror.{DOMAIN}"))
 
     def test_onion_sibling_of_skipped_clearnet_is_skipped(self) -> None:
         self.assertTrue(self._skipped("mirror.abc123.onion"))
@@ -136,7 +139,7 @@ class TestIsSkippedDomain(unittest.TestCase):
         self.assertFalse(self._skipped("auth.abc123.onion"))
 
     def test_unrelated_clearnet_is_not_skipped(self) -> None:
-        self.assertFalse(self._skipped("auth.infinito.test"))
+        self.assertFalse(self._skipped(f"auth.{DOMAIN}"))
 
 
 class TestMainSkipsOnionSiblings(unittest.TestCase):
@@ -150,7 +153,7 @@ class TestMainSkipsOnionSiblings(unittest.TestCase):
         mock_run_checker: MagicMock,
     ) -> None:
         mock_collect.return_value = _vhosts(
-            "mirror.infinito.test",
+            f"mirror.{DOMAIN}",
             "mirror.abc123.onion",
             "auth.abc123.onion",
         )
@@ -165,7 +168,7 @@ class TestMainSkipsOnionSiblings(unittest.TestCase):
                 "argv",
                 _argv(
                     "--skip-domain",
-                    "mirror.infinito.test",
+                    f"mirror.{DOMAIN}",
                     "--tor-proxy",
                     "socks5://127.0.0.1:9050",
                 ),
@@ -175,7 +178,7 @@ class TestMainSkipsOnionSiblings(unittest.TestCase):
             script.main()
 
         probed = [d for call in mock_build_urls.call_args_list for d in call.args[1]]
-        self.assertNotIn("mirror.infinito.test", probed)
+        self.assertNotIn(f"mirror.{DOMAIN}", probed)
         self.assertNotIn("mirror.abc123.onion", probed)
         self.assertIn("auth.abc123.onion", probed)
 
@@ -248,7 +251,7 @@ class TestMainTimesOutOnionsOnly(unittest.TestCase):
         mock_build_urls: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_collect.return_value = _vhosts("auth.infinito.test", "auth.abc123.onion")
+        mock_collect.return_value = _vhosts(f"auth.{DOMAIN}", "auth.abc123.onion")
         mock_build_urls.side_effect = lambda _vhosts, domains: [
             f"http://{d}/" for d in domains
         ]
@@ -274,7 +277,7 @@ class TestMainTimesOutOnionsOnly(unittest.TestCase):
             for call in mock_run_checker.call_args_list
         }
         self.assertEqual(budgets["http://auth.abc123.onion/"], 100000)
-        self.assertEqual(budgets["http://auth.infinito.test/"], 0)
+        self.assertEqual(budgets[f"http://auth.{DOMAIN}/"], 0)
 
 
 class TestDetectSchemeFromConf(unittest.TestCase):
