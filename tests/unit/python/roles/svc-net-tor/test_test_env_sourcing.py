@@ -15,6 +15,7 @@ import unittest
 from jinja2 import Environment, StrictUndefined, select_autoescape
 
 from plugins.filter.dotenv import FilterModule
+from plugins.filter.network_of import FilterModule as NetworkFilters
 from utils.cache.files import read_text
 
 from . import PROJECT_ROOT
@@ -40,6 +41,7 @@ def _render(mode: str) -> str:
         autoescape=select_autoescape(default_for_string=False),
     )
     env.filters.update(FilterModule().filters())
+    env.filters.update(NetworkFilters().filters())
     return env.from_string(read_text(str(TEMPLATE))).render(
         lookup=_lookup,
         DEPLOYMENT_MODE=mode,

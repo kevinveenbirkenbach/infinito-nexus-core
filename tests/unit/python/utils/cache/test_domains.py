@@ -209,146 +209,122 @@ class TestImportableWithoutAnsible(unittest.TestCase):
         self.assertIn("OK", result.stdout)
 
 
-class TestOnionDomainInjection(unittest.TestCase):
+class TestNetworkSiblingInjection(unittest.TestCase):
     ONION = "abc123def456ghij789klmno000pqrstuvwx111yz222abc333def444gh.onion"
 
-    def _apps(self, **tor):
-        return {
-            "web-app-x": {
-                "services": {
-                    "tor": {
-                        "enabled": True,
-                        "exclusive": False,
-                        "primary": False,
-                        **tor,
-                    }
-                },
-            }
-        }
+    def _apps(self, enabled=True, **reachability):
+        config = {"services": {"tor": {"enabled": enabled}}}
+        if reachability:
+            config["networks"] = {"reachability": reachability}
+        return {"web-app-x": config}
 
-    def test_dual_stack_appends_onion(self):
-        merged = {"web-app-x": ["x.infinito.test"]}
-        out = cache_domains._inject_onion_domains(
-            merged, self._apps(), "infinito.test", self.ONION
-        )
-        self.assertEqual(out["web-app-x"], ["x.infinito.test", f"x.{self.ONION}"])
+    def _inject(self, apps, node_mode, *, domains=None, deployed=("web-app-x",)):
+        return cache_domains._inject_network_siblings(
+            {"web-app-x": domains if domains is not None else ["x.infinito.test"]},
+            apps,
+            "infinito.test",
+            self.ONION,
+            node_mode,
+            deployed=list(deployed),
+        )["web-app-x"]
 
-    def test_exclusive_replaces_clearnet(self):
-        merged = {"web-app-x": ["x.infinito.test"]}
-        out = cache_domains._inject_onion_domains(
-            merged, self._apps(exclusive=True), "infinito.test", self.ONION
+    def test_multi_appends_onion_after_clearnet(self):
+        self.assertEqual(
+            self._inject(self._apps(), "multi"),
+            ["x.infinito.test", f"x.{self.ONION}"],
         )
-        self.assertEqual(out["web-app-x"], [f"x.{self.ONION}"])
 
-    def test_primary_puts_onion_first(self):
-        merged = {"web-app-x": ["x.infinito.test"]}
-        out = cache_domains._inject_onion_domains(
-            merged, self._apps(primary=True), "infinito.test", self.ONION
-        )
-        self.assertEqual(out["web-app-x"], [f"x.{self.ONION}", "x.infinito.test"])
+    def test_tor_mode_replaces_clearnet(self):
+        self.assertEqual(self._inject(self._apps(), "tor"), [f"x.{self.ONION}"])
 
-    def test_disabled_app_untouched(self):
-        merged = {"web-app-x": ["x.infinito.test"]}
-        apps = {"web-app-x": {"services": {"tor": {"enabled": False}}}}
-        out = cache_domains._inject_onion_domains(
-            merged, apps, "infinito.test", self.ONION
+    def test_clearnet_mode_is_untouched(self):
+        self.assertEqual(
+            self._inject(self._apps(enabled=False), "clearnet"), ["x.infinito.test"]
         )
-        self.assertEqual(out["web-app-x"], ["x.infinito.test"])
 
-    def test_exclusive_primary_default_from_provider(self):
-        """A consumer that omits exclusive/primary inherits the svc-net-tor
-        provider defaults (exclusive: true -> onion only)."""
-        merged = {"web-app-x": ["x.infinito.test"]}
-        apps = {
-            "web-app-x": {"services": {"tor": {"enabled": True, "shared": True}}},
-            "svc-net-tor": {
-                "services": {
-                    "tor": {
-                        "enabled": True,
-                        "shared": True,
-                        "exclusive": True,
-                        "primary": True,
-                    }
-                }
-            },
-        }
-        out = cache_domains._inject_onion_domains(
-            merged, apps, "infinito.test", self.ONION
-        )
-        self.assertEqual(out["web-app-x"], [f"x.{self.ONION}"])
+    def test_clearnet_mode_never_renders_the_tor_flag(self):
+        apps = self._apps(enabled="{{ 'svc-net-tor' in group_names }}")
+        self.assertEqual(self._inject(apps, "clearnet"), ["x.infinito.test"])
 
-    def test_consumer_override_beats_provider_default(self):
-        """A consumer that pins exclusive: false overrides the provider's
-        exclusive: true and stays dual-stack."""
-        merged = {"web-app-x": ["x.infinito.test"]}
-        apps = {
-            "web-app-x": {
-                "services": {
-                    "tor": {"enabled": True, "shared": True, "exclusive": False}
-                }
-            },
-            "svc-net-tor": {
-                "services": {
-                    "tor": {
-                        "enabled": True,
-                        "shared": True,
-                        "exclusive": True,
-                        "primary": False,
-                    }
-                }
-            },
-        }
-        out = cache_domains._inject_onion_domains(
-            merged, apps, "infinito.test", self.ONION
-        )
-        self.assertEqual(out["web-app-x"], ["x.infinito.test", f"x.{self.ONION}"])
+    def test_tor_only_role_on_clearnet_node_fails_loudly(self):
+        with self.assertRaisesRegex(ValueError, "web-app-x"):
+            self._inject(self._apps(modes=["tor"]), "clearnet")
 
-    def test_consumer_exclusive_false_inherits_provider_primary_dual(self):
-        """A consumer pinning only exclusive: false inherits the provider's
-        primary: true and stays dual-stack, onion-first."""
-        merged = {"web-app-x": ["x.infinito.test"]}
-        apps = {
-            "web-app-x": {
-                "services": {
-                    "tor": {"enabled": True, "shared": True, "exclusive": False}
-                }
-            },
-            "svc-net-tor": {
-                "services": {
-                    "tor": {
-                        "enabled": True,
-                        "shared": True,
-                        "exclusive": True,
-                        "primary": True,
-                    }
-                }
-            },
-        }
-        out = cache_domains._inject_onion_domains(
-            merged, apps, "infinito.test", self.ONION
+    def test_single_mode_on_multi_serves_tor(self):
+        self.assertEqual(
+            self._inject(self._apps(single_mode=True), "multi"), [f"x.{self.ONION}"]
         )
-        self.assertEqual(out["web-app-x"], [f"x.{self.ONION}", "x.infinito.test"])
+
+    def test_clearnet_only_role_on_multi_stays_clearnet(self):
+        self.assertEqual(
+            self._inject(self._apps(modes=["clearnet"]), "multi"), ["x.infinito.test"]
+        )
+
+    def test_disabled_tor_bond_on_multi_stays_clearnet(self):
+        self.assertEqual(
+            self._inject(self._apps(enabled=False), "multi"), ["x.infinito.test"]
+        )
+
+    def test_role_without_tor_bond_is_exempt_on_tor_node(self):
+        apps = {"web-app-x": {"services": {}}}
+        self.assertEqual(self._inject(apps, "tor"), ["x.infinito.test"])
+
+    def test_deployed_mismatch_fails_loudly(self):
+        with self.assertRaisesRegex(ValueError, "web-app-x"):
+            self._inject(self._apps(modes=["clearnet"]), "tor")
+
+    def test_undeployed_mismatch_keeps_domains(self):
+        self.assertEqual(
+            self._inject(self._apps(modes=["clearnet"]), "tor", deployed=()),
+            ["x.infinito.test"],
+        )
 
     def test_bare_primary_domain_maps_to_node_onion(self):
-        merged = {"web-app-x": ["infinito.test"]}
-        out = cache_domains._inject_onion_domains(
-            merged, self._apps(), "infinito.test", self.ONION
+        self.assertEqual(
+            self._inject(self._apps(), "multi", domains=["infinito.test"]),
+            ["infinito.test", self.ONION],
         )
-        self.assertEqual(out["web-app-x"], ["infinito.test", self.ONION])
+
+    def test_named_canonicals_gain_onion_keys_after_clearnet(self):
+        self.assertEqual(
+            self._inject(self._apps(), "multi", domains={"api": "api.infinito.test"}),
+            {"api": "api.infinito.test", "api_onion": f"api.{self.ONION}"},
+        )
+
+    def test_named_canonicals_in_tor_mode_swap_values(self):
+        self.assertEqual(
+            self._inject(self._apps(), "tor", domains={"api": "api.infinito.test"}),
+            {"api": f"api.{self.ONION}"},
+        )
 
 
-class TestOnionFlagsAreRendered(unittest.TestCase):
-    """`services.tor.*` reaches this map as Jinja in 99 of the 105 roles that
-    declare it, and as its own source text whenever the applications render is
-    still in flight. Reading that text as a boolean answers False and drops the
-    onion domains for every app, which is what froze a clearnet asset URL into
-    the applications payload of run 34922994823.
+class TestNodeNetworkMode(unittest.TestCase):
+    def test_node_onion_requires_the_provider_on_the_host(self):
+        apps = {"svc-net-tor": {"services": {"tor": {"node": "n.onion"}}}}
+        self.assertEqual(cache_domains.node_onion_of(apps, {"group_names": []}), "")
+        self.assertEqual(
+            cache_domains.node_onion_of(apps, {"group_names": ["svc-net-tor"]}),
+            "n.onion",
+        )
+
+    def test_empty_mode_derives_from_the_node_onion(self):
+        self.assertEqual(cache_domains.node_network_mode({}, "n.onion"), "multi")
+        self.assertEqual(cache_domains.node_network_mode({}, ""), "clearnet")
+
+    def test_declared_tor_mode_without_provider_fails(self):
+        with self.assertRaises(ValueError):
+            cache_domains.node_network_mode({"NETWORK_MODE": "tor"}, "")
+
+
+class TestTorFlagsAreRendered(unittest.TestCase):
+    """`services.tor.enabled` reaches this map as Jinja in almost every role
+    that declares it, and as its own source text whenever the applications
+    render is still in flight. Reading that text as a boolean answers False and
+    drops the onion domains for every app.
     """
 
-    ONION = TestOnionDomainInjection.ONION
+    ONION = TestNetworkSiblingInjection.ONION
     JINJA_ON = "{{ 'svc-net-tor' in group_names }}"
-
-    _apps = TestOnionDomainInjection._apps
 
     def _templar(self, **variables):
         from ansible.parsing.dataloader import DataLoader
@@ -358,49 +334,34 @@ class TestOnionFlagsAreRendered(unittest.TestCase):
         templar.available_variables = dict(variables)
         return templar
 
-    def _inject(self, apps, **variables):
-        return cache_domains._inject_onion_domains(
+    def _inject(self, templar, **variables):
+        return cache_domains._inject_network_siblings(
             {"web-app-x": ["x.infinito.test"]},
-            apps,
+            {"web-app-x": {"services": {"tor": {"enabled": self.JINJA_ON}}}},
             "infinito.test",
             self.ONION,
-            templar=self._templar(**variables),
+            "multi",
+            templar=templar,
             variables=dict(variables),
-        )
+        )["web-app-x"]
 
     def test_a_templated_enabled_flag_still_injects_the_onion(self):
-        out = self._inject(
-            self._apps(enabled=self.JINJA_ON),
-            group_names=["svc-net-tor", "web-app-x"],
+        variables = {"group_names": ["svc-net-tor", "web-app-x"]}
+        self.assertEqual(
+            self._inject(self._templar(**variables), **variables),
+            ["x.infinito.test", f"x.{self.ONION}"],
         )
-
-        self.assertEqual(out["web-app-x"], ["x.infinito.test", f"x.{self.ONION}"])
 
     def test_a_templated_flag_resolving_false_leaves_the_clearnet_domain(self):
-        out = self._inject(self._apps(enabled=self.JINJA_ON), group_names=["web-app-x"])
-
-        self.assertEqual(out["web-app-x"], ["x.infinito.test"])
-
-    def test_templated_exclusive_replaces_the_clearnet_domain(self):
-        out = self._inject(
-            self._apps(enabled=self.JINJA_ON, exclusive=self.JINJA_ON),
-            group_names=["svc-net-tor", "web-app-x"],
+        variables = {"group_names": ["web-app-x"]}
+        self.assertEqual(
+            self._inject(self._templar(**variables), **variables),
+            ["x.infinito.test"],
         )
 
-        self.assertEqual(out["web-app-x"], [f"x.{self.ONION}"])
-
     def test_a_flag_that_cannot_be_rendered_is_an_error(self):
-        """Without a templar the text cannot resolve, and answering False
-        would drop the onion domains without saying so."""
         with self.assertRaisesRegex(ValueError, "services.tor.enabled"):
-            cache_domains._inject_onion_domains(
-                {"web-app-x": ["x.infinito.test"]},
-                self._apps(enabled=self.JINJA_ON),
-                "infinito.test",
-                self.ONION,
-                templar=None,
-                variables={"group_names": ["svc-net-tor"]},
-            )
+            self._inject(None, group_names=["svc-net-tor"])
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ def _expand(accept_status, domains=None):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.expand_accept_status(
-        accept_status, DOMAINS if domains is None else domains
+        accept_status, DOMAINS if domains is None else domains, ".onion"
     )
 
 

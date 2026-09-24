@@ -73,6 +73,7 @@ from ansible.plugins.loader import lookup_loader
 from ansible.plugins.lookup import LookupBase
 
 from utils.networks.lookup_context import resolve_var
+from utils.networks.reachability import TOR, is_network
 
 HOST_GATEWAY = "host-gateway"
 DOCKER_INTERNAL_HOST = "host.docker.internal"
@@ -135,7 +136,7 @@ class LookupModule(LookupBase):
             return []
 
         provider_host = str(self._lookup("tls", SSO_PROVIDER, "domain") or "").strip()
-        if not provider_host.endswith(".onion"):
+        if not is_network(provider_host, TOR):
             return []
 
         return [

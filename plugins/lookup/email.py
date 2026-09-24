@@ -9,6 +9,7 @@ from ansible.plugins.lookup import LookupBase
 from plugins.lookup.applications import LookupModule as ApplicationsLookup
 from plugins.lookup.domain import LookupModule as DomainLookup
 from plugins.lookup.users import LookupModule as UsersLookup
+from utils.networks.reachability import network, network_of
 
 SYSTEM_EMAIL_PREFIX = "SYSTEM_EMAIL_"
 
@@ -152,7 +153,7 @@ class LookupModule(LookupBase):
             if not external:
                 return False
             mail_host = str(resolved.get("host") or "").lower()
-            if mail_host.endswith(".onion"):
+            if not network(network_of(mail_host)).tls:
                 return False
             return _as_bool(variables.get("TLS_ENABLED"))
         if short_key == "port":

@@ -54,71 +54,107 @@ class TestExtractDomainsFromFilenames(unittest.TestCase):
         self.assertIsNone(domains)
 
 
-class TestSplitOnionDomains(unittest.TestCase):
+SUFFIX = ".onion"
+
+
+def _vhosts(*domains: str) -> dict[str, Path]:
+    return {d: Path("/etc/nginx/servers/http") / f"{d}.conf" for d in domains}
+
+
+def _argv(*extra: str) -> list[str]:
+    return [
+        "script.py",
+        "--nginx-config-dir",
+        "/etc/nginx/servers",
+        "--proxy-suffix",
+        SUFFIX,
+        "--image",
+        "img:tag",
+        *extra,
+    ]
+
+
+class TestCollectVhosts(unittest.TestCase):
+    def test_https_conf_wins_over_the_http_redirect(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            for protocol, domain in (
+                ("http", "app.infinito.test"),
+                ("https", "app.infinito.test"),
+                ("http", "app.abc123.onion"),
+            ):
+                (Path(tmp) / protocol).mkdir(exist_ok=True)
+                (Path(tmp) / protocol / f"{domain}.conf").write_text("")
+
+            vhosts = script.collect_vhosts(tmp)
+
+        self.assertEqual(vhosts["app.infinito.test"].parent.name, "https")
+        self.assertEqual(vhosts["app.abc123.onion"].parent.name, "http")
+
+    def test_missing_directories_return_none(self) -> None:
+        with patch("sys.stderr"):
+            self.assertIsNone(script.collect_vhosts("/definitely/missing"))
+
+
+class TestSplitProxiedDomains(unittest.TestCase):
     def test_splits_families(self) -> None:
         domains = [
             "auth.abc123.onion",
             "app.infinito.test",
             "matomo.abc123.onion",
         ]
-        clearnet, onion = script.split_onion_domains(domains)
+        clearnet, onion = script.split_proxied_domains(domains, SUFFIX)
         self.assertEqual(clearnet, ["app.infinito.test"])
         self.assertEqual(onion, ["auth.abc123.onion", "matomo.abc123.onion"])
 
     def test_clearnet_only(self) -> None:
         domains = ["a.example", "b.example"]
-        self.assertEqual(script.split_onion_domains(domains), (domains, []))
+        self.assertEqual(script.split_proxied_domains(domains, SUFFIX), (domains, []))
 
     def test_empty_list(self) -> None:
-        self.assertEqual(script.split_onion_domains([]), ([], []))
+        self.assertEqual(script.split_proxied_domains([], SUFFIX), ([], []))
+
+    def test_no_suffix_proxies_nothing(self) -> None:
+        domains = ["a.abc123.onion"]
+        self.assertEqual(script.split_proxied_domains(domains, ""), (domains, []))
 
 
 class TestIsSkippedDomain(unittest.TestCase):
-    def test_explicit_clearnet_domain_is_skipped(self) -> None:
+    def _skipped(self, domain: str) -> bool:
         skip_set = {"mirror.infinito.test"}
         labels = {d.split(".", 1)[0] for d in skip_set}
-        self.assertTrue(
-            script.is_skipped_domain("mirror.infinito.test", skip_set, labels)
-        )
+        return script.is_skipped_domain(domain, skip_set, labels, SUFFIX)
+
+    def test_explicit_clearnet_domain_is_skipped(self) -> None:
+        self.assertTrue(self._skipped("mirror.infinito.test"))
 
     def test_onion_sibling_of_skipped_clearnet_is_skipped(self) -> None:
-        skip_set = {"mirror.infinito.test"}
-        labels = {d.split(".", 1)[0] for d in skip_set}
-        self.assertTrue(
-            script.is_skipped_domain("mirror.abc123.onion", skip_set, labels)
-        )
+        self.assertTrue(self._skipped("mirror.abc123.onion"))
 
     def test_unrelated_onion_is_not_skipped(self) -> None:
-        skip_set = {"mirror.infinito.test"}
-        labels = {d.split(".", 1)[0] for d in skip_set}
-        self.assertFalse(
-            script.is_skipped_domain("auth.abc123.onion", skip_set, labels)
-        )
+        self.assertFalse(self._skipped("auth.abc123.onion"))
 
     def test_unrelated_clearnet_is_not_skipped(self) -> None:
-        skip_set = {"mirror.infinito.test"}
-        labels = {d.split(".", 1)[0] for d in skip_set}
-        self.assertFalse(
-            script.is_skipped_domain("auth.infinito.test", skip_set, labels)
-        )
+        self.assertFalse(self._skipped("auth.infinito.test"))
 
 
 class TestMainSkipsOnionSiblings(unittest.TestCase):
     @patch("script.run_checker")
     @patch("script.build_urls_from_nginx_confs")
-    @patch("script.extract_domains_from_filenames")
+    @patch("script.collect_vhosts")
     def test_onion_sibling_of_skip_domain_is_excluded(
         self,
-        mock_extract: MagicMock,
+        mock_collect: MagicMock,
         mock_build_urls: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_extract.return_value = [
+        mock_collect.return_value = _vhosts(
             "mirror.infinito.test",
             "mirror.abc123.onion",
             "auth.abc123.onion",
-        ]
-        mock_build_urls.side_effect = lambda _dir, domains: [
+        )
+        mock_build_urls.side_effect = lambda _vhosts, domains: [
             f"http://{d}/" for d in domains
         ]
         mock_run_checker.return_value = 0
@@ -127,17 +163,12 @@ class TestMainSkipsOnionSiblings(unittest.TestCase):
             patch.object(
                 script.sys,
                 "argv",
-                [
-                    "script.py",
-                    "--nginx-config-dir",
-                    "/etc/nginx",
-                    "--image",
-                    "img:tag",
+                _argv(
                     "--skip-domain",
                     "mirror.infinito.test",
                     "--tor-proxy",
                     "socks5://127.0.0.1:9050",
-                ],
+                ),
             ),
             self.assertRaises(SystemExit),
         ):
@@ -210,15 +241,15 @@ class TestBuildDockerCmdTimeout(unittest.TestCase):
 class TestMainTimesOutOnionsOnly(unittest.TestCase):
     @patch("script.run_checker")
     @patch("script.build_urls_from_nginx_confs")
-    @patch("script.extract_domains_from_filenames")
+    @patch("script.collect_vhosts")
     def test_the_onion_batch_alone_carries_the_budget(
         self,
-        mock_extract: MagicMock,
+        mock_collect: MagicMock,
         mock_build_urls: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_extract.return_value = ["auth.infinito.test", "auth.abc123.onion"]
-        mock_build_urls.side_effect = lambda _dir, domains: [
+        mock_collect.return_value = _vhosts("auth.infinito.test", "auth.abc123.onion")
+        mock_build_urls.side_effect = lambda _vhosts, domains: [
             f"http://{d}/" for d in domains
         ]
         mock_run_checker.return_value = 0
@@ -227,17 +258,12 @@ class TestMainTimesOutOnionsOnly(unittest.TestCase):
             patch.object(
                 script.sys,
                 "argv",
-                [
-                    "script.py",
-                    "--nginx-config-dir",
-                    "/etc/nginx",
-                    "--image",
-                    "img:tag",
+                _argv(
                     "--tor-proxy",
                     "socks5://127.0.0.1:9050",
                     "--onion-timeout",
                     "100000",
-                ],
+                ),
             ),
             self.assertRaises(SystemExit),
         ):
@@ -288,14 +314,18 @@ class TestBuildUrlsFromNginxConfs(unittest.TestCase):
     def test_build_urls_https_preferred(self, mock_detect: MagicMock) -> None:
         mock_detect.return_value = "https"
 
-        urls = script.build_urls_from_nginx_confs("/etc/nginx", ["example.com"])
+        urls = script.build_urls_from_nginx_confs(
+            _vhosts("example.com"), ["example.com"]
+        )
         self.assertEqual(urls, ["https://example.com/"])
 
     @patch("script.detect_scheme_from_conf")
     def test_build_urls_http_when_http_detected(self, mock_detect: MagicMock) -> None:
         mock_detect.return_value = "http"
 
-        urls = script.build_urls_from_nginx_confs("/etc/nginx", ["example.com"])
+        urls = script.build_urls_from_nginx_confs(
+            _vhosts("example.com"), ["example.com"]
+        )
         self.assertEqual(urls, ["http://example.com/"])
 
     @patch("script.detect_scheme_from_conf")
@@ -305,7 +335,9 @@ class TestBuildUrlsFromNginxConfs(unittest.TestCase):
         mock_detect.return_value = None
 
         with patch("sys.stderr") as _stderr:
-            urls = script.build_urls_from_nginx_confs("/etc/nginx", ["example.com"])
+            urls = script.build_urls_from_nginx_confs(
+                _vhosts("example.com"), ["example.com"]
+            )
 
         self.assertEqual(urls, ["http://example.com/"])
 
@@ -444,20 +476,16 @@ class TestRunChecker(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     @patch("script.run_checker")
-    @patch("script.extract_domains_from_filenames")
-    def test_main_exits_1_when_extract_domains_returns_none(
+    @patch("script.collect_vhosts")
+    def test_main_exits_1_when_collect_vhosts_returns_none(
         self,
-        mock_extract: MagicMock,
+        mock_collect: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_extract.return_value = None
+        mock_collect.return_value = None
 
         with (
-            patch.object(
-                script.sys,
-                "argv",
-                ["script.py", "--nginx-config-dir", "/missing", "--image", "img:tag"],
-            ),
+            patch.object(script.sys, "argv", _argv()),
             self.assertRaises(SystemExit) as cm,
         ):
             script.main()
@@ -466,20 +494,16 @@ class TestMain(unittest.TestCase):
         mock_run_checker.assert_not_called()
 
     @patch("script.run_checker")
-    @patch("script.extract_domains_from_filenames")
+    @patch("script.collect_vhosts")
     def test_main_exits_0_when_no_domains_found(
         self,
-        mock_extract: MagicMock,
+        mock_collect: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_extract.return_value = []
+        mock_collect.return_value = {}
 
         with (
-            patch.object(
-                script.sys,
-                "argv",
-                ["script.py", "--nginx-config-dir", "/etc/nginx", "--image", "img:tag"],
-            ),
+            patch.object(script.sys, "argv", _argv()),
             self.assertRaises(SystemExit) as cm,
         ):
             script.main()
@@ -489,14 +513,14 @@ class TestMain(unittest.TestCase):
 
     @patch("script.run_checker")
     @patch("script.build_urls_from_nginx_confs")
-    @patch("script.extract_domains_from_filenames")
+    @patch("script.collect_vhosts")
     def test_main_passes_defaults_and_exits_with_run_checker_rc(
         self,
-        mock_extract: MagicMock,
+        mock_collect: MagicMock,
         mock_build_urls: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_extract.return_value = ["example.com", "api.example.com"]
+        mock_collect.return_value = _vhosts("example.com", "api.example.com")
         mock_build_urls.return_value = [
             "http://example.com/",
             "https://api.example.com/",
@@ -507,17 +531,12 @@ class TestMain(unittest.TestCase):
             patch.object(
                 script.sys,
                 "argv",
-                [
-                    "script.py",
-                    "--nginx-config-dir",
-                    "/etc/nginx",
-                    "--image",
-                    "img:tag",
+                _argv(
                     "--short",
                     "--ignore-network-blocks-from",
                     "pxscdn.com",
                     "cdn.example.org",
-                ],
+                ),
             ),
             self.assertRaises(SystemExit) as cm,
         ):
@@ -540,30 +559,19 @@ class TestMain(unittest.TestCase):
 
     @patch("script.run_checker")
     @patch("script.build_urls_from_nginx_confs")
-    @patch("script.extract_domains_from_filenames")
+    @patch("script.collect_vhosts")
     def test_main_no_host_network_flag_disables_host_network(
         self,
-        mock_extract: MagicMock,
+        mock_collect: MagicMock,
         mock_build_urls: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_extract.return_value = ["example.com"]
+        mock_collect.return_value = _vhosts("example.com")
         mock_build_urls.return_value = ["http://example.com/"]
         mock_run_checker.return_value = 0
 
         with (
-            patch.object(
-                script.sys,
-                "argv",
-                [
-                    "script.py",
-                    "--nginx-config-dir",
-                    "/etc/nginx",
-                    "--image",
-                    "img:tag",
-                    "--no-host-network",
-                ],
-            ),
+            patch.object(script.sys, "argv", _argv("--no-host-network")),
             self.assertRaises(SystemExit) as cm,
         ):
             script.main()
@@ -575,22 +583,18 @@ class TestMain(unittest.TestCase):
 
     @patch("script.run_checker")
     @patch("script.build_urls_from_nginx_confs")
-    @patch("script.extract_domains_from_filenames")
+    @patch("script.collect_vhosts")
     def test_main_exits_0_when_no_urls_built(
         self,
-        mock_extract: MagicMock,
+        mock_collect: MagicMock,
         mock_build_urls: MagicMock,
         mock_run_checker: MagicMock,
     ) -> None:
-        mock_extract.return_value = ["example.com"]
+        mock_collect.return_value = _vhosts("example.com")
         mock_build_urls.return_value = []
 
         with (
-            patch.object(
-                script.sys,
-                "argv",
-                ["script.py", "--nginx-config-dir", "/etc/nginx", "--image", "img:tag"],
-            ),
+            patch.object(script.sys, "argv", _argv()),
             self.assertRaises(SystemExit) as cm,
         ):
             script.main()
