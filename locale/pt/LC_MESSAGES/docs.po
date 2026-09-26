@@ -223,6 +223,9 @@ msgstr ""
 msgid "**A role may narrow the pool.** `meta/services.yml.<primary_entity> .architectures` lists what the role can run on, next to `modes`, because both state a capability rather than a testing preference. The row draws from the intersection of the run's pool with the declarations of the role and of every role the deploy planner brings up for that variant, because the deploy pulls those in too; an empty intersection aborts the matrix."
 msgstr ""
 
+msgid "**A shared infrastructure network carries lateral reach the application layer does not control.** On the compose stack, Flowise and Baserow both join `postgres` because both use the central database, and Flowise opens `baserow:80` at `192.168.200.5` although Baserow does not admit Flowise. Reach has to be measured by resolved address: an unknown name falls through to a wildcard resolver that answers with one reachable address, so a name-based probe reports every peer as reachable and proves nothing."
+msgstr ""
+
 msgid "**AACS & BD+ Support**"
 msgstr ""
 
@@ -2422,6 +2425,9 @@ msgstr ""
 msgid "**Description:** Shared message broker for async messaging with per-consumer virtual host and user isolation"
 msgstr ""
 
+msgid "**Description:** Shared premise of every desktop role, the login account its files belong to"
+msgstr ""
+
 msgid "**Description:** Shared relational database server for applications needing central SQL storage, run in Docker"
 msgstr ""
 
@@ -2546,6 +2552,9 @@ msgid "**Description:** Wrapper role for idempotent package installation and upd
 msgstr ""
 
 msgid "**Description:** nftables packet filter whose rules each role owns as its own table, replaced atomically and reloaded at boot"
+msgstr ""
+
+msgid "**Design:** the decision this requirement implements is [ADR 0003 - One MCP surface per provider, and a disposition for every role](../architecture/decisions/0003-mcp-surface-per-provider.md). That record holds the architecture, the metadata contract, the identity and discovery rules, the safety contract, and the exhaustive per-role audit. This document holds the user story, the acceptance criteria, and the order of work."
 msgstr ""
 
 msgid "**Desktop Integration Hooks:** This README ensures inclusion in the Web App Desktop overview."
@@ -3289,7 +3298,13 @@ msgstr ""
 msgid "**Flexible vHost templates**: *basic* and *ws_generic* flavours cover standard HTTP and WebSocket applications."
 msgstr ""
 
+msgid "**Flowise 3.1.4** is reconciled through the authenticated `/api/v1/custom-mcp-servers` routes with a scoped identity limited to `tools:create`, `tools:view`, `tools:update` and `tools:delete`. It registers only Streamable HTTP providers: its SSE fallback cannot complete a connection at this pin, so an SSE provider is reported incompatible rather than claimed as registered. The role builds its own image from the pinned npm package, because the published `flowiseai/flowise` tags `3.1.3`, `3.1.4` and `latest` all ship the `flowise` package at version 3.1.2, which serves none of the required routes. Internal connectivity is never solved by globally disabling SSRF protection for all flow authors."
+msgstr ""
+
 msgid "**Flowise cross-agent supervisor is Phase 2, deferred.** The supervisor (Flowise as MCP client delegating to Hermes' MCP-server mode v0.6.0+ and OpenClaw's MCP-server, chaining cross-agent pipelines) is a separate later slice, not the first implementation. Rationale: it depends on the young hermes MCP-server mode and adds a second orchestration tier. The first slice ships each agent standalone; the supervisor design below is retained as the Phase 2 target. Single-agent use MUST always work without Flowise."
+msgstr ""
+
+msgid "**Flowise's published images do not contain the version their tag claims:** `3.1.3`, `3.1.4` and `latest` all ship `flowise` 3.1.2, because upstream's Dockerfile runs an unpinned `npm install -g flowise` whose layer the release CI reuses. The role builds from an explicit npm pin and verifies the served route set."
 msgstr ""
 
 msgid "**Flowise's role-local LiteLLM is refactored into the shared role.** The role-local LiteLLM config and container in `web-app-flowise` (`templates/litellm.config.yaml.j2`, its compose service, related env) are removed; Flowise consumes `svc-ai-litellm` instead. No duplicated LiteLLM deployment remains. Flowise stays green after the refactor."
@@ -3941,6 +3956,9 @@ msgid "**Integration Support:** Compatible with ``sys-svc-proxy`` and other Infi
 msgstr ""
 
 msgid "**Integration Support:** Compatible with `sys-svc-proxy` and other Infinito.Nexus service roles."
+msgstr ""
+
+msgid "**Integration paths are tried in this order**, and a lower one is used only when every higher one fails to preserve the application's authorization boundary:"
 msgstr ""
 
 msgid "**Integration:** Supports seamless integration with your backup infrastructure by limiting the backup user's permissions to only the required commands."
@@ -4807,6 +4825,9 @@ msgstr ""
 msgid "**New lint contracts.** Port variables must resolve through lookups, scheduler services must declare *replicas: 1*, and volume-owning stack roles must declare their backup policy. *role_path* is forbidden in shell and command bodies. Deployment-mode defaults, container-inspection resolvers, asynchronous-task rationales and health-check declarations are validated centrally. Hadolint directives and documented *nocheck* exceptions are recognized instead of producing false positives."
 msgstr ""
 
+msgid "**Nextcloud minted a new app password on every run and revoked none.** The name was fixed and managed, so each run that found the stored password rejected added another valid token to the account while every previous one kept full access. The mint is now preceded by a listing and the revocation of every token carrying that name."
+msgstr ""
+
 msgid "**Nginx** (frontend) — static assets + reverse proxy onto Frappe / SocketIO"
 msgstr ""
 
@@ -5038,6 +5059,12 @@ msgstr ""
 msgid "**One override per tool:** ``ACTIONLINT_VERSION``, ``HADOLINT_VERSION`` and ``SHFMT_VERSION`` override the pin for a one-off install without editing the role."
 msgstr ""
 
+msgid "**One premise, one place:** A second shared desktop prerequisite is added here rather than in every ``dsk-*`` role."
+msgstr ""
+
+msgid "**One premise, one place:** A second shared desktop prerequisite is added here rather than in every `dsk-*` role."
+msgstr ""
+
 msgid "**One-line Script Injection**"
 msgstr ""
 
@@ -5108,6 +5135,9 @@ msgid "**OpenTalk Cross-Launch:** Start a video meeting in OpenTalk from a file 
 msgstr ""
 
 msgid "**OpenTalk Cross-Launch:** Start a video meeting in OpenTalk from a file context without re-authenticating when `web-app-opentalk` is deployed alongside."
+msgstr ""
+
+msgid "**Opening an adapter provider's network to its clients collides with the sidecar isolation invariant.** A provider that declares the `mcp_client` overlay puts its own containers on it. The same declaration on an adapter provider would give its sidecar a second interface, and [`isolation.sh`](../../../roles/test-e2e-cli/files/shared/mcp/isolation.sh) rejects anything but exactly one, because a sidecar holding the provider's credential must reach that provider only."
 msgstr ""
 
 msgid "**Operating a deployment.** New make targets reach a single deployed application: *compose-app-exec*, *compose-app-logs* and *compose-app-restart*. Diagnostics collect the logs an application writes to a file, including from busybox containers. Health probes use a fast start cadence with a window that outlasts a real boot, so a slow starter is no longer reaped. The CSP health check accepts a status code a vhost declares instead of dropping the vhost, and gives onion vhosts a navigation budget Tor can meet."
@@ -5486,6 +5516,9 @@ msgstr ""
 msgid "**PromQL interface:** Query and explore metrics via the Prometheus web UI."
 msgstr ""
 
+msgid "**Prometheus ran with no `--query.timeout`**, so a query the adapter abandoned after 15s kept the server busy for its two-minute default, and a range query's point count was unbounded although the response was truncated to 100 rows. The timeout is now derived from `mcp.limits.timeout_seconds`, and `policy.assert_range` refuses a range whose point count exceeds the contract's `result_items`, naming the smallest step that would fit."
+msgstr ""
+
 msgid "**Prometheus** metrics support"
 msgstr ""
 
@@ -5510,6 +5543,9 @@ msgstr ""
 msgid "**Public-facing host port.** Bound on `0.0.0.0` and exposed to the public internet (or to whatever the operator's firewall allows). Same uniqueness rule as `local`."
 msgstr ""
 
+msgid "**Published tool schemas were a suggestion, not a boundary.** An argument the contract does not name was appended to the upstream request as a query parameter, and a tool declaring no schema accepted anything. Arguments are now validated against the contract, after the size ceiling so a large payload is still refused for being large."
+msgstr ""
+
 msgid "**Pull-only trust model:** the local host owns the SSH session; provider hosts never gain credentials on this side."
 msgstr ""
 
@@ -5529,6 +5565,9 @@ msgid "**Python-based Install:** Installs ``dockreap`` (isolated, system-friendl
 msgstr ""
 
 msgid "**Python-based Install:** Installs `dockreap` (isolated, system-friendly CLI install)."
+msgstr ""
+
+msgid "**Qdrant ran with no authentication at all.** Its environment set the HTTP port and disabled telemetry, so every container reaching its network held full read, write and delete access to every collection, and the surface's read-only promise rested entirely on the adapter's contract naming only GET routes. The engine now declares `read_only_api_key`, the adapter presents it, and a write route is refused by the engine rather than only by the adapter."
 msgstr ""
 
 msgid "**Queue clock.** GitHub cancels a job that sat queued for ``INFINITO_CI_QUEUE_HOURS``. With ``INFINITO_CI_CONCURRENCY`` runners free and every job assumed to burn its full ``timeout-minutes``, a chunk drains in waves, and the last wave that still starts inside the queue window is ``floor(queue_hours / job_timeout)``. A chunk therefore holds at most ``concurrency * waves`` jobs. Assuming every job runs to its timeout is deliberately pessimistic -- no job can outlast it -- so the drain estimate can only overshoot, never undershoot."
@@ -5711,7 +5750,7 @@ msgstr ""
 msgid "**Reusable dependency role** for higher-level SSH workflows"
 msgstr ""
 
-msgid "**Revalidation required:** [035 - MCP Proxy Expansion and Application Interconnection](035-mcp-proxy-expansion.md) records the exhaustive 169-role audit and supersedes this document where this document assumes an empty baseline, treats metadata as enforcement, or marks client provisioning and end-to-end authorization complete. Checked items below describe the original implementation slice and MUST NOT be read as proof that the stricter identity, revocation, transport, restart, proxy, and real-tool-call criteria in requirement 035 are complete."
+msgid "**Revalidation required:** [ADR 0003 - One MCP surface per provider, and a disposition for every role](../architecture/decisions/0003-mcp-surface-per-provider.md) holds the exhaustive per-role audit and the standing contract, and supersedes this document where this document assumes an empty baseline, treats metadata as enforcement, or marks client provisioning and end-to-end authorization complete. The remaining work is tracked in [035 - MCP Proxy Expansion and Application Interconnection](035-mcp-proxy-expansion.md). Checked items below describe the original implementation slice and MUST NOT be read as proof that the stricter identity, revocation, transport, restart, proxy, and real-tool-call criteria in requirement 035 are complete."
 msgstr ""
 
 msgid "**Reverse Proxy**"
@@ -6632,6 +6671,9 @@ msgstr ""
 msgid "**The `mcp` role is granted per platform, not per application.** A user's `roles:` list carries role names only, and [`build_realm_rbac_groups`](../web-app-keycloak/filter_plugins/build_realm_rbac_groups.py) matches them without an application context, so `roles: [mcp]` makes that user a member of *every* deployed `/roles/<app>/mcp` group. Entitling somebody to drive Baserow but not GitLab is therefore not expressible declaratively today; it needs the Keycloak membership to be set directly on the single group. The tool-server side honours whatever membership arrives, so the limit is the platform's user model, not this wiring, and the Playwright coverage reflects it: it proves \"all groups sees all servers\" and \"no group sees none\", not the selective case."
 msgstr ""
 
+msgid "**The adapter leaked its upstream credential on a redirect.** It opened the upstream with `urlopen`, which follows redirects, and urllib copies the original request's headers onto the target, so an upstream answering `302` with an off-host location would have handed the credential to whoever it named. The opener now refuses redirects outright, since the target is contracted."
+msgstr ""
+
 msgid "**The agent then runs autonomously, step by step:**"
 msgstr ""
 
@@ -6694,6 +6736,9 @@ msgid "**The matrix carries the runner label, and `runs-on` reads it.** The entr
 msgstr ""
 
 msgid "**The migration is blocked on a transport gap, and the credential half of it is already built.** The adapter presented its upstream credential only as a header (`ADAPTER_UPSTREAM_KEY` → `Authorization: Bearer …`) while Baserow keys its endpoint by URL segment, so `policy.upstream_url` now splices an optional `ADAPTER_UPSTREAM_PATH_KEY` and `ADAPTER_UPSTREAM_PATH_SUFFIX` into the upstream URL, delivered through the same `upstream.env` file. With neither variable set it returns the base URL unchanged, which is why the fourteen existing providers are untouched."
+msgstr ""
+
+msgid "**The platform does not deploy one all-powerful OpenAPI-to-MCP process.** It provides one reusable, immutable adapter implementation and instantiates it once per provider application or per equally isolated trust domain. Each instance attaches only to the provider's own network, receives only that provider's least-privileged credential, exposes a distinct endpoint, and stays addressable by the provider's `application_id`. Every exposed provider remains a separate logical MCP server even when a common implementation serves it, which preserves the mapping between `roles/<provider-application-id>/mcp`, the client connection, the upstream credential, the tool allowlist and the audit record."
 msgstr ""
 
 msgid "**The pools are narrowable per run.** The `distros` and `filesystem` inputs default to empty, which means every declared value. Narrowing is for chasing one distribution or one filesystem."
@@ -6853,6 +6898,12 @@ msgid "**Trusted-Header SSO Bridge:**   When the oauth2-proxy SSO flavor is acti
 msgstr ""
 
 msgid "**Trusted-header SSO bridge:** Establishes the owner session from the oauth2-proxy identity (see below)."
+msgstr ""
+
+msgid "**Twenty-four roles' audit entries contradicted their own metadata** the first time the classification lint ran, nine of them shipping an adapter while the list called them untried candidates."
+msgstr ""
+
+msgid "**Two proofs were vacuous.** Flowise tool-name verification compared against a hardcoded empty list, and every role-local MCP spec gated itself on the service flag, so a surface that kept serving after being switched off was indistinguishable from one never deployed. Both now fail when they should."
 msgstr ""
 
 msgid "**Two strategies decide among the survivors, and `services.litellm.router_strategy` picks one.** Both run behind the same filter and behind decision 7's locality restriction; they differ only in what ranks the routes that are left."
@@ -7124,6 +7175,9 @@ msgstr ""
 msgid "**Work Package Management:** Create, assign, track, and prioritize tasks and issues with customizable workflows that keep your project organized and on schedule."
 msgstr ""
 
+msgid "**Work:** TODO — the acceptance criteria and the order of implementation live in [035 - MCP Proxy Expansion and Application Interconnection](../../requirements/035-mcp-proxy-expansion.md). This record holds the decision, the forces behind it, the standing contract and the per-role audit; that document holds what is still to be built and which artifact proves each criterion. A disposition change belongs here, because the audit below is what two lints read. A newly met criterion belongs there."
+msgstr ""
+
 msgid "**Worker runtime.** atmo targets Cloudflare Workers + D1 + (KV?). Self-hosting options, cheapest-first:"
 msgstr ""
 
@@ -7220,10 +7274,13 @@ msgstr ""
 msgid "**``web-app-keycloak``\\ ’s SSO-proxy sidecar** *(optional)* – protects the site with OAuth2."
 msgstr ""
 
-msgid "**`administrative_surface` (5):** `web-app-fusiondirectory`, `web-app-lam`, `web-app-pgadmin`, `web-app-phpldapadmin`, `web-app-phpmyadmin`. These UIs expose identity or database administration rather than a bounded application-domain API and MUST NOT be represented by a shared service-account tool surface."
+msgid "**`administrative_surface` (5):** `web-app-fusiondirectory`, `web-app-lam`, `web-app-pgadmin`, `web-app-phpldapadmin`, `web-app-phpmyadmin`. These UIs expose identity or database administration rather than a bounded application-domain API and are never represented by a shared service-account tool surface."
 msgstr ""
 
 msgid "**`algorithm:` defaults to `plain`** when the field is omitted."
+msgstr ""
+
+msgid "**`allowed_consumers` creates no network edge.** A client reaches a provider only when the provider declares a `kind: mcp_client` consumer in `meta/networks.yml`, or when the client happens to declare that provider for an unrelated reason. Four of twenty providers declared the opening; the other sixteen admitted consumers they could not serve, four of them enabled. Deploying Hermes failed at its own probe with `All connection attempts failed` against `http://prometheusmcp:8080/mcp`, because `hermes` joins `[gitlab, hermes, homeassistant, litellm, moodle]` while `prometheusmcp` joins `[prometheus]` alone."
 msgstr ""
 
 msgid "**`application_id`** (string):"
@@ -7268,7 +7325,7 @@ msgstr ""
 msgid "**`frappe`** (Gunicorn) — Python web backend"
 msgstr ""
 
-msgid "**`host_execution_boundary` (45):** `dev-arduino`, `dev-core`, `dev-java`, `dev-locales`, `dev-make`, `dev-nix`, `dev-nodejs`, `dev-python`, `drv-epson-multiprinter`, `drv-intel`, `drv-lid-switch`, `drv-non-free`, `dsk-bluray-player`, `dsk-chromium`, `dsk-code`, `dsk-copyq`, `dsk-docker`, `dsk-dotlinker`, `dsk-firefox`, `dsk-git`, `dsk-gnome`, `dsk-gnome-caffeine`, `dsk-gnome-extensions`, `dsk-gnome-terminal`, `dsk-gnt-claude`, `dsk-gnt-codex`, `dsk-gnt-cursor`, `dsk-gnt-pi`, `dsk-gnucash`, `dsk-jrnl`, `dsk-keepassxc`, `dsk-laya`, `dsk-libreoffice`, `dsk-micro`, `dsk-neovim`, `dsk-nextcloud`, `dsk-obs`, `dsk-qbittorrent`, `dsk-retroarch`, `dsk-spotify`, `dsk-ssh`, `dsk-torbrowser`, `dsk-virtualbox`, `dsk-zoom`, `gen-hunspell`. These roles operate a workstation, developer toolchain, device, or host package; bridging them would amount to shared shell, filesystem, browser-session, device, or host execution without an application-specific remote identity."
+msgid "**`host_execution_boundary` (47):** `dev-arduino`, `dev-core`, `dev-java`, `dev-locales`, `dev-make`, `dev-nix`, `dev-nodejs`, `dev-python`, `drv-epson-multiprinter`, `drv-intel`, `drv-lid-switch`, `drv-non-free`, `dsk-base`, `dsk-bluray-player`, `dsk-chromium`, `dsk-code`, `dsk-copyq`, `dsk-docker`, `dsk-dotlinker`, `dsk-firefox`, `dsk-git`, `dsk-gnome`, `dsk-gnome-caffeine`, `dsk-gnome-extensions`, `dsk-gnome-terminal`, `dsk-gnt-claude`, `dsk-gnt-codex`, `dsk-gnt-cursor`, `dsk-gnt-pi`, `dsk-gnucash`, `dsk-jrnl`, `dsk-keepassxc`, `dsk-laya`, `dsk-libreoffice`, `dsk-micro`, `dsk-neovim`, `dsk-nextcloud`, `dsk-obs`, `dsk-qbittorrent`, `dsk-retroarch`, `dsk-spotify`, `dsk-ssh`, `dsk-torbrowser`, `dsk-virtualbox`, `dsk-zoom`, `gen-hunspell`, `user-workstation`. These roles operate a workstation, developer toolchain, device, or host package; bridging them would amount to shared shell, filesystem, browser-session, device, or host execution without an application-specific remote identity. `dsk-base` and `user-workstation` provision the login account the other desktop roles write for, which is the host execution boundary itself rather than an application behind it."
 msgstr ""
 
 msgid "**`hostname`** (string):"
@@ -7295,7 +7352,7 @@ msgstr ""
 msgid "**`mechanism: bridge`** marks an addon that *is* a network/appservice bridge to an external system (e.g. a Matrix `mautrix` bridge to WhatsApp)."
 msgstr ""
 
-msgid "**`no_remote_surface` (27):** `svc-ai-ollama`, `svc-ai-robot`, `svc-ai-s1`, `svc-ai-searxng`, `svc-ai-tika`, `web-app-chess`, `web-app-dashboard`, `web-app-docs`, `web-app-fediwall`, `web-app-hugo`, `web-app-littlejs`, `web-app-mig`, `web-app-mini-qr`, `web-app-navigator`, `web-app-roulette-wheel`, `web-opt-rdr-domains`, `web-opt-rdr-www`, `web-svc-asset`, `web-svc-cdn`, `web-svc-coturn`, `web-svc-css`, `web-svc-file`, `web-svc-html`, `web-svc-legal`, `web-svc-logout`, `web-svc-mirror`, `web-svc-simpleicons`. These roles have no independently useful authenticated remote action contract at the pinned implementation. Static published content MAY later be consumed through one owning application's bounded `resource_readonly` adapter, but a new MCP sidecar that merely reimplements a static site's behavior does not count as integration. Model tool calling in Ollama does not by itself make Ollama an MCP client or server."
+msgid "**`no_remote_surface` (27):** `svc-ai-ollama`, `svc-ai-robot`, `svc-ai-s1`, `svc-ai-searxng`, `svc-ai-tika`, `web-app-chess`, `web-app-dashboard`, `web-app-docs`, `web-app-fediwall`, `web-app-hugo`, `web-app-littlejs`, `web-app-mig`, `web-app-mini-qr`, `web-app-navigator`, `web-app-roulette-wheel`, `web-opt-rdr-domains`, `web-opt-rdr-www`, `web-svc-asset`, `web-svc-cdn`, `web-svc-coturn`, `web-svc-css`, `web-svc-file`, `web-svc-html`, `web-svc-legal`, `web-svc-logout`, `web-svc-mirror`, `web-svc-simpleicons`. These roles have no independently useful authenticated remote action contract at the pinned implementation. Static published content may later be consumed through one owning application's bounded `resource_readonly` adapter, but a new MCP sidecar that merely reimplements a static site's behaviour does not count as integration. Model tool calling in Ollama does not by itself make Ollama an MCP client or server."
 msgstr ""
 
 msgid "**`privileged_control_plane` (27):** `svc-ai-agent-broker`, `svc-ai-jupyter`, `svc-bkp-local-2-device`, `svc-bkp-nfs-2-local`, `svc-bkp-remote-2-local`, `svc-bkp-secrets-2-local`, `svc-bkp-volume-2-local`, `svc-dns-unbound`, `svc-net-firewall`, `svc-net-tor`, `svc-net-wireguard-core`, `svc-net-wireguard-firewalled`, `svc-net-wireguard-plain`, `svc-opt-keyboard-color`, `svc-opt-ssd-hdd`, `svc-opt-swapfile`, `svc-prx-openresty`, `svc-registry-cache`, `svc-registry-docker`, `svc-runner`, `svc-storage-nfs-client`, `svc-storage-nfs-server`, `svc-swarm-manager`, `svc-swarm-node`, `svc-virt-kata`, `update`, `web-app-openbao`. These roles can recover secrets, alter routing or host state, run code, change deployment state, or reach storage/control-plane sockets; they require a separate audited operations gateway and human approval rather than general-purpose application MCP."
@@ -8142,6 +8199,9 @@ msgstr ""
 msgid "**description**: Shared message broker for async messaging with per-consumer virtual host and user isolation"
 msgstr ""
 
+msgid "**description**: Shared premise of every desktop role, the login account its files belong to"
+msgstr ""
+
 msgid "**description**: Shared relational database server for applications needing central SQL storage, run in Docker"
 msgstr ""
 
@@ -8405,6 +8465,12 @@ msgstr ""
 
 #, no-python-format
 msgid "**mode** -- which of ``compose``/``swarm``/``host`` the row deploys in, drawn from the modes the role actually offers. In practice that is at most two: swarm requires the role to ship its own stack, host requires it not to. ``(position + sweep) % len(offered)`` therefore flips a row between its two modes on consecutive sweeps."
+msgstr ""
+
+msgid "**n8n 1.100.1** is `direction: both`: an SSE client and a Streamable HTTP server at MCP Server Trigger typeVersion 2. Managed client nodes use Bearer or Header authentication and an explicit include list, never upstream's `include: all`. Managed server triggers require Bearer authentication, connect only explicitly selected workflow tools with checked-in input schemas, stay disabled until the operator enables them, and expose read-only operations first."
+msgstr ""
+
+msgid "**n8n shipped with no `allowed_groups` while declaring an `mcp` role nothing consulted**, and minted a public-API key per run that it then left standing. The gate is closed and the key is revoked before the run ends."
 msgstr ""
 
 msgid "**navigator**"
@@ -9006,6 +9072,9 @@ msgstr ""
 msgid "0002: The CPU architecture is a deploy-matrix axis 🏗️"
 msgstr ""
 
+msgid "0003: One MCP surface per provider, and a disposition for every role 🔌"
+msgstr ""
+
 msgid "001 - Nextcloud Talk TURN relay"
 msgstr ""
 
@@ -9393,9 +9462,6 @@ msgstr ""
 msgid ":func:`failed_selections` reproduces the combination that broke, which is what a handful of red rows deserves. Once most of the ranking is red the question is no longer which combination broke but whether the role comes up at all, and a token per combination spends the priority budget proving the same role red twice. The role name lets the rotation pick the axes."
 msgstr ""
 
-msgid ":func:`harms` is the single predicate both ends of the pipeline ask; the rest of this module are the criteria it folds together."
-msgstr ""
-
 msgid ":func:`image_healthcheck` plus which address answered."
 msgstr ""
 
@@ -9415,6 +9481,9 @@ msgid ":func:`load_gitignore_patterns` — read non-empty, non-comment, non-nega
 msgstr ""
 
 msgid ":func:`md_body_after_header` strips the version header line off an entry body so the remainder can be mirrored into package changelogs."
+msgstr ""
+
+msgid ":func:`reason` is the single predicate both ends of the pipeline ask, and :func:`harms` is its boolean face; the rest of this module are the criteria it folds together."
 msgstr ""
 
 msgid ":func:`render_compose_networks` -> top-level ``networks:`` block (column 0)"
@@ -9550,6 +9619,9 @@ msgid "A GitHub Personal Access Token (PAT) with `repo` scope, exported as `RUNN
 msgstr ""
 
 msgid "A Matrix mautrix bridge becomes one addon entry per bridged network, absorbing the former `vars/bridges.yml`:"
+msgstr ""
+
+msgid "A Moodle-compatible plugin pinned, an exact web-service function allowlist, a restricted service user, and proof that unlisted functions cannot be invoked."
 msgstr ""
 
 msgid "A Nextcloud plugin that previously lived as a standalone config file moves wholesale into its `config:` block:"
@@ -9703,9 +9775,6 @@ msgstr ""
 msgid "A clean `down && up` is required after the change: `make compose-up` alone recreates the bridge but compose then re-attaches existing containers with dynamic IPs instead of the static `default.env` ones, which breaks CoreDNS."
 msgstr ""
 
-msgid "A client MUST NOT treat an unreachable provider as fatal while the play is still running. Roles deploy in dependency order, so a client that probes during its own role can run before a provider exists at all, and aborting there prevents that provider from ever deploying. This is the same exemption `credential_missing` already carries, and it ends the same way: the reconciliation stage probes with `MCP_RECONCILE_STRICT` once every provider has run, and a provider still unreachable there is a real failure."
-msgstr ""
-
 msgid "A client declares what it can present instead of what it serves:"
 msgstr ""
 
@@ -9791,6 +9860,9 @@ msgstr ""
 msgid "A declared value that is a ``{start, end}`` mapping renders as ``start-end`` on both sides, so a relay range needs no special term."
 msgstr ""
 
+msgid "A dedicated bot/service identity instead of administrator credentials, and read/search tools separated from post/channel management."
+msgstr ""
+
 msgid "A dedicated disk mounted straight onto `/var/lib/docker` needs no special layout: baudolo carves its snapshot **inside** the subject, as `<data root>/.baudolo-<tag>`, so source and destination are always on the same filesystem. Placing it beside the subject would fail with `EXDEV` exactly on that layout, since the parent directory then belongs to a different filesystem."
 msgstr ""
 
@@ -9830,6 +9902,9 @@ msgstr ""
 msgid "A digital administration and documentation platform for structured organizations."
 msgstr ""
 
+msgid "A disposition change belongs in the ADR, because the audit is the authoritative list two lints read. A newly met criterion belongs here."
+msgstr ""
+
 msgid "A distro ships the interpreter and its extensions as separate packages, so a present ``php`` binary says nothing about them and ``ensure_command_present`` returns early on one. The extension is therefore probed against ``php -m``."
 msgstr ""
 
@@ -9849,9 +9924,6 @@ msgid "A docs `README.md` MUST explain what kind of documentation lives in that 
 msgstr ""
 
 msgid "A docs `README.md` MUST stay short and scope-focused."
-msgstr ""
-
-msgid "A documented blocker when none of the above can preserve the application's authorization boundary."
 msgstr ""
 
 msgid "A failing pre-state snapshot aborts the deploy (no `suppress_flush`): no update proceeds without a successful backup of the state it is about to change. `svc-bkp-local-2-device` is never started at deploy time (no device present); it stays plug-triggered via its `.mount` unit."
@@ -10106,12 +10178,6 @@ msgstr ""
 msgid "A pin the Docker updater (`image` + `version`) and the repository updater (`repository` + `ref`) do not reach names its upstream next to itself:"
 msgstr ""
 
-msgid "A pinned, isolated upstream sidecar."
-msgstr ""
-
-msgid "A pinned, source-audited upstream plugin."
-msgstr ""
-
 msgid "A platform may refuse a window it considers too small. Hermes requires 64000 tokens and answers `HTTP 500` with \"below the minimum 64,000 required by Hermes Agent\" for anything less, so `web-app-hermes` declares `services.hermes.min_context` and the broker withholds any platform whose minimum the selected model misses: it is absent from `/v1/models` and answers 404, while every other platform keeps serving. Refusing the whole deploy instead would block a pairing that works, since OpenClaw declares no minimum and the broker pulls Hermes into its closure either way. A model that declares no window at all is reported rather than withheld: an agent that does not know its window runs."
 msgstr ""
 
@@ -10128,9 +10194,6 @@ msgid "A pool of two or more stays a preference because the matrix already narro
 msgstr ""
 
 msgid "A pool or token of exactly one kind is read as a human naming it, so the applying step **fails the row instead of substituting** a kind the host can serve. Pinning a kind the runner cannot deliver therefore produces a red job that says nothing about the question."
-msgstr ""
-
-msgid "A post-application MCP reconciliation stage MUST run after all selected provider roles have provisioned and probed their endpoints. The stage MUST create one immutable discovery snapshot and reconcile Open WebUI, Flowise, Hermes, OpenClaw, and n8n from that snapshot. It MUST run after initial deployment, provider credential rotation, provider MCP enable/disable changes, and a standalone client container restart."
 msgstr ""
 
 msgid "A practical long-term target is:"
@@ -10205,10 +10268,10 @@ msgstr ""
 msgid "A refusal names the token and why. Fix the token, never the check: a variant that no longer exists means the list was carried over from an older run, and dropping the pin only moves the wrong row into the queue."
 msgstr ""
 
-msgid "A regex over dotted octets, e.g. ``192\\.168\\.24\\.\\d+`` for a /24 or ``192\\.168\\.(24|25)\\.\\d+`` for a /23."
+msgid "A refusal records what the server answered under the masking of the day. A source change clears it by itself, because the entry is then new; a change to the masking or to the damage predicate does not, and those entries would stay skipped forever."
 msgstr ""
 
-msgid "A relative `include_tasks` resolves against the including file's directory when that file was reached by path, and against `tasks/` when it was reached through `tasks_from`. A file under `tasks/utils/` therefore loads from its own role and fails from the reconciler, unchanged. Every include below a `tasks_from` entrypoint MUST name a path that holds under both bases."
+msgid "A regex over dotted octets, e.g. ``192\\.168\\.24\\.\\d+`` for a /24 or ``192\\.168\\.(24|25)\\.\\d+`` for a /23."
 msgstr ""
 
 msgid "A release tag (``vX.Y.Z``) is built the first time someone opens it. The browser shows a progress bar and reloads once the build is done. Tags never change, so each tag is built only once."
@@ -10230,9 +10293,6 @@ msgid "A repository definition must declare at least one of these; the rest (``n
 msgstr ""
 
 msgid "A repository-local Sphinx entry point is also available at [Contribution Guide Index](docs/contributing/index.rst)."
-msgstr ""
-
-msgid "A repository-owned allowlist adapter or a repository-owned n8n workflow."
 msgstr ""
 
 msgid "A request stays local while a local model can serve it, switch or not"
@@ -10320,9 +10380,6 @@ msgid "A role that declares no users contributes none, so the result follows the
 msgstr ""
 
 msgid "A role that declares none takes the run's whole pool, which is what spreads both architectures evenly over its variants: every row of the catalogue advances the same rotation, so a role's consecutive rows alternate rather than repeating one architecture."
-msgstr ""
-
-msgid "A role that gains a `shared_net` overlay changes its network layout: the project's default network, named after the entity and carrying the declared local subnet, is replaced by an unnamed project default, and the entity name passes to an externally managed network. Docker cannot relabel an existing network, so on a deployment that already ran, the network has to be recreated, and that fails while any consumer holds an endpoint on it:"
 msgstr ""
 
 msgid "A role that hands ``sys-pip-install`` a bare package name follows whatever pip resolves; one that pins ``name==version`` freezes it, and nothing thaws it again. The docker updater keeps image tags current and dependabot reads ``pyproject.toml``; neither sees a version inside an Ansible task variable, so a pin set once ages silently."
@@ -10448,9 +10505,6 @@ msgstr ""
 msgid "A services.<key> flag (``enabled`` / ``shared``) MAY be true if it is the literal Python ``True``, any string containing the substring ``in group_names``, or a string referencing a `GROUP_GATED_CONSTANTS` entry. Negated and compound predicates (``\"{{ 'X' not in group_names }}\"``) match on purpose: they are true on some node shape, and the static closure is the co-deploy superset. Mirrors the substring test at ``tests/integration/roles/meta/services/test_dynamic_flags.py:194``."
 msgstr ""
 
-msgid "A shared infrastructure network carries lateral reach between the applications that join it, so `allowed_consumers` is an application-layer decision the network does not enforce. Measured on the compose stack: Flowise and Baserow both join `postgres` because both use the central database, and Flowise opens `baserow:80` at `192.168.200.5` although Baserow does not admit Flowise as a consumer. A client whose users can name a URL is bounded only by its deny list, which covers loopback, link-local metadata and multicast but no application host. Reach MUST be measured by resolved address, never by name: an unknown name falls through to a wildcard resolver that answers with one reachable address, so a name-based probe reports every peer as reachable and proves nothing. Bounding lateral reach needs a network policy or per-pair networks rather than the current shared-service topology."
-msgstr ""
-
 msgid "A shared mapper that imports every LDAP group with `preserve.group.inheritance=true` MUST NOT be used. Role names recur across applications (`administrator`, `editor`, ...) and Keycloak's `GroupTreeResolver` keys its lookup map on the group name, so the second `administrator` silently overwrites the first."
 msgstr ""
 
@@ -10541,9 +10595,6 @@ msgstr ""
 msgid "A superseded record MUST stay in place with its status changed and a link to the record that replaces it, because the reasoning it carries is what makes the replacement legible."
 msgstr ""
 
-msgid "A supported native MCP endpoint with an enforceable tool policy."
-msgstr ""
-
 msgid "A suppression marker is a comment carrying one or more rule keys:"
 msgstr ""
 
@@ -10589,6 +10640,9 @@ msgstr ""
 msgid "A translation identical to its source changed nothing and so damaged nothing, except when the source is a sentence: the server answers with its input when it fails, and the client seeds every entry with the source, so an echoed sentence is a failure that would otherwise count as translated and never be retried."
 msgstr ""
 
+msgid "A translation that was turned down, kept so the catalog shows why."
+msgstr ""
+
 msgid "A typical OIDC-consuming role wires the values into its environment template, for example [env.j2](../../../../roles/web-app-mastodon/templates/env.j2):"
 msgstr ""
 
@@ -10629,9 +10683,6 @@ msgstr ""
 msgid "A verified upstream app↔app plugin exists but is not yet declared as an addon. Links to the plugin page. This is the backlog."
 msgstr ""
 
-msgid "A versioned managed chatflow or agentflow fixture MUST be created through a supported API, tagged with an Infinito ownership marker, and updated idempotently without overwriting human flows. It MUST reference registry connections or encrypted Flowise credentials, never plaintext bearer values in `flowData`. The end-to-end test MUST execute a deterministic MCP tool and assert its result; listing a connection or rejecting an anonymous chatflow request is insufficient."
-msgstr ""
-
 msgid "A volume whose payload cannot tolerate NFS semantics opts out with `nfs: false` plus a justification, which keeps engine state local without pinning the whole role. The deploy MUST NOT silently lose data on reschedule."
 msgstr ""
 
@@ -10658,6 +10709,15 @@ msgid "ACTION: ask user \"disable matomo, dashboard, prometheus, email, css prov
 msgstr ""
 
 msgid "ACT_PLATFORM_IMAGE: act runner platform image, resolved from the svc-runner role's ``act-runner`` service declaration."
+msgstr ""
+
+msgid "ADR 0003, Consequences"
+msgstr ""
+
+msgid "ADR 0003, Exhaustive Application-ID Audit"
+msgstr ""
+
+msgid "ADR 0003, metadata and safety contract"
 msgstr ""
 
 msgid "AI Agent nodes"
@@ -10733,6 +10793,9 @@ msgid "About"
 msgstr ""
 
 msgid "About AGENTS.md"
+msgstr ""
+
+msgid "Absence of an `mcp:` block was the documented way to say \"no upstream path\", which cannot distinguish a reviewed refusal from a role nobody examined."
 msgstr ""
 
 msgid "Absolute path of the category file below *root*."
@@ -10892,6 +10955,9 @@ msgid "Ad-hoc `community.docker.docker_network` calls or `docker network create`
 msgstr ""
 
 msgid "Adapter shape"
+msgstr ""
+
+msgid "Adapter starter contracts"
 msgstr ""
 
 msgid "Adapter to Baserow: the endpoint key, which Baserow reads from the URL *path*, not from a header. It reaches the sidecar as `ADAPTER_UPSTREAM_PATH_KEY` and is spliced in by `policy.upstream_url()`, so it never enters the rendered contract the sidecar advertises. The key is generated as `credentials.mcp_endpoint_key` (32 hex characters, matching the `varchar(32)` column). An unknown key answers `401 Endpoint not found.`."
@@ -11853,7 +11919,7 @@ msgstr ""
 msgid "Allowed `lifecycle` Values"
 msgstr ""
 
-msgid "Allowed classifications MUST be `native_server`, `native_client`, `native_both`, `plugin_server`, `sidecar_server`, `adapter_server`, `adapter_candidate`, `blocked`, `enabler`, `subordinate`, and `no_surface`. Allowed reasons MUST be documented and linted, including `no_remote_surface`, `host_execution_boundary`, `privileged_control_plane`, `shared_engine_isolation`, `administrative_surface`, `duplicate_owner`, `version_unverified`, `licence`, `hosted_only`, `stdio_only`, `interactive_browser_session`, `unreviewed_third_party`, and `missing_dependency`. A deployable mapping MUST additionally carry the source URL and exact supported version or source commit; a negative classification MUST carry a concrete reason and explanatory notes."
+msgid "Allowed classifications are `native_server`, `native_client`, `native_both`, `plugin_server`, `sidecar_server`, `adapter_server`, `adapter_candidate`, `blocked`, `enabler`, `subordinate`, and `no_surface`. Allowed reasons MUST be documented and linted, including `no_remote_surface`, `host_execution_boundary`, `privileged_control_plane`, `shared_engine_isolation`, `administrative_surface`, `duplicate_owner`, `version_unverified`, `licence`, `hosted_only`, `stdio_only`, `interactive_browser_session`, `unreviewed_third_party`, and `missing_dependency`. A deployable mapping additionally carries the source URL and the exact supported version or commit; a negative classification carries a concrete reason and notes."
 msgstr ""
 
 msgid "Allowed file types 📋"
@@ -11862,7 +11928,7 @@ msgstr ""
 msgid "Allowed group flavors, currently `groupOfNames`"
 msgstr ""
 
-msgid "Allowed implementation values MUST become `native`, `plugin`, `sidecar`, `adapter`, and `external`. An `adapter` MUST declare exactly one of these types:"
+msgid "Allowed implementation values are `native`, `plugin`, `sidecar`, `adapter`, and `external`. An `adapter` declares exactly one type:"
 msgstr ""
 
 msgid "Allows JavaScript to substitute a value for an unset environment variable. Reserved for a value the code itself owns and no role renders. Normalising to `\"\"`, `\"[]\"`, `false`, `0` or another `process.env` entry needs no marker."
@@ -12069,6 +12135,9 @@ msgstr ""
 msgid "An Arch Linux based system; `package_install` sets up the unprivileged AUR build environment itself."
 msgstr ""
 
+msgid "An MCP client turns an application's API into tools a model may call. The cheap way to build that is one process holding administrator credentials for every application and translating an OpenAPI document into tools on demand. That process is a single credential store, a single network position reaching every application, and a tool surface that grows with every upstream release nobody reviewed."
+msgstr ""
+
 msgid "An OIDC round-trip plus admin token request (allow ≥ 60 s)."
 msgstr ""
 
@@ -12117,16 +12186,10 @@ msgstr ""
 msgid "An application id is expanded to the service key(s) that role provides; every other token is kept verbatim. Order-preserving, de-duplicated. Used wherever the operator supplies service references (``disable``, include/prune closures) so both spellings resolve identically."
 msgstr ""
 
-msgid "An application that authenticates its own API with a bearer MUST expose that path through the SSO ACL whitelist. The proxy cannot validate an application bearer, so a fully gated vhost answers an API call with an identity-provider redirect, which a client following redirects reads as a successful 200."
-msgstr ""
-
 msgid "An application whose registration rejects the shell-safe alphabet states that in its own meta/users.yml rather than carrying a second credential beside the account it already owns."
 msgstr ""
 
 msgid "An application's canonical primary domain when it has at most max_length characters, otherwise its short entity name (e.g. ``keycloak``)."
-msgstr ""
-
-msgid "An audit-only mapping MUST use this minimal explicit form:"
 msgstr ""
 
 msgid "An axis the token leaves open matches anything, so ``web-app-x`` covers every row of that role and ``web-app-x#2@swarm`` only its swarm deploy of variant 2. Reads the strings a matrix entry carries, not a discovery row's native types."
@@ -12159,7 +12222,13 @@ msgstr ""
 msgid "An empty string means \"not configured\" and passes every check, which is what makes an optional provider key expressible: declare the shape, leave the value empty, and the consumer gates on emptiness."
 msgstr ""
 
+msgid "An enabled adapter declares everything it is allowed to do"
+msgstr ""
+
 msgid "An entry in `whitelist` or `priority` is a role name that MAY pin the axes the row would otherwise be assigned. Two spellings are accepted:"
+msgstr ""
+
+msgid "An entry the server already answered with a damaged span is skipped. The answer is deterministic for an unchanged source, so asking again spends a masking pass, a request and an inference to arrive at the same refusal. The mark rides in the entry's comments, so gettext drops it the moment the source changes and the entry is offered again by itself."
 msgstr ""
 
 msgid "An entry therefore carries `enforce_filesystem`, true when a human left the row no choice: a `/filesystem` selection token, or a run whose `filesystem` input names exactly one kind."
@@ -12231,7 +12300,7 @@ msgstr ""
 msgid "An unset key is not an error. The provider's route stays unpublished, the gateway serves whatever local backend the round deploys, and [the litellm CLI test](../../../../../roles/svc-ai-litellm/files/test/probe.py) asserts the absence rather than skipping."
 msgstr ""
 
-msgid "An upstream README or current default branch MAY identify a candidate, but only the source and tests of the exact selected tag or digest may close a compatibility criterion."
+msgid "An upstream README or current default branch may identify a candidate, but only the source and tests of the exact selected tag or digest close a compatibility question."
 msgstr ""
 
 msgid "An upstream path exists or is claimed, and something concrete stops it here. Each row names what, using the reason vocabulary above, so \"blocked\" never reads as \"nobody looked\"."
@@ -12241,6 +12310,9 @@ msgid "Analytics tracking"
 msgstr ""
 
 msgid "Android SDK is never needed; safe to remove"
+msgstr ""
+
+msgid "Annotate ``message`` as unanswerable, quoting what was turned down."
 msgstr ""
 
 msgid "Annotation format emitted by utils.annotations.message:"
@@ -12349,6 +12421,12 @@ msgid "Ansible plugin index (all types): [docs.ansible.com](https://docs.ansible
 msgstr ""
 
 msgid "Ansible prepares the host and renders the desired state."
+msgstr ""
+
+msgid "Ansible resolves the dependency before the role's own tasks and runs it once per play, so no guard is needed at the call site."
+msgstr ""
+
+msgid "Ansible resolves the dependency before the role’s own tasks and runs it once per play, so no guard is needed at the call site."
 msgstr ""
 
 msgid "Ansible rewrites this interpreter path to the configured host interpreter for module execution."
@@ -12598,9 +12676,6 @@ msgstr ""
 msgid "Application-scoped queries across the role catalogue: enumerate invokable applications, group them by deployment type, validate per-application storage budgets, and aggregate compute resources."
 msgstr ""
 
-msgid "Application-scoped user grants"
-msgstr ""
-
 msgid "Applications MAY override any subset of these keys under `compose.services.email` in their role or inventory."
 msgstr ""
 
@@ -12697,9 +12772,6 @@ msgstr ""
 msgid "Architecture"
 msgstr ""
 
-msgid "Architecture Decision"
-msgstr ""
-
 msgid "Architecture Decisions 🧭"
 msgstr ""
 
@@ -12769,9 +12841,6 @@ msgstr ""
 msgid "As a Infinito.Nexus platform operator, I want to provide a fully integrated, production-ready Penpot design and prototyping platform within the Infinito.Nexus ecosystem so that teams can create, collaborate on, and share design projects directly inside their sovereign Infinito.Nexus installation."
 msgstr ""
 
-msgid "As a client, each managed MCP Client Tool node MUST use Bearer or Header authentication and an explicit include list. The upstream `include: all` behavior MUST NOT be used for deployment-managed workflows."
-msgstr ""
-
 msgid "As a consumer of the Infinito.Nexus LLM gateway, I want to send a prompt to one alias and have a fast typed decision pick the model that can actually serve it, so that I neither hard-code a model per call site nor pay a large model to answer a question a small one handles."
 msgstr ""
 
@@ -12836,9 +12905,6 @@ msgid "As a platform user with agent access, I want Open WebUI to start my own H
 msgstr ""
 
 msgid "As a self-hoster running Infinito.Nexus behind NAT/CGNAT/dynamic IP (Raspberry Pi, edge node, home server), I want a `svc-net-tor` role that makes the node's primary domain a Tor v3 `.onion` address so that the entire stack (web, SSO, LDAP, CA) is reachable over Tor without public IP, port forwarding, VPS, or DynDNS — while individual apps can still attach extra public domains with their own TLS."
-msgstr ""
-
-msgid "As a server, each managed MCP Server Trigger workflow MUST:"
 msgstr ""
 
 msgid "As a visitor of an Infinito.Nexus deployment, I want the documentation, the universal logout panel and the dashboard to speak my language from the core gettext catalogs, and I want browser apps such as MIG to be allowed to read the API, so that every surface core renders follows the same translations."
@@ -12971,9 +13037,6 @@ msgid "Audience 👥"
 msgstr ""
 
 msgid "Audit and metadata"
-msgstr ""
-
-msgid "Audit and pin the project-owned MCP plugin against the exact Matomo version. Expose reporting reads only and never share a superuser token. Leave blocked until endpoint, transport, auth, and tool scope are verified in source."
 msgstr ""
 
 msgid "Auth"
@@ -13271,6 +13334,9 @@ msgid "Band category (`http`, `ssh`, `oauth2`, `relay`, …). Looked up in `PORT
 msgstr ""
 
 msgid "Bare-basename patterns (no slash): match any path component via ``fnmatch``."
+msgstr ""
+
+msgid "Base"
 msgstr ""
 
 msgid "Base DN derived from `DOMAIN_PRIMARY`"
@@ -14554,9 +14620,6 @@ msgstr ""
 msgid "Call Shapes 📞"
 msgstr ""
 
-msgid "Call the entry's authorize route."
-msgstr ""
-
 msgid "Call this role via ``include_role`` and pass mappings through ``dotlinker_mappings``:"
 msgstr ""
 
@@ -15287,6 +15350,9 @@ msgid "Clone, set up the workstation, and deploy Backup Remote Server onto the l
 msgstr ""
 
 msgid "Clone, set up the workstation, and deploy Backup to External Device onto the local stack:"
+msgstr ""
+
+msgid "Clone, set up the workstation, and deploy Base onto the local stack:"
 msgstr ""
 
 msgid "Clone, set up the workstation, and deploy Baserow onto the local stack:"
@@ -16270,6 +16336,9 @@ msgstr ""
 msgid "Condition"
 msgstr ""
 
+msgid "Condition for reclassification"
+msgstr ""
+
 msgid "Condition used for entries whose value is ``None`` (dict) or for plain-name entries in a list term."
 msgstr ""
 
@@ -16425,6 +16494,9 @@ msgid "Connection vars, vars-file/JSON overlays, become-password handling."
 msgstr ""
 
 msgid "Consequences in practice:"
+msgstr ""
+
+msgid "Consequences ⚖️"
 msgstr ""
 
 msgid "Consequences 📉"
@@ -16825,9 +16897,6 @@ msgstr ""
 msgid "Correct requirement 025's stale claims and add the exhaustive audit/lint status mechanism."
 msgstr ""
 
-msgid "Corrections to Existing MCP Metadata"
-msgstr ""
-
 msgid "Cosmetic repairs a restored translation goes through."
 msgstr ""
 
@@ -16929,9 +16998,6 @@ msgid "Create the AI model entry under Administration > Intelligence panel > Set
 msgstr ""
 
 msgid "Create the AI model entry under Administration > Intelligence panel > Settings, selecting the ``Custom OpenAI-compatible`` provider, and enter the API credentials under Administration > Integrations."
-msgstr ""
-
-msgid "Create the entry when none exists or replace its complete desired state when exactly one exists."
 msgstr ""
 
 msgid "Create the matching test file under `tests/unit/` if it does not exist."
@@ -17036,10 +17102,13 @@ msgstr ""
 msgid "Credentials Interaction 🔐"
 msgstr ""
 
-msgid "Credentials MUST be unique per provider and, when a provider cannot distinguish consumers, per provider-consumer pair. Rotation MUST use an explicit two-phase procedure: issue new, reconcile every consumer, prove new works, revoke old, and prove old fails. Disabling a surface or removing a consumer MUST revoke the related credential rather than merely hiding the connection."
+msgid "Credentials and authorization"
 msgstr ""
 
-msgid "Credentials and authorization"
+msgid "Credentials are kept out of logs, task output and Playwright traces by three static lints. Generated non-secret configuration needs a secret/non-secret classification of rendered files that does not exist; API responses and exception text are runtime observations."
+msgstr ""
+
+msgid "Credentials are unique per provider and, where a provider cannot distinguish consumers, per provider-consumer pair. Rotation is two-phase: issue new, reconcile every consumer, prove new works, revoke old, prove old fails. Disabling a surface or removing a consumer revokes the credential rather than hiding the connection."
 msgstr ""
 
 msgid "Credentials for proprietary / external (non-self-hosted) providers MUST be declared once in `group_vars/all/18_api.yml` under the `API` mapping (a key per provider, e.g. `cloudflare`, `telegram`, `github`, `google`, `jira`), sourced from the vault and defaulting to empty."
@@ -17118,13 +17187,7 @@ msgstr ""
 msgid "Ctrl+C only cancels the current input; the console exits on ``exit``/``quit`` or EOF (Ctrl+D). Ctrl+Shift+C is intercepted by the terminal emulator (copy shortcut) and never reaches the app."
 msgstr ""
 
-msgid "Curated Adapter Candidates"
-msgstr ""
-
 msgid "Current Project Layout 🗂️"
-msgstr ""
-
-msgid "Current Shopware 6.7.8.2 predates the experimental native server. Upgrade only to an explicit tested release containing `/api/_mcp`, provision a dedicated minimal-ACL integration, and allowlist search/read tools. Keep write, delete, cache, state-machine, and configuration tools disabled."
 msgstr ""
 
 msgid "Current State Audit"
@@ -17469,6 +17532,12 @@ msgstr ""
 msgid "Declarative **SAML** SSO against Keycloak (``AUTH_TYPE=saml``, wired entirely from env vars — no admin-panel step)"
 msgstr ""
 
+msgid "Declare it as a dependency in the desktop role's `meta/main.yml`:"
+msgstr ""
+
+msgid "Declare it as a dependency in the desktop role’s ``meta/main.yml``:"
+msgstr ""
+
 #, python-brace-format
 msgid "Declare the image at the file root of `meta/services.yml` → `<service>.{image,version}`:"
 msgstr ""
@@ -17477,6 +17546,9 @@ msgid "Declared version sources"
 msgstr ""
 
 msgid "Declares Ansible Galaxy info and `dependencies:`. No project-internal `run_after:` / `lifecycle:` (those live on the primary entity in `meta/services.yml`)."
+msgstr ""
+
+msgid "Declaring every adapter field explicitly means a surface cannot be enabled by adding one flag. Eight of the enabled serving surfaces reached that bar; the remaining thirty-eight candidates did not, and the audit says so rather than shipping them with defaults."
 msgstr ""
 
 msgid "Declaring it"
@@ -17694,9 +17766,6 @@ msgid "Delete ``sites/<version>`` inside the ``docs_sites`` volume to rebuild a 
 msgstr ""
 
 msgid "Delete `sites/<version>` inside the `docs_sites` volume to rebuild a version on its next visit."
-msgstr ""
-
-msgid "Delete a stale managed entry only when its name begins with `infinito:` and the provider is absent from the desired snapshot."
 msgstr ""
 
 msgid "Delete all User (if no ldap is used)"
@@ -18428,9 +18497,6 @@ msgstr ""
 msgid "Discovers apps, creates `devices.yml`, and deploys all discovered apps."
 msgstr ""
 
-msgid "Discovery and Reconciliation"
-msgstr ""
-
 msgid "Discovery and lifecycle"
 msgstr ""
 
@@ -18438,6 +18504,9 @@ msgid "Discovery filters"
 msgstr ""
 
 msgid "Discovery is an intersection, not a list. A provider names the clients it admits in ``allowed_consumers``; a client names the transports and auth schemes it can present. Only a pair that satisfies both, and whose provider credential actually resolves, reaches ``selected``."
+msgstr ""
+
+msgid "Discovery reconciles, and owns only what it named"
 msgstr ""
 
 msgid "Discovery 🔍"
@@ -18698,6 +18767,9 @@ msgstr ""
 msgid "Docs: `External Authentication <https://docs.bigbluebutton.org/greenlight/v3/external-authentication/>`__"
 msgstr ""
 
+msgid "Document"
+msgstr ""
+
 msgid "Document any plugin-specific task arguments in the plugin docstring and README."
 msgstr ""
 
@@ -18853,7 +18925,13 @@ msgstr ""
 msgid "Drop the `# nocheck: dynamic-flag` line above the `ldap:` block."
 msgstr ""
 
+msgid "Drop the annotations a previous rejection wrote on ``message``."
+msgstr ""
+
 msgid "Drop the per-process role-type cache. Tests that mutate ``vars/main.yml`` (or another marker-bearing file) mid-run MUST call this between mutations."
+msgstr ""
+
+msgid "Drop the refusal mark from every entry carrying one."
 msgstr ""
 
 msgid "Drop-in tasks for ``aacskeys`` and ``libbdplus`` via AUR (commented out by default)."
@@ -18881,6 +18959,9 @@ msgid "Drv-lid-switch Role"
 msgstr ""
 
 msgid "Drv-non-free Role"
+msgstr ""
+
+msgid "Dsk-base Role"
 msgstr ""
 
 msgid "Dsk-bluray-player Role"
@@ -19088,6 +19169,9 @@ msgstr ""
 msgid "Each call MUST be reviewed for the rule scope and required-checks impact."
 msgstr ""
 
+msgid "Each candidate starts with three to five named read tools rather than a generated copy of an API, and the first investigation uses the starter contract recorded in [Adapter starter contracts](#adapter-starter-contracts). If the exact pinned version cannot implement the named contract through a stable authenticated API, the role becomes `blocked` with the observed reason rather than receiving a generic substitute."
+msgstr ""
+
 msgid "Each case pins one half of the contract: a snapshot is taken **only** where it would be faithful, and where it would not be, `auto` degrades silently to the live copy while a stated kind fails the run loudly."
 msgstr ""
 
@@ -19218,7 +19302,7 @@ msgstr ""
 msgid "Each service in host vars MAY carry a `mirror_policy` field that controls how the override is applied:"
 msgstr ""
 
-msgid "Each service-account integration MUST provision a dedicated non-login identity with only the upstream permissions needed by the declared tool allowlist. The lookup MUST resolve `mcp.credential.owner`, `source`, and `key`; it MUST NOT hard-code `administrator`. Deployment MUST fail if the resolved principal is missing, empty, more privileged than `auth_subject` declares, or shared with an unrelated provider."
+msgid "Each service-account integration provisions a dedicated non-login identity holding only the upstream permissions the declared allowlist needs. The lookup resolves `mcp.credential.owner`, `source` and `key`; deployment fails when the resolved principal is missing, empty, more privileged than `auth_subject` declares, or shared with an unrelated provider."
 msgstr ""
 
 msgid "Each settings change MUST be reviewed before it lands. Approval here is equivalent in blast radius to approving a `deny`-rule edit: the next tool call may run under new rules. Operators SHOULD diff the proposed change against the live file before approving and SHOULD decline any change that widens `allowWrite`, removes a `deny` entry, adds a broad `allow` wildcard, or registers a hook command."
@@ -19549,6 +19633,9 @@ msgid "End-to-end tests"
 msgstr ""
 
 msgid "Endpoint"
+msgstr ""
+
+msgid "Endpoint DNS and routing from each client, in compose and in swarm, is unproven; only a running cluster can show it. The isolation half is covered, by a probe that compares the sidecar's own addresses against the declared subnets."
 msgstr ""
 
 msgid "Endpoints"
@@ -19912,7 +19999,7 @@ msgstr ""
 msgid "Every `web-app-*` role lands on the unified meta + dual-mode contract."
 msgstr ""
 
-msgid "Every adapter MUST enforce request size, response size, timeout, concurrency, pagination, result-row, and stream-duration limits with explicit values in role metadata. It MUST log provider `application_id`, consumer `application_id`, tool name, credential subject, result status, duration, and correlation identifier without logging credentials or payload bodies."
+msgid "Every adapter enforces request size, response size, timeout, concurrency, pagination, result-row and stream-duration limits with explicit values in role metadata, and logs provider, consumer, tool name, credential subject, result status, duration and correlation identifier without logging credentials or payload bodies."
 msgstr ""
 
 msgid "Every addon of a web-facing role MUST ship `roles/<role>/files/playwright/addons/<addon_id>.spec.js`. There is NO per-addon exemption: no mechanism-based auto-exempt and no `# nocheck` escape; network bridges and auth extensions covered by the role's OIDC/LDAP login spec all ship their own spec asserting the addon-specific behaviour or skip-on-disabled gating. Desktop (`desk-*`) roles are the one exception — they drive no web surface, so they MUST NOT ship addon specs and the lint forbids them."
@@ -19948,7 +20035,7 @@ msgstr ""
 msgid "Every chunk of the sweep, priority blocks first."
 msgstr ""
 
-msgid "Every client connection MUST map to exactly one provider group named `roles/<provider-application-id>/mcp`. The deployment MAY create or locate the corresponding client-local group by name after startup and then use the identifier assigned by the client API; it MUST NOT predict a generated group UUID."
+msgid "Every client connection maps to exactly one provider group named `roles/<provider-application-id>/mcp`. The declarative user schema carries an application-scoped role form, so `mcp` can be granted for one application without granting it everywhere:"
 msgstr ""
 
 msgid "Every collector is best-effort: a missing source must never abort the capture. ``INFINITO_RESCUE_DIAGNOSTICS_DIR`` and ``INFINITO_DNS53_SAMPLER_LOG`` are required and never defaulted here, so ``group_vars/all/05_paths.yml`` stays the one source. Prints one summary and ALWAYS exits 1 so a failure stays a failure."
@@ -19985,9 +20072,6 @@ msgid "Every emoji used as a STRUCTURED marker across the project (complexity-ma
 msgstr ""
 
 msgid "Every env variable the spec reads MUST be exposed in the role's `templates/playwright.env.j2`. Names MUST match exactly."
-msgstr ""
-
-msgid "Every exposed provider remains a separate logical MCP server even when a common proxy implementation serves it. This preserves the mapping between `roles/<provider-application-id>/mcp`, the client connection, the upstream credential, the tool allowlist, and the audit record."
 msgstr ""
 
 msgid "Every external CI trigger MUST route through one of the entry workflows. Each entry translates its event into a call to the orchestrator; the catalog of triggers and inputs lives in [workflows.md](../../tools/github/actions/workflows.md)."
@@ -20105,6 +20189,9 @@ msgstr ""
 msgid "Every role MUST declare its Docker images in `meta/services.yml`. The file root IS the services map keyed by `<service-name>` (no `compose:` and no `services:` wrapper):"
 msgstr ""
 
+msgid "Every role carries a disposition"
+msgstr ""
+
 msgid "Every role file with its per-type policy and dotted-path entries."
 msgstr ""
 
@@ -20117,10 +20204,13 @@ msgstr ""
 msgid "Every role type with the files it MAY or MUST ship."
 msgstr ""
 
+msgid "Every role with a literal `application_id` is filed exactly once below. A role missing from these lists would read as \"not yet looked at\" and as \"decided against\" at the same time, with nothing to tell the two apart."
+msgstr ""
+
 msgid "Every role with an ``application_id`` declares exactly one ``mcp:`` entry. The block is an audit disposition first and a deployable surface second: ``classification`` states what the role is, and only a deployable classification may also carry ``enabled``/``shared`` and a served contract."
 msgstr ""
 
-msgid "Every role with an `application_id` MUST contain one role-local `mcp:` audit mapping in `meta/services.yml`. This requirement supersedes requirement 025's rule that absence means no upstream path, because absence cannot distinguish a reviewed refusal from a role that nobody examined. Discovery MUST select only a deployable classification with explicit `enabled: true` and `shared: true`; audit-only mappings MUST never become endpoints."
+msgid "Every role with an `application_id` carries one role-local `mcp:` mapping in `meta/services.yml`. Discovery selects only a deployable classification with explicit `enabled: true` and `shared: true`; an audit-only mapping never becomes an endpoint:"
 msgstr ""
 
 msgid "Every row is assigned its deploy mode, tor state, distro, filesystem and CPU architecture by its position in that list (:mod:`utils.github.variant.axes`)."
@@ -20206,6 +20296,12 @@ msgid "ExApp"
 msgstr ""
 
 msgid "Exact command"
+msgstr ""
+
+msgid "Exact native endpoint, transport, scopes, entity exposure and service-call mutations verified. A long-lived administrator token is not acceptable."
+msgstr ""
+
+msgid "Exact project-owned package, image pin, endpoint auth, dedicated service account, tool allowlist, read-only behaviour."
 msgstr ""
 
 msgid "Exactly one result with `isDraft == false` (ready PR): run `gh pr ready --undo <number>` on that result's `number` to demote it to draft."
@@ -21088,6 +21184,9 @@ msgstr ""
 msgid "First-time setup of a development environment for a given application set."
 msgstr ""
 
+msgid "Five roles carry a concrete upstream path that the audit files as `blocked`; the blocker table above names what stops each one, and these are the conditions under which it would move:"
+msgstr ""
+
 msgid "Fix a broken login, bootstrap, or integration flow in an existing `web-*` role"
 msgstr ""
 
@@ -21256,19 +21355,10 @@ msgstr ""
 msgid "Flow Summary 📋"
 msgstr ""
 
-msgid "Flowise 3.1.4 Integration"
-msgstr ""
-
-msgid "Flowise 3.1.4 MUST register only Streamable HTTP providers, because its SSE fallback cannot complete a connection at this pin. An SSE provider MUST be reported as incompatible or placed behind a pinned, protocol-correct bridge; it MUST NOT be claimed as registered. Supporting SSE directly requires an explicit Flowise upgrade whose exact source and end-to-end tests prove the transport."
-msgstr ""
-
-msgid "Flowise 3.1.4 binds registry entries to a workspace, not to the platform's per-application Keycloak groups. Until an exact pinned Flowise version proves per-server user ACLs, deployment-managed MCP connections MUST live in an admin-only workspace or a separate Flowise trust-domain instance. They MUST NOT be offered to every ordinary flow author merely because the user can sign into Flowise. The same rule applies to Hermes, OpenClaw, n8n, and any future client lacking a tested per-server user authorization boundary."
-msgstr ""
-
 msgid "Flowise Supervisor (cross-agent pipelines) — Phase 2"
 msgstr ""
 
-msgid "Flowise and Open WebUI are clients, not generic security gateways. n8n MAY adapt a workflow to MCP when its project, credential, input schema, and exposed workflow tools are deployment-managed. LiteLLM MAY become a routing or policy layer only after the exact selected image is pinned and proven; it MUST NOT become the sole holder of all application administrator credentials."
+msgid "Flowise and Open WebUI are clients, not generic security gateways. n8n may adapt a workflow to MCP when its project, credential, input schema and exposed workflow tools are deployment-managed. LiteLLM may become a routing layer only after the exact selected image is pinned and proven, and must not become the sole holder of every application's administrator credential."
 msgstr ""
 
 msgid "Flowise and n8n"
@@ -21558,9 +21648,6 @@ msgid "For each ``backup-docker-to-local`` directory, the newest 3 timestamp sub
 msgstr ""
 
 msgid "For each `backup-docker-to-local` directory, the newest 3 timestamp subdirectories are skipped"
-msgstr ""
-
-msgid "For each compatible server the reconciler MUST:"
 msgstr ""
 
 msgid "For each external failure, you MUST first search [s.infinito.nexus/issues](https://s.infinito.nexus/issues) for a matching open issue using `gh issue list --search \"<exact error message>\"`. A match requires the exact same error message line from the log to appear in the existing issue. Looser symptom-only matches MUST NOT be treated as duplicates."
@@ -22844,7 +22931,7 @@ msgid "Hermes exposes no administrator-visible list of configured MCP servers, s
 msgstr ""
 
 #, python-brace-format
-msgid "Hermes renders its agent config and its env from the same discovery list within one pass, and they disagree. Measured on compose: `config/config.yaml` written at 17:07:54 carries `web_app_prometheus` with `Authorization: \"Bearer ${env:WEB_APP_PROMETHEUS_MCP_TOKEN}\"`, while `.env/env` written at 17:07:51 defines no `*_MCP_TOKEN` at all, although [`templates/env.j2`](../../roles/web-app-hermes/templates/env.j2) loops over the same `HERMES_MCP_SERVERS` unconditionally. The client therefore presents an empty bearer and the adapter answers `401`, which is correct behaviour on its side: probed from inside, `prometheusmcp` returns `200` for its own bearer and `401` for a wrong one. Any fix has to make the env and the config provably render from one evaluation of the list rather than two."
+msgid "Hermes renders its agent config and its env from two evaluations of one discovery list, and they disagree: the config carried `Bearer ${env:WEB_APP_PROMETHEUS_MCP_TOKEN}` while the env defined no `*_MCP_TOKEN`, so the client presented an empty bearer and the adapter correctly answered `401`. Any fix has to make both render from one evaluation."
 msgstr ""
 
 msgid "Hermes self-explores: enumerates devices, probes sensors/actuators, maps what the machine can do, then controls it. Models via the 031 gateway; higher-level tools still via MCP (025) where useful."
@@ -23055,7 +23142,13 @@ msgstr ""
 msgid "How it works"
 msgstr ""
 
+msgid "How many annotations were dropped."
+msgstr ""
+
 msgid "How many chunks a sweep spends"
+msgstr ""
+
+msgid "How many entries were offered again."
 msgstr ""
 
 msgid "How many free ports (or relay ranges) to return."
@@ -23297,6 +23390,9 @@ msgstr ""
 msgid "ISO 639-1 code of the catalog being filled."
 msgstr ""
 
+msgid "ISO 639-1 code of the catalog, when the caller knows it."
+msgstr ""
+
 msgid "ISO 639-1 code of the catalog, when the caller knows it. The script comparison is the one check that needs it; every other criterion reads both strings alone."
 msgstr ""
 
@@ -23372,10 +23468,10 @@ msgstr ""
 msgid "Identity integration"
 msgstr ""
 
-msgid "Identity providers: separate scope"
+msgid "Identity is per provider, never the deployment administrator"
 msgstr ""
 
-msgid "Identity, Authorization, and Credential Requirements"
+msgid "Identity providers: separate scope"
 msgstr ""
 
 msgid "Identity-based secrets, PKI and encryption manager with OIDC login, group-mapped policies and static-seal auto-unseal"
@@ -23922,9 +24018,6 @@ msgid "Implement rbac administration interface"
 msgstr ""
 
 msgid "Implement schema"
-msgstr ""
-
-msgid "Implement the SSE client and bearer-protected Streamable HTTP Trigger workflow contract in this requirement. Do not use features introduced only in n8n 2.13 or later."
 msgstr ""
 
 msgid "Implement the schema"
@@ -24574,6 +24667,9 @@ msgstr ""
 msgid "Install Backup to External Device directly onto the target machine: clone the repository, install the OS prerequisites and the repository toolchain, then deploy against localhost over a local connection (no SSH, no container):"
 msgstr ""
 
+msgid "Install Base directly onto the target machine: clone the repository, install the OS prerequisites and the repository toolchain, then deploy against localhost over a local connection (no SSH, no container):"
+msgstr ""
+
 msgid "Install Blue-ray Disc directly onto the target machine: clone the repository, install the OS prerequisites and the repository toolchain, then deploy against localhost over a local connection (no SSH, no container):"
 msgstr ""
 
@@ -25028,6 +25124,9 @@ msgid "Instance name to (user, password)."
 msgstr ""
 
 msgid "Instance: [bsky-debug.app](https://bsky-debug.app)"
+msgstr ""
+
+msgid "Instantiating per provider means the adapter is deployed as many times as there are surfaces, each with its own credential, network attachment and endpoint. That is the price of the boundary: a shared instance would be one process to run and one credential to steal."
 msgstr ""
 
 msgid "Instead of adding a text-presence regression test:"
@@ -25563,6 +25662,12 @@ msgstr ""
 msgid "It provides automatic TLS integration, WebSocket support, and a flexible templating system for per-application configuration."
 msgstr ""
 
+msgid "It pulls in ``user-workstation`` and nothing else. Desktop roles declare it in their ``meta/main.yml`` dependencies instead of each reaching for the account themselves."
+msgstr ""
+
+msgid "It pulls in `user-workstation` and nothing else. Desktop roles declare it in their `meta/main.yml` dependencies instead of each reaching for the account themselves."
+msgstr ""
+
 msgid "It reads the PR body from ``$PR_BODY``, extracts the first fenced code block whose YAML defines a ``roles:`` list, validates that every listed id is an existing ``roles/<id>`` directory, and writes ``whitelist`` (space-separated) to ``$GITHUB_OUTPUT`` -- the same output the diff-derived resolver produces."
 msgstr ""
 
@@ -25761,12 +25866,6 @@ msgstr ""
 msgid "Keep ``package.json`` and ``playwright.config.js`` centralized in ``roles/test-e2e-playwright/`` (``templates/package.json.j2`` and ``files/playwright.config.js``)."
 msgstr ""
 
-msgid "Keep `direction: client` unless a pinned authenticated bridge proves server behavior. Do not persist raw MCP bearers in JSON; require a supported environment/file secret reference or retain a precise blocker."
-msgstr ""
-
-msgid "Keep `direction: client` unless a pinned authenticated stdio-to-HTTP bridge is added. Document the server-side path as `server_stdio_only`; do not imply a deployable HTTP server."
-msgstr ""
-
 msgid "Keep `package.json` and `playwright.config.js` centralized in `roles/test-e2e-playwright/` (`templates/package.json.j2` and `files/playwright.config.js`)."
 msgstr ""
 
@@ -25851,19 +25950,13 @@ msgstr ""
 msgid "Keep plugin logic focused; move shared logic to `utils/`."
 msgstr ""
 
-msgid "Keep self-hosted deployment blocked while the verified Atlassian path is Cloud-only; an external connector must be explicit and must not be represented as the self-hosted role's endpoint."
-msgstr ""
-
-msgid "Keep self-hosted deployment blocked while the verified Atlassian path is Cloud-only; any external connector requires its own credentials, URL, and data-boundary documentation."
-msgstr ""
-
 msgid "Keep storage usage under control"
 msgstr ""
 
 msgid "Keep templates modular for maintainability and scalability as your application grows."
 msgstr ""
 
-msgid "Keep the current pin as inference-only. Select and pin an MCP-capable release only after source inspection proves per-server routes, exact tool allowlists, credential injection, and the chosen OAuth lifecycle. Use separate provider credentials and avoid a global administrator token."
+msgid "Keep the current pin inference-only. An MCP-capable release is selected only after source inspection proves per-server routes, exact tool allowlists, credential injection and the chosen OAuth lifecycle, with separate provider credentials rather than a global administrator token."
 msgstr ""
 
 msgid "Keep the follow-up limited to the roles touched by staged files so the change stays focused."
@@ -25888,9 +25981,6 @@ msgid "Keep this module free of Ansible imports and cheap to import: it is pulle
 msgstr ""
 
 msgid "Keep this module free of Ansible imports and cheap to import: it is pulled in by the env layer and by ``utils.packages.schema``, which reach contexts where Ansible is not installed. It must also stay importable on the bare bootstrap python, so the SPOT is read with the stdlib block reader instead of PyYAML."
-msgstr ""
-
-msgid "Keep tier and exact self-managed endpoint availability as hard gates. Use a project/group-scoped token and exclude mutation tools until separately enabled."
 msgstr ""
 
 msgid "Keep two things from its report: the run URL, and the candidate table saying what each pin rests on. The second one decides the local lane's scope."
@@ -25993,9 +26083,6 @@ msgid "Keycloak OIDC client is **auto-provisioned** by `web-app-keycloak` for ev
 msgstr ""
 
 msgid "Keycloak OIDC: MDAD's `matrix_synapse_oidc_enabled: true` plus `matrix_synapse_oidc_providers` are templated from the same `OIDC.CLIENT.*` group_vars that the rest of the repo already consumes (no per-app Keycloak entry needed — the existing `redirect_uris` filter auto-allow-lists every consumer)."
-msgstr ""
-
-msgid "Keycloak as authorization enabler"
 msgstr ""
 
 msgid "Keycloak base URL (`https://auth.<domain>`)."
@@ -26431,9 +26518,6 @@ msgid "List"
 msgstr ""
 
 msgid "List Users"
-msgstr ""
-
-msgid "List entries and select the exact deterministic name `infinito:<provider-application-id>`."
 msgstr ""
 
 msgid "List every file with its policy across all types:"
@@ -27373,6 +27457,9 @@ msgstr ""
 msgid "Marker MAY sit on any line of a contiguous comment block above the construct. No blank line between marker and construct."
 msgstr ""
 
+msgid "Marker MAY sit on the construct's line or on any comment line above it within the same blank-line-delimited block. Used for `.po`, where one entry stacks several comments and repeats its text in `msgid` and `msgstr`."
+msgstr ""
+
 msgid "Marker MUST be on the construct's line or any physical line spanned by a multi-line call."
 msgstr ""
 
@@ -27425,6 +27512,9 @@ msgid "Match commands exactly as Claude Code does: literal prefix, `*` wildcard,
 msgstr ""
 
 msgid "Match every user entry, used for sync jobs and listings"
+msgstr ""
+
+msgid "Matched by prefix, so a refusal another engine recorded still counts and is still cleared by ``retry``."
 msgstr ""
 
 msgid "Matches Decision 19 (playwright meta-services parity) and gives operator-visible signal on the bridge wiring."
@@ -28088,10 +28178,13 @@ msgstr ""
 msgid "Mutating tools stay off"
 msgstr ""
 
+msgid "Mutating variants have no tests, because no surface enables mutations. The gate exists instead: a role setting `tools.mutating_tools_enabled` without an `mcp.mutating_proofs` block naming an existing artifact for each of the five proofs fails lint."
+msgstr ""
+
 msgid "Mutation against the destination repo. Verb `clone` is not in the wildcard list because it is otherwise read-only-ish (e.g. `gh repo clone` is just a git clone)."
 msgstr ""
 
-msgid "Mutations MUST be classified as reversible, irreversible, external-communication, financial, identity/permission, code-execution, or infrastructure-control. Any enabled mutation requires a separate opt-in variant, a distinct RBAC role where practical, an idempotency strategy, a human confirmation boundary, and a tested audit event. Infrastructure control, arbitrary code execution, unrestricted filesystem access, identity administration, and raw database mutation remain forbidden for shared clients."
+msgid "Mutations are classified as reversible, irreversible, external-communication, financial, identity/permission, code-execution or infrastructure-control. Any enabled mutation requires a separate opt-in variant, a distinct RBAC role where practical, an idempotency strategy, a human confirmation boundary and a tested audit event. Infrastructure control, arbitrary code execution, unrestricted filesystem access, identity administration and raw database mutation stay forbidden for shared clients."
 msgstr ""
 
 msgid "Mutually exclusive plugins"
@@ -28283,6 +28376,9 @@ msgstr ""
 msgid "Native auth"
 msgstr ""
 
+msgid "Native server only with a dedicated least-privilege identity, a verified read-only allowlist, per-consumer grants, and an actual client tool call."
+msgstr ""
+
 msgid "Native surface"
 msgstr ""
 
@@ -28387,9 +28483,6 @@ msgid "Networking helper for iptables forwarding and NAT masquerading of a WireG
 msgstr ""
 
 msgid "Networks 🌐"
-msgstr ""
-
-msgid "Never attach a global MCP server to the shared engine or root credential. Instantiate one sidecar per consuming application with a database-scoped read-only principal and only schema/SELECT/SHOW/DESCRIBE tools. Otherwise record `shared_engine_isolation`."
 msgstr ""
 
 msgid "Never deployed"
@@ -28596,6 +28689,9 @@ msgstr ""
 msgid "No changes required in application code."
 msgstr ""
 
+msgid "No client executes a deterministic real tool call in every deployment. Flowise does, through its managed Agentflow fixture; the others assert less."
+msgstr ""
+
 msgid "No consumer addresses a backend directly"
 msgstr ""
 
@@ -28672,12 +28768,6 @@ msgid "No prior server-side Tor art in the repo (`desk-torbrowser` is desktop cl
 msgstr ""
 
 msgid "No privileged mode, no host network, pid, ipc or user namespace, no host bind mount, no container-engine socket."
-msgstr ""
-
-msgid "No provider or client `enabled` or `shared` expression may enumerate concrete peer role names. Provider enablement MUST be explicit operator/variant state or derived through a common direction-aware lookup. Every client MUST declare supported transports and authentication schemes. The discovery result MUST include selected entries and rejected entries with a stable rejection code such as `consumer_not_allowed`, `transport_unsupported`, `auth_unsupported`, `credential_missing`, or `endpoint_unreachable`."
-msgstr ""
-
-msgid "No role in this section has been proven to possess a safe native MCP server at its currently pinned version. Each is a candidate for an isolated adapter or a managed n8n workflow only after the exact pinned upstream API, authentication, pagination, and error semantics are inspected. The adapter MUST start with three to five named read tools, not a generated copy of the entire API."
 msgstr ""
 
 msgid "No role under `roles_path` declares this application_id."
@@ -29260,6 +29350,9 @@ msgstr ""
 msgid "One package id, declared either repository-wide or by one role."
 msgstr ""
 
+msgid "One post-application reconciliation stage runs after every selected provider role has provisioned and probed its endpoint, builds one immutable discovery snapshot, and reconciles every client from it. No provider or client `enabled` or `shared` expression enumerates concrete peer role names. The discovery result carries selected entries and rejected ones with a stable code such as `consumer_not_allowed`, `transport_unsupported`, `auth_unsupported`, `credential_missing` or `endpoint_unreachable`."
+msgstr ""
+
 msgid "One query per run, not one per deploy mode. Every row is a ``role#variant`` selection, so the row basis, the ranking and the budget cut all speak the same unit and the cut can select a subset of a role's variants. Which deploy mode a row actually runs in is decided afterwards by the rotation in ``utils.github.variant.bundles``; the query only decides which rows exist."
 msgstr ""
 
@@ -29285,6 +29378,9 @@ msgid "One selection token, taken apart."
 msgstr ""
 
 msgid "One service serves both block shapes, because the demands of the two overlap: a host install needs `/sbin/init` as the entrypoint and the cgroup mount to deploy systemd units, and it needs the daemon socket too, since a role without a compose template of its own still pulls in containerised dependencies. A containerised block needs that socket to nest its `docker run` one level below the machine, and a work directory mounted at the same absolute path on both sides so the bind sources it names resolve on the daemon. The union is the machine, and the block decides what it does with it."
+msgstr ""
+
+msgid "One sidecar per consuming application with a database-scoped read-only principal and only schema/SELECT/SHOW/DESCRIBE tools. Never a global server on the shared engine or the root credential."
 msgstr ""
 
 msgid "One single-database dump inside a generation."
@@ -29345,10 +29441,6 @@ msgid "Only Assist-exposed entities are reachable"
 msgstr ""
 
 msgid "Only CODEOWNERS matter"
-msgstr ""
-
-#, python-brace-format
-msgid "Only Open WebUI carries a per-server user boundary, through the `mcp` RBAC group it grants per provider. Flowise and OpenClaw instead declare an `mcp` role their auth proxy admits alongside `administrator`, which is the documented trust domain the criterion allows: holding it reaches every provider that client is admitted to. n8n's MCP block is disabled. Hermes has neither: `meta/rbac.yml` declares `roles: {}` and `services.sso.enabled` is false, so its whole MCP surface is bounded by the shared `API_SERVER_KEY` alone. Whether that counts as an isolated trust domain is an operator decision, not something the declarations settle."
 msgstr ""
 
 msgid "Only a clean sweep of successes retires the suite. A shard that failed, was cancelled, timed out or skipped did not run through, and a run that holds no job for the suite at all never started it -- none of those is evidence the suite is good, so the retrigger keeps asking for it."
@@ -29414,22 +29506,13 @@ msgstr ""
 msgid "Open Questions"
 msgstr ""
 
-msgid "Open WebUI access tests MUST cover a user with one of several MCP groups, a user with no MCP group, a user in the wrong application's group, and removal of the user's last group. The known empty-group synchronization behavior MUST be fixed upstream, patched in the pinned image, or compensated by an explicit reconciliation/session-invalidation mechanism before strict revocation is claimed."
-msgstr ""
-
 msgid "Open WebUI consumes MCP through its native tool-server support. Every deployed shared MCP server role is rendered into `TOOL_SERVER_CONNECTIONS` as a `type: mcp` entry."
 msgstr ""
 
 msgid "Open WebUI consumes MCP through its native tool-server support. Every deployed shared MCP server role is rendered into ``TOOL_SERVER_CONNECTIONS`` as a ``type: mcp`` entry."
 msgstr ""
 
-msgid "Open WebUI has environment-backed configuration with persistence disabled. The reconciler MUST reapply the complete desired connection and access grant after every process start, then verify it through the API. Restarting only the Open WebUI container MUST converge to the same enabled connections and grants as a full deployment."
-msgstr ""
-
 msgid "Open WebUI sends `POST /v1/chat/completions` with `model: hermes` or `model: openclaw` to the broker, authenticated with the broker key and carrying the `X-OpenWebUI-User-*` headers (`ENABLE_FORWARD_USER_INFO_HEADERS=true`)."
-msgstr ""
-
-msgid "Open WebUI stores its tool servers in its own configuration, so a deployment that already holds connections answers every later read with them. A client MUST reconcile that answer against the declared set instead of adopting it: reading it as the desired state leaves a newly declared provider registered nowhere and a rotated bearer registered stale, in both cases without a failure. Clients that render their whole configuration each run, such as Hermes and OpenClaw, do not carry this class."
 msgstr ""
 
 msgid "Open WebUI's `ToolServerConnection` accepts bearer, session, system_oauth and oauth_2.1. A server whose scheme it cannot present is skipped rather than registered with an unusable credential, so a basic-auth server such as Jenkins does not appear here."
@@ -29586,9 +29669,6 @@ msgid "OpenTalk authenticates users via OIDC and resolves invitee searches via `
 msgstr ""
 
 msgid "OpenTalk does not open LDAP connections itself. It relies on Keycloak's LDAP federation (`svc-db-openldap` is mapped into the central Keycloak realm) and queries Keycloak's admin Web API for user lookups. This avoids dual-source-of-truth problems and keeps LDAP credentials away from the OpenTalk service account."
-msgstr ""
-
-msgid "Opening an adapter provider's network to its clients collides with the sidecar isolation invariant, so one of the two has to give. A provider that declares the `mcp_client` overlay puts its own containers on it: `homeassistant` joins `[homeassistant, homeassistant_default]`. The same declaration on an adapter provider would give its sidecar a second interface, and [`isolation.sh`](../../roles/test-e2e-cli/files/shared/mcp/isolation.sh) rejects anything but exactly one, because a sidecar holding the provider's credential must reach that provider only. Today `prometheusmcp` satisfies it with a single attachment and is therefore reachable by no client at all. Either the sidecar joins only the pair network and the provider joins it too, or the isolation check becomes an identity check over the admitted peers rather than a count."
 msgstr ""
 
 msgid "Opening the PR through a GitHub App installation token bypasses this restriction. The App counts as a distinct actor, so PR-lifecycle events fire normally and the full CI pipeline runs against every update PR."
@@ -30582,7 +30662,13 @@ msgstr ""
 msgid "Per-manager dispatch for `pacman` / `apt-get` / `dnf` / `yum` / `brew`."
 msgstr ""
 
+msgid "Per-pair networks have to replace `kind: mcp_client`, which opens a provider to every client rather than to the admitted one. Either the sidecar joins only the pair network and the provider joins it too, or the isolation check becomes an identity check over the admitted peers rather than a count."
+msgstr ""
+
 msgid "Per-plugin configuration is keyed by the addon id and rendered by [03_configure.yml](./03_configure.yml). A new plugin requires no changes here when its addon spec and optional hook file are present at the conventional paths."
+msgstr ""
+
+msgid "Per-provider constraints"
 msgstr ""
 
 msgid "Per-release archive files for [CHANGELOG.md](../../CHANGELOG.md). The active changelog at the repository root keeps the most recent releases inline; once an entry rolls past the configured retention window, it lives here as its own file."
@@ -30610,6 +30696,9 @@ msgid "Per-role update PRs: the Docker-image-version and repository-ref updaters
 msgstr ""
 
 msgid "Per-role views over CI deploy runs, turning Ansible profiling output into comparable, downloadable role-timing metrics."
+msgstr ""
+
+msgid "Per-server group grants, no hard-coded administrator token source, application-scoped user roles, last-group revocation, reconciliation after restart."
 msgstr ""
 
 msgid "Per-service `mirror_policy`:"
@@ -30663,7 +30752,7 @@ msgstr ""
 msgid "Per-user token for timeline data; no posting, messaging, contact, moderation, or account mutation"
 msgstr ""
 
-msgid "Per-user token is required for private feeds, rooms, messages, or mail; a shared service account MUST NOT merge users' private data"
+msgid "Per-user token is required for private feeds, rooms, messages, or mail; a shared service account never merges users' private data"
 msgstr ""
 
 msgid "Per-variable computation MUST live under [`handlers/`](handlers/) (see [handlers README](handlers/README.md) for the naming convention used there)."
@@ -30825,9 +30914,6 @@ msgstr ""
 msgid "Pin"
 msgstr ""
 
-msgid "Pin a Moodle-compatible plugin, use an exact web-service function allowlist and restricted service user, and prove that unlisted functions cannot be invoked."
-msgstr ""
-
 msgid "Pin a matrix plan to a subset of rounds when `variants` is set."
 msgstr ""
 
@@ -30840,16 +30926,7 @@ msgstr ""
 msgid "Pin the expensive value when"
 msgstr ""
 
-msgid "Pin the experimental Frappe MCP component in a small managed app, expose a few named read tools, reject generic DocType/method/SQL execution, and use a restricted ERPNext API user or proven per-user OAuth. Verify against the exact Frappe v16 pin."
-msgstr ""
-
-msgid "Pin the official Qdrant MCP server, require read-only mode, and provision one collection and key per application. No shared administrator key or all-collection visibility is allowed."
-msgstr ""
-
-msgid "Pin the plugin and Jenkins compatibility, expose job/status/log reads first, and keep build/config/script actions outside the default tool list."
-msgstr ""
-
-msgid "Pin the required apps, scope the application password/service account, constrain files and tools, and prove that the endpoint cannot escape that user's shares."
+msgid "Pin the experimental Frappe component in a small managed app, expose a few named read tools, reject generic DocType/method/SQL execution, and use a restricted API user or proven per-user OAuth, verified against the exact Frappe v16 pin."
 msgstr ""
 
 msgid "Pinned ***pkgmgr*** clones to ***stable*** for reproducible deployments."
@@ -31073,6 +31150,9 @@ msgstr ""
 msgid "Plugin Type"
 msgstr ""
 
+msgid "Plugin and Jenkins compatibility pinned; job/status/log reads first; build, config and script actions outside the default tool list."
+msgstr ""
+
 msgid "Plugin development: <https://docs.ansible.com/ansible/latest/dev_guide/developing_plugins.html>"
 msgstr ""
 
@@ -31284,9 +31364,6 @@ msgid "Present the list to the operator and ask which runs should be cancelled t
 msgstr ""
 
 msgid "Presentation"
-msgstr ""
-
-msgid "Preserve the Community Edition licensing blocker. A future Enterprise variant must explicitly supply the edition/license and use a restricted OAuth application."
 msgstr ""
 
 msgid "Preserve the role's base CSS so the application styling stays intact."
@@ -31583,9 +31660,6 @@ msgstr ""
 msgid "Provider audit"
 msgstr ""
 
-msgid "Provider identity"
-msgstr ""
-
 msgid "Provider keys: variable or secret? 🔑"
 msgstr ""
 
@@ -31727,7 +31801,7 @@ msgstr ""
 msgid "Public access or restricted user token; no shelf, review, follow, or federation mutation"
 msgstr ""
 
-msgid "Public collection only; the single owner secret MUST NOT be exposed to a shared client"
+msgid "Public collection only; the single owner secret is never exposed to a shared client"
 msgstr ""
 
 msgid "Public communication MUST be conducted through the following channels:"
@@ -31964,6 +32038,9 @@ msgstr ""
 msgid "Qdrant Docker Upgrade"
 msgstr ""
 
+msgid "Qdrant and the high-value read adapters are in place. What is left, in order: the remaining business, content, social and operations adapters, once the shared contract and the first adapters pass compose and swarm tests; and separately reviewed evaluations of the Shopware upgrade, the ERPNext plugin, the Matomo plugin, the LiteLLM gateway and the LM Studio client, because each moves an upstream version or maturity boundary."
+msgstr ""
+
 msgid "Qdrant sidecar path"
 msgstr ""
 
@@ -31986,6 +32063,9 @@ msgid "Quality debt compounds if ignored."
 msgstr ""
 
 msgid "Query the open PRs for the frozen `<branch>`:"
+msgstr ""
+
+msgid "Question"
 msgstr ""
 
 msgid "Questions and discussion about the contribution workflow MAY be raised in the [Infinito Nexus Hub](https://hub.infinito.nexus). A dedicated thread on forking and contributing is available [here](https://s.infinito.nexus/forking)."
@@ -32498,10 +32578,10 @@ msgstr ""
 msgid "Reconcile a catalog's live candidates against the declared addons."
 msgstr ""
 
-msgid "Reconcile the 3.1.4 Streamable HTTP registry and a managed flow as defined above. Remove the global-security-relaxation-as-integration claim and replace the anonymous-only test with a deterministic tool call."
+msgid "Reconciles the 3.1.4 Streamable HTTP registry and a managed flow. No global-security-relaxation-as-integration claim, and a deterministic tool call rather than an anonymous-rejection test."
 msgstr ""
 
-msgid "Reconciliation MUST use the ownership name `infinito:<provider-application-id>`. It MUST update or remove only entries carrying that marker and preserve all human-created client configuration. Zero matching entries creates one, one updates it, and more than one MUST fail without guessing which duplicate to keep."
+msgid "Reconciliation updates or removes only entries carrying its own ownership marker and preserves human-created configuration. Zero matches creates, one updates, more than one fails rather than guessing which duplicate to keep. The marker is per client, because the name is not always free: Flowise registry entries are `infinito:<provider-application-id>`, Open WebUI groups carry the RBAC group path Keycloak also issues, and n8n uses its configured workflow name."
 msgstr ""
 
 msgid "Recording"
@@ -32944,6 +33024,9 @@ msgstr ""
 msgid "Reloads and restarts the timer using systemd to ensure that changes take effect."
 msgstr ""
 
+msgid "Remaining rollout"
+msgstr ""
+
 msgid "Remote"
 msgstr ""
 
@@ -33251,26 +33334,14 @@ msgstr ""
 msgid "Replace `admin@example.com` with the OIDC email address used to log in."
 msgstr ""
 
-msgid "Replace `hosted_only` with `stdio_only`. The audit of `discourse/discourse-mcp` at `v0.3.1` closed the sidecar path: ownership, licence, pinning and the read-only default all pass, but the HTTP transport serves one session per process, which upstream asserts itself in `src/test/transport.test.ts` at that tag. A shared multi-consumer endpoint cannot be built on it, and the deploy-time contract probe alone would leave the process in its `503` restart-required state. Enable nothing until upstream supports concurrent sessions."
-msgstr ""
-
-msgid "Replace `hosted_only` with `unreviewed_third_party`. The review ran and selected no module. Odoo SA publishes no server and the OCA organisation holds no MCP repository, so the field is third-party only. The leading candidate, `ivnvxd/mcp-server-odoo` at `v0.8.0`, fails on maintenance breadth (197 of 231 commits from one author), on access control that ships as a separate Odoo Apps store module outside any pinnable tag, and on a mutating default tool scope. Re-review if Odoo SA or the OCA publishes a server."
-msgstr ""
-
-msgid "Replace `hosted_only`. Pin the official WordPress MCP adapter, expose its HTTP endpoint, register only reviewed Abilities with permission callbacks, and authenticate as a real restricted user through Application Password or proven OAuth."
-msgstr ""
-
 #, python-brace-format
 msgid "Replace `{username}` with the actual username of the user you wish to delete."
-msgstr ""
-
-msgid "Replace administrator credentials with a dedicated bot/service identity and separate read/search tools from post/channel-management tools."
 msgstr ""
 
 msgid "Replace every generated credential in ``host_vars_file`` with a fresh one."
 msgstr ""
 
-msgid "Replace the unversioned preview image with an explicit MCP-capable headless version, render only deployment-curated servers, disable arbitrary per-request URLs, and test tool allowlists. Otherwise classify `version_unverified`."
+msgid "Replace the unversioned preview image with an explicit MCP-capable headless version, render only deployment-curated servers, disable arbitrary per-request URLs, and test tool allowlists."
 msgstr ""
 
 msgid "Replaced inline SQL task templates with a first-class database_query Ansible module that takes a caller-controlled mask_values parameter, and migrated every role to call it instead of templating ad-hoc psql/mysql commands"
@@ -33465,7 +33536,7 @@ msgstr ""
 msgid "Required Files"
 msgstr ""
 
-msgid "Required correction or validation"
+msgid "Required apps pinned, application password scoped, files and tools constrained, and proof that the endpoint cannot escape that user's shares."
 msgstr ""
 
 msgid "Required environment"
@@ -33492,9 +33563,6 @@ msgstr ""
 msgid "Required for rolling-release development and early-integration testing"
 msgstr ""
 
-msgid "Required implementation or precise blocker"
-msgstr ""
-
 msgid "Required input"
 msgstr ""
 
@@ -33508,6 +33576,9 @@ msgid "Required when"
 msgstr ""
 
 msgid "Required, as in the list form."
+msgstr ""
+
+msgid "Requirement 025 established the first metadata and the Open WebUI integration. Reading the code against it showed the gap between what was declared and what ran:"
 msgstr ""
 
 msgid "Requirement Keywords (RFC 2119) 📋"
@@ -33554,6 +33625,9 @@ msgid "Requires systemd configuration; networking differences from native Linux"
 msgstr ""
 
 msgid "Requires the newest generation to hold real payload — a volume counts when it has a `files/` tree or a non-empty `sql` dump. In the async pass it additionally requires `PREVIOUS_GENERATION` to be a distinct, older generation, which is what proves the differential `--link-dest` chain advanced."
+msgstr ""
+
+msgid "Requiring a disposition for every role turned a silent default into 172 explicit decisions that a lint now keeps current. A new role fails that lint until somebody disposes of it, which is the intended friction."
 msgstr ""
 
 msgid "Requiring at least one SSH public key ensures that the administrator account is always accessible via secure, key-based authentication and avoids insecure or unusable configurations."
@@ -33752,9 +33826,6 @@ msgstr ""
 msgid "Resource limits added to prevent OOM crashes"
 msgstr ""
 
-msgid "Resources, prompts, sampling, elicitation, roots, and any protocol capability added by an upstream MCP release MUST be independently classified. The absence of a dangerous tool list does not authorize an unreviewed non-tool MCP capability."
-msgstr ""
-
 msgid "Respawn only on non-zero exit. Swarm has no separate max-restarts knob on the condition itself; the ``:N`` suffix is dropped because swarm carries the same idea via ``restart_policy.max_attempts``."
 msgstr ""
 
@@ -33852,12 +33923,6 @@ msgid "Restrictions 🚫"
 msgstr ""
 
 msgid "Restructure guides for better discoverability"
-msgstr ""
-
-msgid "Retain per-server group grants but remove the hard-coded administrator token source, add application-scoped user roles, fix last-group revocation, and reconcile after restart."
-msgstr ""
-
-msgid "Retain the native server only with a dedicated least-privilege identity, a verified read-only tool allowlist, per-consumer grants, and an actual client tool call."
 msgstr ""
 
 msgid "Retrieval, web search and code execution come from platform services (``svc-ai-tika``, ``svc-ai-searxng``, ``svc-ai-jupyter``, ``svc-db-qdrant``) rather than from a third-party API, each switched on per deployment"
@@ -34370,6 +34435,9 @@ msgstr ""
 msgid "Return the container-to-container Prometheus scrape target for a native-metrics app."
 msgstr ""
 
+msgid "Return the criterion ``translation`` broke, empty when it broke none."
+msgstr ""
+
 msgid "Return the current play application mapping using the shared resolver from utils/roles/applications/in_group_deps."
 msgstr ""
 
@@ -34487,7 +34555,7 @@ msgstr ""
 msgid "Return the per-service mount block (``volumes:`` + ``configs:`` + ``secrets:``) as a YAML string starting at column 0."
 msgstr ""
 
-msgid "Return the plain translation, or ``None`` when it damaged a protected span."
+msgid "Return the plain translation, or what was rejected and the criterion it broke."
 msgstr ""
 
 msgid "Return the primary domain for application_id from the domains mapping:"
@@ -34500,6 +34568,9 @@ msgid "Return the provider's declared secret and the owner it belongs to."
 msgstr ""
 
 msgid "Return the public profile the address names, empty for a foreign one."
+msgstr ""
+
+msgid "Return the refusal annotations the entry carries."
 msgstr ""
 
 msgid "Return the repository root inside the deploy container."
@@ -34638,6 +34709,9 @@ msgid "Return whether ``translation`` repeats a word the source does not."
 msgstr ""
 
 msgid "Return whether a non-Latin language came back written in Latin letters."
+msgstr ""
+
+msgid "Return whether a previous run recorded this entry as unanswerable."
 msgstr ""
 
 msgid "Return whether a provider admits one client."
@@ -36477,6 +36551,9 @@ msgstr ""
 msgid "Safety"
 msgstr ""
 
+msgid "Safety contract for every adapter"
+msgstr ""
+
 msgid "Safety net for shared infra (``svc-registry-cache``, ...) that no application's ``meta/services.yml`` explicitly depends on."
 msgstr ""
 
@@ -36707,9 +36784,6 @@ msgid "Secret Scanning ❌"
 msgstr ""
 
 msgid "Secrets"
-msgstr ""
-
-msgid "Secrets MUST be sent in authenticated headers or a supported secret reference. A URL path component selected by `key_credential` MUST be hidden behind an internal header-authenticated proxy or be proven non-secret. Bearer values and secret path segments MUST be redacted from application logs, reverse-proxy logs, task output, Playwright traces, and exception messages."
 msgstr ""
 
 msgid "Secrets are NOT available in `pull_request` workflows triggered by forks. This is a GitHub security restriction. The mirror and image build run via `pull_request_target` instead:"
@@ -37073,6 +37147,12 @@ msgid "Self-hosted portal for unified access to all deployed applications via a 
 msgstr ""
 
 msgid "Self-hosted runners (opt-in overflow)"
+msgstr ""
+
+msgid "Self-hosted stays blocked while the verified Atlassian path is Cloud-only; an external connector carries its own credentials, URL and data-boundary documentation."
+msgstr ""
+
+msgid "Self-hosted stays blocked while the verified Atlassian path is Cloud-only; an external connector is explicit and is never represented as the self-hosted role's endpoint."
 msgstr ""
 
 msgid "Self-hosted ticketing platform for events with online sales, registration management, and secure payments"
@@ -37534,6 +37614,9 @@ msgstr ""
 msgid "Shared postgres"
 msgstr ""
 
+msgid "Shared premise of every desktop role, the login account its files belong to"
+msgstr ""
+
 msgid "Shared relational database (MariaDB/Postgres)"
 msgstr ""
 
@@ -37654,7 +37737,7 @@ msgstr ""
 msgid "Sibling of `container_address` for service-level commands. While `container_address` resolves to a runtime container ID for `docker exec`, this lookup returns the addressable form for `container service ps`, `container service logs`, and `container ps --filter \"label=com.docker.swarm.service.name=...\"`."
 msgstr ""
 
-msgid "Sidecars and adapters MUST use an immutable version and digest, documented provenance and license, a non-root user, read-only root filesystem, dropped Linux capabilities, no host or control-plane socket, explicit CPU/memory/PID limits, a provider-only network, and no unrelated outbound network access."
+msgid "Sidecars and adapters use an immutable version and digest, documented provenance and licence, a non-root user, a read-only root filesystem, dropped capabilities, no host or control-plane socket, explicit CPU/memory/PID limits, a provider-only network, and no unrelated outbound access."
 msgstr ""
 
 msgid "Signal"
@@ -38201,6 +38284,9 @@ msgstr ""
 msgid "Standardized container paths (`/opt/src/infinito`) and switched to a global virtual environment to ensure reproducible builds and consistent test execution."
 msgstr ""
 
+msgid "Standing constraint"
+msgstr ""
+
 msgid "Start Here 📖"
 msgstr ""
 
@@ -38390,7 +38476,7 @@ msgstr ""
 msgid "Steps that produce a local backup root from a remote device, and that root."
 msgstr ""
 
-msgid "Still open: MCP calls carrying that identity, and the obstacle is upstream rather than a piece of this platform nobody wrote yet. [035](035-mcp-proxy-expansion.md) already fixes the bar: `auth_subject: user` may be set only after the exact client and server prove authorization-code or token-exchange behaviour, token refresh, audience binding, revocation and expiry. No MCP provider deployed here clears it — every server role authenticates as one `service_account`, because that is what its upstream offers — so `auth_subject: user` has nothing to resolve against. Meeting the bar means a provider gaining per-user OAuth upstream, not a credential model this repository can add on its own."
+msgid "Still open: MCP calls carrying that identity, and the obstacle is upstream rather than a piece of this platform nobody wrote yet. [ADR 0003](../architecture/decisions/0003-mcp-surface-per-provider.md) already fixes the bar: `auth_subject: user` may be set only after the exact client and server prove authorization-code or token-exchange behaviour, token refresh, audience binding, revocation and expiry. No MCP provider deployed here clears it — every server role authenticates as one `service_account`, because that is what its upstream offers — so `auth_subject: user` has nothing to resolve against. Meeting the bar means a provider gaining per-user OAuth upstream, not a credential model this repository can add on its own."
 msgstr ""
 
 msgid "Stop and clarify when the inputs or intent are unclear."
@@ -38466,9 +38552,6 @@ msgid "Storage- and runtime-aware CI variant matrix: variant bundles are split p
 msgstr ""
 
 msgid "Store Format"
-msgstr ""
-
-msgid "Store authentication through Flowise's encrypted custom-header configuration rather than in flow JSON."
 msgstr ""
 
 msgid "Store each shared value once."
@@ -38713,6 +38796,9 @@ msgid "Summary for Contributors 📋"
 msgstr ""
 
 msgid "Summary 💡"
+msgstr ""
+
+msgid "Supersedes the design half of requirement 025, which assumed an empty baseline, treated metadata as enforcement, and marked client provisioning and end-to-end authorization complete."
 msgstr ""
 
 msgid "Superseding runs 🔁"
@@ -39031,9 +39117,6 @@ msgid "Swarm Loop"
 msgstr ""
 
 msgid "Swarm NFS export env handlers."
-msgstr ""
-
-msgid "Swarm attaches every task to `docker_gwbridge` for ingress and egress. A sidecar isolation check that compares attached addresses against the provider's declared subnets MUST accept that interface, or it rejects every sidecar in swarm while proving nothing about application reachability."
 msgstr ""
 
 msgid "Swarm deploy of the MariaDB database role (svc-db-mariadb)"
@@ -39528,9 +39611,6 @@ msgstr ""
 msgid "Target Design 📐"
 msgstr ""
 
-msgid "Target Metadata Contract"
-msgstr ""
-
 msgid "Target Schema"
 msgstr ""
 
@@ -39998,9 +40078,6 @@ msgstr ""
 msgid "The **sys-svc-webserver-https** role extends a basic NGINX installation by wiring in everything you need to serve content over HTTPS:"
 msgstr ""
 
-msgid "The 18 roles already containing an `mcp:` block require the following revalidation before they count as complete:"
-msgstr ""
-
 msgid "The 2.7.0 image ships 23 tool categories, which are application names (``calendar``, ``files``, ``mail``, ``talk``, …) rather than operations: each bundles its read and its write tools, and the hub offers no setting that removes only the mutating ones. Enabling the ExApp writes ``true`` for every category absent from ``tool_status``, so the hub itself serves all of them, write tools included."
 msgstr ""
 
@@ -40103,6 +40180,9 @@ msgstr ""
 msgid "The Certbot role provides a ready-to-use, automated solution for SSL/TLS management in your infrastructure. Whether you’re managing traditional servers or containerized environments, this role ensures your certificates are always in place and valid."
 msgstr ""
 
+msgid "The Community Edition licensing blocker stands. An Enterprise variant supplies edition and licence explicitly and uses a restricted OAuth application."
+msgstr ""
+
 msgid "The Context Agent app exposes an MCP endpoint below the Nextcloud AppAPI proxy and uses app-password authentication."
 msgstr ""
 
@@ -40130,7 +40210,7 @@ msgstr ""
 msgid "The Docker/OCI hostname for an application's container: ``bounded_name`` at the 63-byte limit sethostname(2) enforces."
 msgstr ""
 
-msgid "The Flowise supervisor criteria are Phase 2, and reading both upstreams turned \"not built yet\" into a concrete blocker: `stdio_only`, the same reason `web-app-discourse` carries in [035](035-mcp-proxy-expansion.md). Neither agent's server mode speaks a transport a second container can reach."
+msgid "The Flowise supervisor criteria are Phase 2, and reading both upstreams turned \"not built yet\" into a concrete blocker: `stdio_only`, the same reason `web-app-discourse` carries in [ADR 0003](../architecture/decisions/0003-mcp-surface-per-provider.md). Neither agent's server mode speaks a transport a second container can reach."
 msgstr ""
 
 msgid "The Frappe MCP component is experimental and unverified against the pinned Frappe v16."
@@ -40722,7 +40802,7 @@ msgstr ""
 msgid "The actual app deploy runs inside a **sealed throwaway Docker daemon** and is torn down on exit, so the host's own stack is never touched. Several runners can share one host (or coexist with other workloads) safely."
 msgstr ""
 
-msgid "The adapter `digest` pins nothing today. All ten `implementation: adapter` roles carry the identical placeholder `sha256:` followed by sixty-four zeros, the schema only checks that prefix, and nothing outside the tests reads the field: the running image is resolved through `lookup('container_image', …)` from `services.mcp-adapter.image`. The immutable-source guarantee is therefore declared and not in force, so a lint that rejects a placeholder digest MUST land together with real digests rather than before them."
+msgid "The adapter `digest` pins nothing. All ten `implementation: adapter` roles carry the identical placeholder `sha256:` followed by sixty-four zeros, the schema only checks that prefix, and the running image is resolved through `lookup('container_image', …)` instead. A lint that rejects the placeholder has to land together with real digests rather than before them."
 msgstr ""
 
 msgid "The adapter is what bounds that. [`files/mcp/tools.json`](./files/mcp/tools.json) names the nine read tools of `calendar`, `contacts` and `files` — the three categories whose upstream `is_available` is unconditional, so the set does not vary with which optional apps a deployment installs. `svc-ai-mcp-adapter` refuses any tool outside that list and any tool marked `mutating` while `mutating_tools_enabled` is false, and it refuses to start at all if the contract's `schema_sha256` does not match the file. The refusal happens in the sidecar, so it holds for every client regardless of what each renders locally."
@@ -41230,9 +41310,6 @@ msgstr ""
 msgid "The current `roles/web-app-matrix/` ships a self-contained compose stack with Synapse, Element, a handful of bridges and a ChatGPT bot. Adding a new bridge or service today means hand-rolling its compose service, env file, postgres seed, well-known entries and Playwright coverage inside this repo — the marginal cost per bridge is high, and the matrix-docker-ansible-deploy (MDAD) upstream community already maintains all of that under one umbrella role."
 msgstr ""
 
-msgid "The current statement that Flowise lacks an instance-level registry is incorrect for the pinned version and MUST be removed from requirement 025 and the role README. The deployment MUST use the authenticated `/api/v1/custom-mcp-servers` routes with a scoped API identity whose workspace permissions are limited to the required `tools:create`, `tools:view`, `tools:update`, and `tools:delete` operations."
-msgstr ""
-
 msgid "The dashboard sits behind proxy + Keycloak OIDC (Decision #9); voice/chat connectors are the follow-up (Decision #10)."
 msgstr ""
 
@@ -41255,9 +41332,6 @@ msgid "The decision compares the free space on the filesystem holding Docker's d
 msgstr ""
 
 msgid "The decision repeats for the same request"
-msgstr ""
-
-msgid "The declarative user schema MUST gain an application-scoped role form, for example:"
 msgstr ""
 
 msgid "The declared codes, empty when the app declares none for this domain."
@@ -41379,6 +41453,9 @@ msgid "The diagram places Backup to External Device in the Infinito.Nexus cosmos
 msgstr ""
 
 msgid "The diagram places Base Development Toolchain in the Infinito.Nexus cosmos: the components it deploys (capabilities), the central services it consumes (dependencies), and its outward reach (federation and bridged external networks)."
+msgstr ""
+
+msgid "The diagram places Base in the Infinito.Nexus cosmos: the components it deploys (capabilities), the central services it consumes (dependencies), and its outward reach (federation and bridged external networks)."
 msgstr ""
 
 msgid "The diagram places Baserow in the Infinito.Nexus cosmos: the components it deploys (capabilities), the central services it consumes (dependencies), and its outward reach (federation and bridged external networks)."
@@ -42237,6 +42314,9 @@ msgstr ""
 msgid "The effective budget for the actual workload is lower than the table suggests because the runner itself plus the nested `infinito` container (systemd, nested Docker, Ansible) reserve a non-trivial baseline. Plan for roughly **1–2 GB of overhead** before any role deploys a service."
 msgstr ""
 
+msgid "The eighteen roles that already carried an `mcp:` block when this record was written each hold a standing constraint, because their surface was declared before the contract above existed:"
+msgstr ""
+
 msgid "The embedded snippet (``templates/service.yml.j2``) keeps the previous single-host behaviour: an unauthenticated in-memory Redis attached to the consumer stack’s default network."
 msgstr ""
 
@@ -42293,15 +42373,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "The env-var contracts each service expects strictly via `${VAR:?…}` (consumed in [compose.yml](../../../../compose.yml) and [compose/cache.override.yml](../../../../compose/cache.override.yml)):"
-msgstr ""
-
-msgid "The exact Flowise 3.1.4 source provides authenticated create, list, update, authorize, delete, and tool-list routes under `/api/v1/custom-mcp-servers`. It stores custom-header authentication encrypted and binds entries to the active workspace. Its authorization path passes `sse` to the toolkit, but that argument only selects stdio versus HTTP: for any URL the toolkit attempts Streamable HTTP first and falls back to SSE through `secureFetch`, whose `node-fetch` response body the MCP SDK rejects with `expected a web ReadableStream`. The pinned release therefore registers Streamable HTTP providers and cannot register SSE ones."
-msgstr ""
-
-msgid "The exact n8n 1.95.3 source contains an SSE MCP Client Tool and an SSE MCP Server Trigger. Its public API can create credentials and workflows and activate workflows. The newer instance-wide administration MCP service MUST NOT be attributed to this pinned release."
-msgstr ""
-
-msgid "The exact schema name may change during implementation, but an unscoped `roles: [mcp]` MUST NOT grant every application's `mcp` role. Direct Keycloak group membership remains valid, but both paths MUST converge on the exact application group in the OIDC claim."
 msgstr ""
 
 msgid "The existing application loader (`utils/cache/applications.py`) MUST load every `meta/addons/*.yml` like the other file-rooted meta topics. No new generated repository-wide dictionary is introduced."
@@ -42374,9 +42445,6 @@ msgstr ""
 msgid "The final `done` job aggregates all deploy, install, and development gates. CI is considered green only when this job succeeds."
 msgstr ""
 
-msgid "The first implementation investigation for each candidate MUST use the following starter contract. Tool names are proposed repository contracts, not claims that upstream already uses those names. If the exact pinned version cannot implement the named contract through a stable authenticated API, the role MUST be changed to `blocked` with the observed reason rather than receiving a generic substitute."
-msgstr ""
-
 msgid "The first usable address, e.g. ``192.168.24.1``."
 msgstr ""
 
@@ -42414,9 +42482,6 @@ msgstr ""
 msgid "The following directories are never readable, even if a task explicitly requests access:"
 msgstr ""
 
-msgid "The following lists are the complete repository snapshot used to construct this requirement. Implementation MUST replace the snapshot check with a test that derives the current set dynamically; it MUST NOT hard-code the number 172."
-msgstr ""
-
 msgid "The following pages cover contribution guidelines, development workflows, agent instructions, and security references."
 msgstr ""
 
@@ -42424,9 +42489,6 @@ msgid "The following registries are discovered and mirrored:"
 msgstr ""
 
 msgid "The following roles MUST NOT carry `BIBER_*` env keys nor a biber scenario; closing each item is a NOOP except when a stale env-key shows up; in that case remove it."
-msgstr ""
-
-msgid "The following roles have a concrete upstream MCP or MCP-client path that is absent from, or incorrectly represented by, current metadata. `candidate` means the path deserves implementation work; it does not mean that the current deployed version is safe or compatible."
 msgstr ""
 
 msgid "The following roles have an MCP surface confirmed from upstream or project-owned documentation at requirement creation time. Each row is an implementation candidate, not proof that the current role already exposes MCP."
@@ -42519,9 +42581,6 @@ msgstr ""
 msgid "The group stays primary. It reaps within seconds of a run being created and needs no runner, while the fallback first has to win a runner slot — from the very pool the superseded sweep is saturating, so it is slowest exactly when it is needed. Measured waits in this repository range from under a minute to about twenty. That is the cost of the fallback, and the reason it is a fallback rather than the mechanism."
 msgstr ""
 
-msgid "The hazard is ordering-dependent, not universal: it fires only when a consumer already holds an endpoint at the moment the provider first renders with the overlay. A provider that renders first migrates cleanly and never sees it, which is why some roles pass and others abort on the same change. Purging the provider's stack does not help, because the project label lives on the Docker network rather than in the compose directory. A fresh deployment is unaffected, so this never appears in CI."
-msgstr ""
-
 msgid "The helper hard-fails on unknown service names. Adding a new gate requires both the env-template flag and at least one `skipUnlessServiceEnabled('<svc>')` call in the spec; the parity guards [test_env_services_match.py](../../../../../tests/integration/roles/playwright/test_env_services_match.py) and [test_spec_env_gates.py](../../../../../tests/integration/roles/playwright/test_spec_env_gates.py) enforce that contract."
 msgstr ""
 
@@ -42589,9 +42648,6 @@ msgstr ""
 msgid "The image's healthcheck config, ``{}`` when the image definitively declares none, and ``None`` when the answer is indeterminate - an unresolvable name, a network error, an auth wall, a rate limit, or an index without a matching platform. A caller must not read ``{}`` and ``None`` as the same thing: only the former is evidence."
 msgstr ""
 
-msgid "The implementation MUST NOT claim that the newer instance-wide n8n administration MCP server exists in 1.100.1. Using that surface requires a separately reviewed, explicit n8n upgrade."
-msgstr ""
-
 msgid "The implementation MUST keep a clean abstraction line between the render backends so that the future direction — `compose → swarm → kubernetes` — can be added as an additional backend rather than a rewrite."
 msgstr ""
 
@@ -42599,9 +42655,6 @@ msgid "The implementation MUST keep a clean abstraction line between the render 
 msgstr ""
 
 msgid "The implementation MUST prefer native upstream MCP support. Plugin, sidecar, or marketplace MCP servers MAY be used only when the upstream project documents them as supported or when the role README documents the risk and the operator explicitly enables the integration."
-msgstr ""
-
-msgid "The implementation MUST start from the current code rather than from the completed checkboxes in requirement 025:"
 msgstr ""
 
 msgid "The implementation MUST validate the bridge rule and the loader on the first slice before sweeping the rest:"
@@ -42629,9 +42682,6 @@ msgid "The implementing PR MUST NOT mark any Acceptance Criterion complete until
 msgstr ""
 
 msgid "The implementing PR MUST not mark any Acceptance Criterion complete until the behavior is verified end to end."
-msgstr ""
-
-msgid "The implementing agent MUST start its upstream source audit from these project-owned repositories or exact tags and MUST record the selected immutable version in the implementing PR:"
 msgstr ""
 
 msgid "The implementing changes are committed and the PR references the requirement file."
@@ -42757,6 +42807,9 @@ msgstr ""
 msgid "The list is cut into serial chunks with a hard boundary at the priority/regular seam (:mod:`cli.meta.ci.chunks`), sized by the run's job and queue budget (:mod:`cli.meta.ci.slots`)."
 msgstr ""
 
+msgid "The list was held against the repository by three lints that parsed this section. They are gone, and the trade is deliberate: a lint that reads prose ties every role addition to an edit here, and the audit is a review record rather than a runtime registry. What they proved while they ran is worth keeping: the classification check named twenty-four roles whose audit entry contradicted their own metadata the first time it ran, nine of them shipping an adapter while the list still called them untried candidates. Without them, a role added later is absent here until someone notices."
+msgstr ""
+
 #, python-brace-format
 msgid "The literal `null` is normalised to `{}` so a bare `- ` list item stays valid."
 msgstr ""
@@ -42834,9 +42887,6 @@ msgid "The main purpose of this role is to:"
 msgstr ""
 
 msgid "The maintained native path needs Kibana Agent Builder with its index privileges and licence; the older sidecar is deprecated."
-msgstr ""
-
-msgid "The maintained native path requires Kibana Agent Builder, suitable index/application privileges, and licensing; the older sidecar is deprecated. Record `missing_kibana_and_licence` until those dependencies are explicit."
 msgstr ""
 
 msgid "The make target ultimately calls the same CLI, so any behaviour described here applies to both."
@@ -42966,7 +43016,7 @@ msgstr ""
 msgid "The node hidden service exposes Mailu's mail ports in addition to `80`, via extra `HiddenServicePort` entries: `HiddenServicePort 25`, `587`, `465`, `143`, `993` → Mailu's local front binds on `127.0.0.1`. Mailu is then reachable at `<node>.onion` for SMTP/submission/IMAP."
 msgstr ""
 
-msgid "The number of discarded translations; their entries stay unchanged."
+msgid "The number of discarded translations; their entries keep no ``msgstr``."
 msgstr ""
 
 msgid "The number of dumps replayed."
@@ -42982,6 +43032,9 @@ msgid "The offered modes are already narrowed by the run's ``--modes`` input, th
 msgstr ""
 
 msgid "The official Baserow SSO feature is Enterprise-only. This role instead gates the community image with the shared Keycloak oauth2-proxy and installs a small trusted-header bridge in the Baserow backend. The bridge trusts the identity headers injected by nginx after oauth2-proxy authentication and converts them into native Baserow JWT refresh/access tokens for the frontend."
+msgstr ""
+
+msgid "The official WordPress MCP adapter pinned, its HTTP endpoint exposed, only reviewed Abilities with permission callbacks registered, authenticated as a real restricted user."
 msgstr ""
 
 msgid "The official installer is **downloaded at runtime** and verified before execution:"
@@ -43157,9 +43210,6 @@ msgstr ""
 msgid "The plan runs the same pipeline the deploy jobs discover through (``cli.meta.ci.matrix``), so what the table shows and what CI deploys cannot diverge. One row per ``role#variant`` candidate in global query order, with the chunk it falls into and the axes it was assigned."
 msgstr ""
 
-msgid "The platform MUST NOT deploy one all-powerful OpenAPI-to-MCP process holding administrator credentials for every application. It MUST provide one reusable, immutable adapter implementation but instantiate it once per provider application or per equally isolated trust domain. Each adapter instance MUST attach only to the provider's existing local network, receive only that provider's least-privileged credential, expose a distinct MCP endpoint, and remain addressable by the provider's `application_id`."
-msgstr ""
-
 msgid "The platform already reserves a user key per role, so `hermes` and `openclaw` existed as accounts, non-privileged and each with its own mailbox, before either role claimed one. Claiming the key is what turns a reservation into an identity the agent may authenticate as, and gives the account its description."
 msgstr ""
 
@@ -43218,9 +43268,6 @@ msgid "The port is the single source of truth ``svc-net-tor services.tor.ports.l
 msgstr ""
 
 msgid "The post-login assertion MUST prove the session is real, in this order of preference: a user-menu or persona-name string visible in the DOM, a navigation element only rendered for authenticated users, a URL pattern unique to authenticated state. Stopping at a 2xx status code or a static text snippet that exists logged-out as well MUST NOT count as a session check."
-msgstr ""
-
-msgid "The precedence is:"
 msgstr ""
 
 msgid "The prefixed form is byte-identical to the container's ``.Config.Image`` after deploy, so it can be matched against a running container exactly."
@@ -43341,9 +43388,6 @@ msgid "The project-owned plugin is unaudited: endpoint, transport, auth and tool
 msgstr ""
 
 msgid "The project-owned server passes ownership, licence, pinning and read-only default, but its HTTP transport serves one session per process, which upstream asserts in `src/test/transport.test.ts` at `v0.3.1`; the deploy probe alone would leave it restart-required."
-msgstr ""
-
-msgid "The project-owned server requires an active browser tab and plugin connection and can execute powerful design-context operations. Record `interactive_browser_session`; only an experimental user-initiated integration with a pinned server and isolated session may proceed."
 msgstr ""
 
 msgid "The prompt tracks a category stack: typing a bare category name cd's into it, ``..`` walks one level up, ``/`` returns to root, path tokens with ``/`` or ``..`` navigate, ``infinito [path]`` jumps absolute, ``ls`` lists the current folder, everything else runs with the current path prepended."
@@ -43517,13 +43561,16 @@ msgstr ""
 msgid "The recommended way to disable IPv6 for local development is via Make:"
 msgstr ""
 
-msgid "The reconciliation stage MUST run before the end-to-end tests that read the converged state, and MUST NOT sit behind a task that a red test aborts. Placed in the destructor stage it ran after the Playwright suite, and `any_errors_fatal` meant any failing role skipped reconciliation entirely, so the suite asserted a state nothing had produced yet."
-msgstr ""
-
 msgid "The redeploy is NEVER the verification. \"The gate/reinstall has to run anyway\" or \"the next deploy will validate it\" is FORBIDDEN as a justification."
 msgstr ""
 
 msgid "The redundancy cut does not follow the axes. `covered_by` is a role-level claim discovery computes from the service closure, so the row that covers a cut row now usually lands on a different distribution: on a full sweep, 6 of 44 cut rows share their coverer's distro. The cut therefore asserts that the services were exercised, not that they were exercised on that row's distribution. Reaching a cut row on its own axes means naming it on the priority line, which is what `⭐` exists for."
+msgstr ""
+
+msgid "The rejected text is a comment and never a ``msgstr``: it is what the consumers must not use, while an operator judging the criterion needs to read it. A newline is escaped because a ``.po`` comment ends at one. The ``nocheck`` goes on a line of its own above the quote, never behind it: a mangled link is exactly what a rejection quotes and the URL probe reads comments too, while a long quote is wrapped over several comment lines, which would carry the marker away from the URL it has to cover."
+msgstr ""
+
+msgid "The rejected text travels with the verdict so the catalog can record it: a bare mark says an entry is unanswerable, the text says what the server answered, which is what an operator needs to judge the criterion."
 msgstr ""
 
 msgid "The remaining reproductions of Jev, [open-alternative-jev](https://github.com/ikermoel/open-alternative-jev) on any open-weights model and OpenJev on DiffusionGemma 26B-A4B, are not used."
@@ -43569,9 +43616,6 @@ msgid "The repository no longer maintains a generated `05_applications.yml` arti
 msgstr ""
 
 msgid "The repository prefers many focused parts over one giant playbook."
-msgstr ""
-
-msgid "The repository snapshot evaluated for this requirement contains 172 roles with a literal `application_id` and 18 role-local `mcp:` blocks. The audit below classifies every one of those 172 roles exactly once. The snapshot is planning evidence, not a second runtime registry: implemented surfaces remain authoritative in each role's `meta/services.yml`, while a generated lint test MUST prove that every current `application_id` still has a disposition."
 msgstr ""
 
 msgid "The repository working tree stays clean (no `vendor/` checked in) and the host MUST NOT need a PHP or Composer installation."
@@ -43629,12 +43673,6 @@ msgid "The reverse closure is implemented in [affected resolver](../../../../cli
 msgstr ""
 
 msgid "The right choice should be easiest."
-msgstr ""
-
-msgid "The role MUST NOT solve internal connectivity by globally disabling SSRF protection for all flow authors. If the exact pinned Flowise release cannot keep `HTTP_SECURITY_CHECK=true` for internal service DNS, the MCP workspace MUST be admin-only, egress MUST be restricted to a fixed-target MCP proxy, redirects MUST be disabled, DNS resolution MUST be revalidated at connection time, and network policy MUST prevent access to loopback, link-local metadata, unrelated application networks, and the container control plane."
-msgstr ""
-
-msgid "The role MUST build its own Flowise image from the pinned npm package. The published `flowiseai/flowise` tags `3.1.3`, `3.1.4` and `latest` all ship the `flowise` package at version 3.1.2, which serves none of the `custom-mcp-servers`, `mcp-server` or `mcp-endpoint` routes; upstream's Dockerfile runs an unpinned `npm install -g flowise` whose layer the release CI reuses across builds. The deployed version therefore MUST come from `npm install -g flowise@<version>`, and the served route set MUST be verified rather than inferred from the tag."
 msgstr ""
 
 msgid "The role MUST deploy cleanly under all four variants on a fresh box. V1 (ansible all-on) MUST additionally pass the biber + administrator Playwright personas plus the new `test-element-call` + `test-bridge-roster` specs."
@@ -43934,6 +43972,12 @@ msgstr ""
 msgid "The role still ships and still passes its tests, but operators MUST migrate away from it."
 msgstr ""
 
+msgid "The role takes none of its own. ``user-workstation`` reads ``WORKSTATION_USER`` and the ``users`` entry it names."
+msgstr ""
+
+msgid "The role takes none of its own. `user-workstation` reads `WORKSTATION_USER` and the `users` entry it names."
+msgstr ""
+
 msgid "The role then stages the Playwright project to a local staging directory, renders a `.env` file from `templates/playwright.env.j2`, optionally waits until the application is reachable, and executes Playwright inside a Docker image derived from the central Playwright package version."
 msgstr ""
 
@@ -44021,6 +44065,9 @@ msgid "The row then draws from that intersection instead of the run's whole pool
 msgstr ""
 
 msgid "The rows the source run proved, as ``role#variant``, axes dropped."
+msgstr ""
+
+msgid "The rules were written first and the code audited against them afterwards. Each of the following was live at the time it was found, not a hypothetical the design ruled out:"
 msgstr ""
 
 msgid "The run is marked failed. GitHub notifies repository admins. No PR is created with a wrong identity."
@@ -44111,10 +44158,10 @@ msgstr ""
 msgid "The scheduled update workflow MUST be able to reuse the same discovery logic in update mode. Version bumps MAY update `version`; new addon entries MAY be added with `enabled: false`, `required: false`, and complete `update` metadata."
 msgstr ""
 
-msgid "The schema MUST reject a generic URL, runtime OpenAPI document, free-form GraphQL query, raw SQL tool, unrestricted bucket, arbitrary filesystem root, shell command, Docker socket, or implicit exposure of every operation added by an upstream upgrade."
+msgid "The schema lives at ``meta/networks.yml.overlay`` per provider role, discovered into the service_registry by ``discover_role_services``. Keys:"
 msgstr ""
 
-msgid "The schema lives at ``meta/networks.yml.overlay`` per provider role, discovered into the service_registry by ``discover_role_services``. Keys:"
+msgid "The schema rejects a generic URL, a runtime OpenAPI document, free-form GraphQL, a raw SQL tool, an unrestricted bucket, an arbitrary filesystem root, a shell command, a Docker socket, and implicit exposure of every operation an upstream upgrade adds."
 msgstr ""
 
 msgid "The scope MUST be a **default** client scope on every OIDC client that needs group-based RBAC. Making it optional reintroduces a userinfo regression: when optional with `include.in.token.scope=false`, Keycloak drops the group-membership mapper from userinfo even when the scope is explicitly requested, so consumers receive no groups and fall back to `subscriber`."
@@ -44165,7 +44212,7 @@ msgstr ""
 msgid "The script-level references for `scripts/tests/deploy/act/` live in [scripts/tests/deploy/act/README.md](../../../scripts/tests/deploy/act/README.md). For broader test and validation guidance, see [Testing and Validation](../actions/testing.md)."
 msgstr ""
 
-msgid "The section titles below are the classification vocabulary itself, and each role that ships a `meta/mcp.yml` is filed under the value that file declares. [test_mcp_audit_classification.py](../../tests/lint/repository/documentation/test_mcp_audit_classification.py) holds the two apart from drifting: it was written first and immediately named twenty-four roles whose audit entry contradicted their own metadata, nine of them shipping an adapter while the audit still called them untried candidates."
+msgid "The section titles are the classification vocabulary itself, and each role that ships a `meta/mcp.yml` is filed under the value that file declares. The authoritative disposition of a deployed surface is that file; this list is the record of the review, including the roles that deliberately carry no surface."
 msgstr ""
 
 msgid "The security policies enforced on this repository are documented here:"
@@ -44318,9 +44365,6 @@ msgstr ""
 msgid "The shared schema, loader, lint, and the first migrated role MAY land together."
 msgstr ""
 
-msgid "The shared service schema MUST also add explicit adapter and consumer fields. There are no implicit security defaults: every field shown below is required for an enabled adapter surface, and a missing value MUST fail lint or deployment."
-msgstr ""
-
 msgid "The shell prefix, or an empty string when email is disabled."
 msgstr ""
 
@@ -44415,6 +44459,9 @@ msgstr ""
 msgid "The stage a role is invoked in (deepest matching category wins)."
 msgstr ""
 
+msgid "The stage runs before the end-to-end tests that read the converged state, and not behind a task a red test aborts. Placed in the destructor stage it ran after the Playwright suite, and `any_errors_fatal` meant any failing role skipped reconciliation entirely, so the suite asserted a state nothing had produced."
+msgstr ""
+
 msgid "The staging dir exists and contains a non-empty `.env`."
 msgstr ""
 
@@ -44434,6 +44481,9 @@ msgid "The subtree mirrors the host-side `apps/` structure verb by verb and scop
 msgstr ""
 
 msgid "The subtree splits by user intent (the verb) and scope:"
+msgstr ""
+
+msgid "The suppression is dropped only where it introduces a quote of this module's making. Sphinx carries a source comment into the catalog as a user comment, so a ``nocheck`` standing anywhere else belongs to the message and removing it would let the URL probe loose on the ``msgid``."
 msgstr ""
 
 msgid "The swarm deploy chain across both flavors:"
@@ -44526,9 +44576,6 @@ msgstr ""
 msgid "The token store at ``/var/lib/infinito/secrets/tokens.yml`` survives compose+volumes purges. Matrix-deploy variant transitions wipe an app's persistent state but the stale token would otherwise be reused on the next round (for example matomo's API probe in ``sys-front-inj-matomo``, whose token-empty guard never fires while the prior round's token is still present). The purge orchestrator invokes this module to drop the matching ``users.<user>.tokens.<app_id>`` entries alongside the entity-level wipe."
 msgstr ""
 
-msgid "The token store is written on `STACK_HOST` while every `lookup('users').tokens` reader executes on the Ansible controller. In compose the two are one machine; in swarm they are not, so a provider that mints and persists its credential still resolves to an empty bearer for every client. The store therefore has to reach the controller as well."
-msgstr ""
-
 msgid "The top-level `compose.yml` is scoped to **local development and CI testing only**. It MUST NOT be used to deploy or run a live Infinito.Nexus stack. Production deployments MUST go through the Ansible roles and their own rendered compose files under `roles/<role>/templates/`."
 msgstr ""
 
@@ -44562,6 +44609,9 @@ msgstr ""
 msgid "The trusted build additionally receives the Docker Hub mirror credentials (passed only when the label is present); untrusted builds mirror anonymously."
 msgstr ""
 
+msgid "The two clients with version-specific behaviour"
+msgstr ""
+
 msgid "The two deploy-test workflows listed in the `Infrastructure tests` table of [workflows.md](../../tools/github/actions/workflows.md) (compose and swarm modes) run in parallel once DNS and mirroring have completed. Both cover all deployment types (`INFINITO_DISCOVER_ALL`, lifecycle-filtered to the `INFINITO_LIFECYCLES` envelope), not just the `web-*` server scope."
 msgstr ""
 
@@ -44593,9 +44643,6 @@ msgid "The upstream `oauth2-proxy` MUST set `X-Forwarded-User` (or `X-Forwarded-
 msgstr ""
 
 msgid "The upstream server is stdio-oriented and broadly mutating over a cache several applications share."
-msgstr ""
-
-msgid "The upstream server is stdio-oriented and broadly mutating. Keep `stdio_only_and_shared_cache` unless an isolated instance, prefix-scoped ACL principal, pinned bridge, and exact read-only tool list are supplied. Prefer using Redis as an internal agent-memory backend rather than a user-visible server."
 msgstr ""
 
 msgid "The user is a direct member of the expected group (not only a parent OU)."
@@ -44721,6 +44768,9 @@ msgstr ""
 msgid "There are known security concerns with Fetchmail as stated in the [German Wikipedia](https://de.wikipedia.org/wiki/Fetchmail). If you require Fetchmail functions in the future, consider creating a Docker container for [Getmail](https://en.wikipedia.org/wiki/Getmail) as it is considered more secure."
 msgstr ""
 
+msgid "There are no implicit security defaults: every field below is required for an enabled adapter surface, and a missing value fails lint or deployment."
+msgstr ""
+
 msgid "There is consequently no auth chain for the persona helpers to drive and no admin surface to assert against. The opt-out is permanent, not a rollout gap."
 msgstr ""
 
@@ -44737,6 +44787,12 @@ msgid "These are desktop GNOME Shell extensions with no in-app web surface to dr
 msgstr ""
 
 msgid "These are optional and fail soft: unset means the provider's route is never published, and the deployment falls back to whatever local backend the round deploys. The workflow reads each as `${{ secrets.X || vars.X }}`, so the same name works as a repository variable; see [configuration.md](configuration.md#provider-keys-variable-or-secret-) for why the secret is the better half of that pair."
+msgstr ""
+
+msgid "These are proposed repository contracts for the `adapter_candidate` roles, not claims that upstream already uses these names."
+msgstr ""
+
+msgid "These are reached through the owning document application's MCP boundary, such as Nextcloud or OpenCloud, rather than receiving a second independent service-account tool surface."
 msgstr ""
 
 msgid "These are used only for pulling source images from Docker Hub and are not required for GHCR authentication."
@@ -44778,7 +44834,7 @@ msgstr ""
 msgid "These principles govern how teams collaborate, plan, and deliver work. For code design principles, see [principles.md](../design/principles.md)."
 msgstr ""
 
-msgid "These roles remain out of shared MCP discovery. A future exception requires a new requirement with a fixed operation list, dedicated identity, isolation boundary, human approval for mutations, and audit trail."
+msgid "These roles stay out of shared MCP discovery. A future exception requires a new record with a fixed operation list, dedicated identity, isolation boundary, human approval for mutations, and audit trail."
 msgstr ""
 
 msgid "These rules are enforced via branch protection. See [branch.md](artefact/git/branch.md) for the full policy."
@@ -44867,6 +44923,9 @@ msgid "This Ansible role automates the validation of `Content Security Policy (C
 msgstr ""
 
 msgid "This Ansible role automatically restarts Docker Compose configurations with exited or unhealthy containers on Arch Linux systems. It ensures the stability of containerized workloads by recovering from common error conditions like port binding issues."
+msgstr ""
+
+msgid "This Ansible role carries the premise every desktop role shares: the login account whose home the desktop files live in, and whose name they are owned by."
 msgstr ""
 
 msgid "This Ansible role configures NGINX to perform 301 redirects from one domain to another. It handles SSL certificate retrieval for the source domains and sets up the NGINX configuration to redirect to the specified target domains."
@@ -45981,7 +46040,7 @@ msgstr ""
 msgid "This requirement covers two related but separable deliverables:"
 msgstr ""
 
-msgid "This requirement extends [025 - MCP Role Integration](025-mcp-role-integration.md). Requirement 025 defines the initial MCP metadata and the first Open WebUI integration; this requirement defines the exhaustive role audit, proxy and workflow-adapter contract, client reconciliation, and the conditions under which the remaining roles may be integrated."
+msgid "This requirement extends [025 - MCP Role Integration](025-mcp-role-integration.md). Requirement 025 defines the initial MCP metadata and the first Open WebUI integration; this requirement drives the exhaustive role audit, the proxy and workflow-adapter contract, client reconciliation, and the conditions under which the remaining roles may be integrated."
 msgstr ""
 
 msgid "This requirement moves the core roles that render translated text onto the catalogs of [037 - Gettext Catalogs with LibreTranslate Autotranslation](037-gettext-catalogs-libretranslate.md) and opens the API of [038 - web-svc-api](README.md#archive) to browser consumers. The consumer repositories change afterwards and are not part of this requirement."
@@ -46583,6 +46642,9 @@ msgstr ""
 msgid "This role gives every other role one place to put packet filter rules. A role that needs them writes `templates/nftables.conf.j2` declaring its own nftables table and includes this role; the fragment is rendered to `/etc/nftables.d/<role>.conf`, checked, loaded, and read back, so a deploy fails rather than quietly leaving a gap. Deployed on its own, the role installs nftables, the ruleset that loads every fragment, and the `nftables.service` that replays them at boot."
 msgstr ""
 
+msgid "This role guarantees the workstation account before any desktop role writes for it."
+msgstr ""
+
 msgid "This role health-check for Btrfs filesystems, alerts on any device error counters."
 msgstr ""
 
@@ -47059,6 +47121,9 @@ msgstr ""
 msgid "Three lookup plugins on top of the resolver: **sso** (single-app predicate access), **sso_proxy_consumers** (enumerates oauth2-flavored consumers), **sso_oidc_plugin** (renamed from **oidc_flavor**, Nextcloud selector)."
 msgstr ""
 
+msgid "Three measurements decided the shape rather than any preference:"
+msgstr ""
+
 msgid "Three new web-app roles, each with SSO/LDAP wiring and per-scenario Playwright coverage:"
 msgstr ""
 
@@ -47088,6 +47153,9 @@ msgid "Tie-break key for a ready role: coarse bucket first, then name."
 msgstr ""
 
 msgid "Tier Progression: Token Budget Guidance"
+msgstr ""
+
+msgid "Tier and exact self-managed endpoint availability are hard gates. Project/group-scoped token, mutation tools excluded until separately enabled."
 msgstr ""
 
 msgid "Tiering role placing Docker volumes on SSD or HDD by workload type, with symlinks keeping paths consistent"
@@ -47378,9 +47446,6 @@ msgstr ""
 msgid "Tokens are stored in a single YAML file:"
 msgstr ""
 
-msgid "Tool and Adapter Safety Contract"
-msgstr ""
-
 msgid "Tool categories"
 msgstr ""
 
@@ -47393,7 +47458,7 @@ msgstr ""
 msgid "Tool categories exposed by the external service:"
 msgstr ""
 
-msgid "Tool discovery MUST be allowlisted by exact name and JSON schema hash. An unexpected added, removed, or changed upstream tool MUST fail closed until the checked-in contract is reviewed. The policy gateway MUST enforce the same allowlist on `tools/call`; filtering only `tools/list` is insufficient."
+msgid "Tool discovery is allowlisted by exact name and JSON schema hash, and an added, removed or changed upstream tool fails closed until the checked-in contract is reviewed. The policy gateway enforces the same allowlist on `tools/call`; filtering only `tools/list` is insufficient. Resources, prompts, sampling, elicitation, roots and any capability a future MCP release adds are classified independently, because the absence of a dangerous tool list does not authorize an unreviewed non-tool capability."
 msgstr ""
 
 msgid "Tool meaning"
@@ -47771,6 +47836,9 @@ msgstr ""
 msgid "Two distinct meanings of \"bridge\" MUST NOT be conflated:"
 msgstr ""
 
+msgid "Two further properties of the environment shaped the reconciliation design. Open WebUI stores tool servers in its own configuration and answers every later read with them, so a client that adopts that answer as the desired state leaves a newly declared provider registered nowhere and a rotated bearer registered stale, in both cases without a failure. And [`roles/web-app-openwebui/templates/env.j2`](../../../roles/web-app-openwebui/templates/env.j2) sets `ENABLE_PERSISTENT_CONFIG=false`, so API changes to environment-backed connection state are runtime state that has to be reconciled after every container restart."
+msgstr ""
+
 msgid "Two helpers, both pure: `_resolve_variant_payloads` picks the variant payload for each app in a round's include set, and `_bake_overrides` merges those payloads under `applications:` inside the `--vars` JSON the inventory provision step consumes. Caller-supplied `extra_vars` always win over the variant bake — that's the documented \"user vars always win\" rule."
 msgstr ""
 
@@ -48129,6 +48197,9 @@ msgstr ""
 msgid "Upgrade candidates MUST share the same depth (1 to 5 components) AND the same flavor as the current tag, so that ``5.4.5-php8.3-apache`` never silently bumps to ``5.4.6-php8.4-apache`` (different runtime) or to ``5.4.6`` (different depth). Everything that is not the number folds into the flavor: the leading channel, the trailing suffix and the patch letter. That is what keeps ``main-v1.77.7-stable`` away from ``main-v1.77.7-nightly``, ``stable-9646`` away from a bare ``9646``, and ``2.4.0p32`` ordering against ``2.4.0p33`` rather than against the four-component ``2.4.0.32``. Only the patch number joins the ordering key, so ``p9`` sorts below ``p10``."
 msgstr ""
 
+msgid "Upgrade only to an explicit tested release containing `/api/_mcp`, provision a dedicated minimal-ACL integration, and allowlist search and read tools while write, delete, cache, state-machine and configuration tools stay disabled."
+msgstr ""
+
 msgid "Upgraded *matomo-bootstrap* to v1.1.12 and aligned with the latest Matomo version"
 msgstr ""
 
@@ -48145,9 +48216,6 @@ msgid "Upstream MDAD is a fully-fledged Ansible playbook (`setup.yml` plus a top
 msgstr ""
 
 msgid "Upstream OpenTalk supports two `[user_search].backend` values: `keycloak_webapi` and `disabled`. There is no native LDAP backend, so binding OpenTalk directly to OpenLDAP would require a custom backend that is not currently maintained."
-msgstr ""
-
-msgid "Upstream Paths Missing from Current Metadata"
 msgstr ""
 
 msgid "Upstream ``host:port``: compose ``127.0.0.1:<local>``; swarm ``<entity>:<internal>`` (shared-overlay alias) for the app frontend, or ``<entity>_<service_key>:<internal>`` for named sidecars (sso-proxy). A ``host_gateway`` app runs node-local under swarm and publishes its local port to the host, so the overlay-attached proxy reaches it at ``host.docker.internal:<local>`` via the host gateway (the caller sets this off the real DEPLOYMENT_MODE, since such apps force a compose-style render). Missing swarm internal port hard-fails."
@@ -48220,6 +48288,9 @@ msgid "Upstream shape this follows: [jev-router](https://github.com/prismhq/jev-
 msgstr ""
 
 msgid "Upstream site: <https://jellyfin.org>"
+msgstr ""
+
+msgid "Upstream sources"
 msgstr ""
 
 msgid "Upstream story: [OpenProject #628](https://project.infinito.nexus/work_packages/628) — *Integrate OpenBao into Infinito.Nexus*. Implementing PR: [infinito-nexus/core#611](https://github.com/infinito-nexus/core/pull/611)."
@@ -49128,9 +49199,6 @@ msgstr ""
 msgid "Verify OIDC discovery 🩺"
 msgstr ""
 
-msgid "Verify `AUTHORIZED` status and the exact expected tool names and schema hash."
-msgstr ""
-
 msgid "Verify every OpenBao path, config key and CLI flag against the pinned `2.6.2` image before claiming a criterion done — the seal, AppRole and health-parameter facts in this document were read from upstream `main`, and `2.6.2` is what actually ships."
 msgstr ""
 
@@ -49150,12 +49218,6 @@ msgid "Verify that every role declaring `required_by` in its `meta/services.yml`
 msgstr ""
 
 msgid "Verify the caps applied with `docker compose -f compose.yml config | grep -E 'mem_limit|memswap_limit|cpus'` before starting the deploy."
-msgstr ""
-
-msgid "Verify the exact native endpoint, transport, scopes, entity exposure, and service-call mutations. A long-lived administrator token is not acceptable."
-msgstr ""
-
-msgid "Verify the exact project-owned package, image pin, endpoint auth, dedicated service account, tool allowlist, and read-only behavior."
 msgstr ""
 
 msgid "Verify the workflow has `packages: write` in its `permissions` block."
@@ -49732,6 +49794,9 @@ msgstr ""
 msgid "What a translator must never be handed, on either end of the pipeline."
 msgstr ""
 
+msgid "What an enabled surface has to declare"
+msgstr ""
+
 msgid "What capability was introduced?"
 msgstr ""
 
@@ -49748,6 +49813,9 @@ msgid "What does separate them is the role's own account of what it deploys: the
 msgstr ""
 
 msgid "What each axis value costs in runner time, measured off finished runs."
+msgstr ""
+
+msgid "What enforcing it found"
 msgstr ""
 
 msgid "What identifies one deploy job's artifacts."
@@ -49777,6 +49845,9 @@ msgstr ""
 msgid "What it does"
 msgstr ""
 
+msgid "What it does not yet hold"
+msgstr ""
+
 msgid "What it protects"
 msgstr ""
 
@@ -49787,6 +49858,9 @@ msgid "What it provides for this work"
 msgstr ""
 
 msgid "What lives in the inventory file vs. host_vars 📋"
+msgstr ""
+
+msgid "What lives where:"
 msgstr ""
 
 msgid "What makes a token bad, in the order this checks it:"
@@ -49814,6 +49888,15 @@ msgid "What runs in parallel, and what must not"
 msgstr ""
 
 msgid "What still blocks it is the transport. `server.py` speaks streamable HTTP upstream: `post_upstream` POSTs JSON-RPC to one URL and reads the reply, optionally SSE-framed. Baserow serves the older HTTP+SSE transport, where the client opens the stream and posts to the endpoint that stream announces — the shape `roles/test-e2e-cli/files/shared/mcp/contract.py` implements for `transport: sse` (\"the stream is the response channel and the endpoint it announces is the request channel\"). Fronting Baserow therefore needs that client transport in the adapter, or evidence that Baserow 2.3.3 also accepts a plain streamable-HTTP POST, which only a running instance can settle. A second consequence is waiting behind it: `web-app-n8n` speaks only `sse`, so it drops out of `allowed_consumers` the moment the surface becomes `streamable_http`."
+msgstr ""
+
+msgid "What still has to be built, and in which order"
+msgstr ""
+
+msgid "What the decision cost"
+msgstr ""
+
+msgid "What the decision cost and what enforcing it uncovered"
 msgstr ""
 
 msgid "What the deploy axes may draw from, and how they draw."
@@ -50250,9 +50333,6 @@ msgstr ""
 msgid "Where a retrigger should pick the regular line up again."
 msgstr ""
 
-msgid "Where an upstream supports real per-user OAuth, the implementation MAY set `auth_subject: user` only after the exact client and server prove authorization-code or token-exchange behavior, token refresh, audience/resource binding, logout/revocation, and expiry. Passing a static bearer issued to the deployment is not on-behalf-of and MUST remain `service_account`. Client-side group gating controls access to that service account; it does not recreate the caller's application permissions."
-msgstr ""
-
 msgid "Where each guarantee is enforced"
 msgstr ""
 
@@ -50308,6 +50388,9 @@ msgid "Whether ``version`` pins by content rather than by name."
 msgstr ""
 
 msgid "Whether a capable row takes the onion this sweep. Halved on ``sweep // 2`` so it does not flip in lockstep with the mode rotation."
+msgstr ""
+
+msgid "Whether a criterion is met, and by which artifact"
 msgstr ""
 
 msgid "Whether a matrix row may be deployed behind the node onion."
@@ -50368,6 +50451,9 @@ msgid "Which deploy row replays the role's README instructions, and in what mode
 msgstr ""
 
 msgid "Which deployed role's published guide a replay should read."
+msgstr ""
+
+msgid "Which disposition a given role carries today"
 msgstr ""
 
 msgid "Which host(s) are targeted"
@@ -50464,6 +50550,9 @@ msgid "Why is this guidance needed or why was the previous guidance insufficient
 msgstr ""
 
 msgid "Why it lost"
+msgstr ""
+
+msgid "Why one adapter instance per provider, and what forced that shape"
 msgstr ""
 
 msgid "Why renaming folders directly does not work 🔴"
@@ -52073,7 +52162,7 @@ msgstr ""
 msgid "[ ] Creating a calendar event on the atmo instance results, within a bounded delay, in a matching event published by [`web-app-mobilizon`](../../roles/web-app-mobilizon/) at `event.{{ DOMAIN_PRIMARY }}` and thus federated over ActivityPub."
 msgstr ""
 
-msgid "[ ] Creating an agent optionally provisions a dedicated platform user account via the existing `users`/LDAP/Keycloak mechanism; the agent authenticates as that account (OIDC dashboard login, MCP `auth_subject: user`), and deploying against an existing account instead also works. **Partly done:** the account half is implemented and linted (see [Agent identity](#agent-identity)); the MCP half is **blocked** on no deployed provider offering per-user OAuth, which is the bar [035](035-mcp-proxy-expansion.md) sets before `auth_subject: user` may be declared."
+msgid "[ ] Creating an agent optionally provisions a dedicated platform user account via the existing `users`/LDAP/Keycloak mechanism; the agent authenticates as that account (OIDC dashboard login, MCP `auth_subject: user`), and deploying against an existing account instead also works. **Partly done:** the account half is implemented and linted (see [Agent identity](#agent-identity)); the MCP half is **blocked** on no deployed provider offering per-user OAuth, which is the bar [ADR 0003](../architecture/decisions/0003-mcp-surface-per-provider.md) sets before `auth_subject: user` may be declared."
 msgstr ""
 
 msgid "[ ] Credentials and secret URL components are absent from logs, generated non-secret configuration, API responses, task output, Playwright traces, and exception text. **Three of the six surfaces are held statically:** logs and task output by [test_mcp_secrets_are_masked.py](../../tests/lint/ansible/services/test_mcp_secrets_are_masked.py), which requires `no_log` or `mask_values` on any MCP task that both handles a secret and prints; Playwright traces by [test_mcp_secret_not_in_playwright.py](../../tests/lint/ansible/services/test_mcp_secret_not_in_playwright.py), which forbids a `playwright.env.j2` from rendering `mcp_credential`, a `credentials.mcp_*` secret or a `key_credential` URL component. Generated non-secret configuration needs a secret/non-secret classification of rendered files that does not exist yet; API responses and exception text are runtime observations for the deploy phase."
@@ -52972,6 +53061,9 @@ msgstr ""
 msgid "[ACME Protocol (Wikipedia)](https://en.wikipedia.org/wiki/Automated_Certificate_Management_Environment)"
 msgstr ""
 
+msgid "[ADR 0003](../architecture/decisions/0003-mcp-surface-per-provider.md), Context and Decision"
+msgstr ""
+
 msgid "[AGENTS.md](../../../../../AGENTS.md) forbids `for` / `while` / `until` loops in Bash invocations, and `Bash(for *)` / `Bash(while *)` / `Bash(until *)` are in `deny` to enforce the rule. Every task has a flat-form equivalent: a single `grep` with multiple file arguments, `xargs`, a recursive glob, or a dedicated tool."
 msgstr ""
 
@@ -53287,6 +53379,15 @@ msgstr ""
 msgid "[Barracuda](https://www.barracudacentral.org/lookups)"
 msgstr ""
 
+msgid "[Base](roles/dsk-base/)"
+msgstr ""
+
+msgid "[Base](roles/dsk-base/), [Claude Code](roles/dsk-gnt-claude/), [Codex](roles/dsk-gnt-codex/)"
+msgstr ""
+
+msgid "[Base](roles/dsk-base/), [LiteLLM Gateway](roles/svc-ai-litellm/)"
+msgstr ""
+
 msgid "[Baserow Homepage](https://baserow.io/)"
 msgstr ""
 
@@ -53380,9 +53481,6 @@ msgid "[Checkmk](https://checkmk.com/) is an open-source IT/infrastructure & app
 msgstr ""
 
 msgid "[Claude Code](https://code.claude.com/) is Anthropic's terminal coding agent. This role installs it on a workstation and points it at the platform's own model gateway instead of the vendor API."
-msgstr ""
-
-msgid "[Claude Code](roles/dsk-gnt-claude/), [Codex](roles/dsk-gnt-codex/)"
 msgstr ""
 
 msgid "[Cloud Native GitLab (CNG) images](https://gitlab.com/gitlab-org/build/CNG)"
@@ -54675,6 +54773,9 @@ msgstr ""
 msgid "[Workflow Loop](../agents/action/iteration/workflow.md)"
 msgstr ""
 
+msgid "[Workstation User](roles/user-workstation/)"
+msgstr ""
+
 msgid "[Workstation](PULL_REQUEST_TEMPLATE/workstation.md) - `dsk-*` roles"
 msgstr ""
 
@@ -54837,13 +54938,13 @@ msgstr ""
 msgid "[`playwright.spec.js`](../../artefact/files/role/playwright.specs.js.md): what the role-local spec MUST contain (entry point, scenarios, selectors, final state)"
 msgstr ""
 
-msgid "[`plugins/filter/mcp/authorization.py`](../../plugins/filter/mcp/authorization.py) renders `oidc` as a stored bearer value. It does not acquire, refresh, exchange, or revoke an end-user OAuth token. A rendered deployment bearer MUST therefore be classified as `service_account`, never as user delegation or on-behalf-of."
+msgid "[`plugins/filter/mcp/authorization.py`](../../../plugins/filter/mcp/authorization.py) rendered `oidc` as a stored bearer. It acquired, refreshed, exchanged and revoked nothing, so a rendered deployment bearer was user delegation in name only."
 msgstr ""
 
-msgid "[`plugins/lookup/mcp_servers.py`](../../plugins/lookup/mcp_servers.py) currently reads every provider token from `users.administrator.tokens` and copies that deployment credential to every selected client. `auth_subject` is returned as metadata but does not select or verify the real credential owner."
+msgid "[`plugins/lookup/mcp_servers.py`](../../../plugins/lookup/mcp_servers.py) read every provider token from `users.administrator.tokens` and copied that deployment credential to every selected client. `auth_subject` was returned as metadata and selected nothing."
 msgstr ""
 
-msgid "[`plugins/lookup/roles_with_service.py`](../../plugins/lookup/roles_with_service.py) discovers all shared providers without a consumer allowlist. Several current role flags also name concrete peer roles in `group_names`, which cannot scale to Flowise, n8n, LiteLLM, and future clients."
+msgid "[`plugins/lookup/roles_with_service.py`](../../../plugins/lookup/roles_with_service.py) discovered all shared providers with no consumer allowlist, and several role flags named concrete peer roles in `group_names`, which does not scale past the first few clients."
 msgstr ""
 
 msgid "[`plugins/lookup/tls.py`](../../plugins/lookup/tls.py) — TLS resolution"
@@ -54855,25 +54956,10 @@ msgstr ""
 msgid "[`remove.sh`](remove.sh) for DNS teardown"
 msgstr ""
 
-msgid "[`roles/svc-ai-litellm/meta/services.yml`](../../roles/svc-ai-litellm/meta/services.yml) pins `main-v1.77.3.dynamic_rates`. Its current role contract is an inference gateway. It MUST remain only an inference gateway until source inspection and an end-to-end test of a new explicit pin prove the required MCP gateway behavior."
-msgstr ""
-
 msgid "[`roles/svc-ai-ollama/`](../../roles/svc-ai-ollama/) — archetype"
 msgstr ""
 
 msgid "[`roles/svc-runner/README.md`](../../roles/svc-runner/README.md) — the runner role in full"
-msgstr ""
-
-msgid "[`roles/test-e2e-cli/files/shared/mcp/contract.sh`](../../roles/test-e2e-cli/files/shared/mcp/contract.sh) proves the endpoint answers its declared contract, not that any particular client can route to it: it runs in a throwaway container joined to the *provider's* own network, because an `expose:`-only endpoint resolves nowhere else. Per-client routing is therefore still unproven by any test. Measured by hand on compose, Open WebUI resolves `baserow` to `192.168.206.4` and `homeassistant` to `192.168.79.2`, both distinct from the wildcard address, so the topology carries those two pairs; Swarm is unmeasured. [`isolation.sh`](../../roles/test-e2e-cli/files/shared/mcp/isolation.sh) does cover the adapter half, counting networks inside the sidecar for every `implementation: adapter` provider."
-msgstr ""
-
-msgid "[`roles/web-app-flowise/vars/main.yml`](../../roles/web-app-flowise/vars/main.yml) currently computes discovery data but no task registers it. [`roles/web-app-flowise/templates/env.j2`](../../roles/web-app-flowise/templates/env.j2) disables `HTTP_SECURITY_CHECK` globally when MCP servers are present, and [`roles/web-app-flowise/files/playwright/test-mcp.js`](../../roles/web-app-flowise/files/playwright/test-mcp.js) proves only that an anonymous chatflow call is rejected."
-msgstr ""
-
-msgid "[`roles/web-app-openwebui/tasks/utils/mcp.yml`](../../roles/web-app-openwebui/tasks/utils/mcp.yml) and [`roles/web-app-openwebui/files/python/provision_mcp_grants.py`](../../roles/web-app-openwebui/files/python/provision_mcp_grants.py) can resolve or create an Open WebUI group by its path-like name and then write the generated group identifier into `access_grants`. This is the correct deployment-controlled mechanism, but application-specific Keycloak membership, last-group revocation, and restart reconciliation remain mandatory gaps."
-msgstr ""
-
-msgid "[`roles/web-app-openwebui/templates/env.j2`](../../roles/web-app-openwebui/templates/env.j2) sets `ENABLE_PERSISTENT_CONFIG=false`. API changes to environment-backed connection state MUST be treated as runtime state that has to be reconciled after every container restart; a deploy-only one-shot is insufficient."
 msgstr ""
 
 msgid "[`svc-ai-litellm`](../svc-ai-litellm/) publishes one routing alias. When this service is deployed, the gateway's pre-call hook asks it which of the eligible models should answer, passing the prompt as the state and the surviving aliases as the options of a single `choice` question. `services.litellm.router.strategy` follows `services.s1.enabled`, so deploying this role is what switches the gateway from a weighted score to a System One decision."
@@ -55773,7 +55859,7 @@ msgstr ""
 msgid "[x] A role that runs no RDBMS of its own MUST NOT keep read-write state on an NFS-backed volume unless the payload is share-safe: pair `nfs: false` with a single replica or a manager pin, or externalise the state into a database."
 msgstr ""
 
-msgid "[x] A role whose upstream path exists but is unreachable here declares the precise blocker instead of being silently absent, and MUST NOT also declare a served surface. Lint enforces both. Each of the nine `blocked` roles now carries a row naming its reason token and the concrete obstacle, drawn from the per-role guidance the requirement already held; [test_mcp_blocked_reasons.py](../../tests/lint/repository/documentation/test_mcp_blocked_reasons.py) fails when a blocked role has no row, when its token is outside the documented vocabulary, or when it ships an enabled MCP surface anyway."
+msgid "[x] A role whose upstream path exists but is unreachable here declares the precise blocker instead of being silently absent, and MUST NOT also declare a served surface. Each `blocked` role carries a row naming its reason token and the concrete obstacle, drawn from the per-role guidance the requirement already held. A lint enforced the three halves of that — a blocked role without a row, a token outside the documented vocabulary, and a blocked role shipping an enabled surface — by parsing the audit; it was removed together with the other two document-parsing lints, so the rows are now held by review rather than by a test."
 msgstr ""
 
 msgid "[x] A scenario verifies asset upload."
@@ -56017,7 +56103,7 @@ msgstr ""
 msgid "[x] Lint fails when an addon's `bridges:` entry names a service key absent from the same role's `meta/services.yml`, and the error message names the role, addon id, and missing service key."
 msgstr ""
 
-msgid "[x] Lint rejects every generic URL/spec/query/SQL/filesystem/shell/socket/unrestricted-bucket surface described in this requirement."
+msgid "[x] Lint rejects every generic URL/spec/query/SQL/filesystem/shell/socket/unrestricted-bucket surface described in the ADR."
 msgstr ""
 
 msgid "[x] Lint verifies that every bridged service block carries `enabled` and `shared` flags."
@@ -56570,7 +56656,7 @@ msgstr ""
 msgid "[x] With the flag on, the play mounts `pki`, generates an internal root CA and one issuing role, and a service certificate can be issued from it. Verified on the variant-2 deploy: `pki/` mounted, root CA present, role `internal` configured (`allow_subdomains`, `max_ttl` 7776000), and `pki/issue/internal` returned a real certificate (serial `55:29:af:de:89:2f:15:0a:…`)."
 msgstr ""
 
-msgid "[x] WordPress, Discourse, Odoo, Hermes, OpenClaw, Flowise, and the 11 missing upstream-path roles are reclassified exactly as required above before their old status is considered complete."
+msgid "[x] WordPress, Discourse, Odoo, Hermes, OpenClaw, Flowise, and the 11 missing upstream-path roles are reclassified exactly as the ADR requires before their old status is considered complete."
 msgstr ""
 
 msgid "[x] [`docs/contributing/design/role/services/`](../contributing/design/role/services/) documents the `mcp` service block, its fields, defaults, and allowed values."
@@ -57552,6 +57638,9 @@ msgid "`_compute` MUST delegate to three other lookup plugins rather than re-rea
 msgstr ""
 
 msgid "`_shared.js` — env + login helpers (`penpotOidcLogin`, `penpotLdapLogin`, `penpotNativeLogin`, `penpotRegister`)."
+msgstr ""
+
+msgid "``\"block-above\"``: the construct's own line, or any comment line above it within the same blank-line-delimited block. A gettext entry stacks several comments and repeats a URL in both ``msgid`` and ``msgstr``, so a marker has to cover the whole entry and survive whichever writer appends its comment last."
 msgstr ""
 
 msgid "``\"line-above\"``: marker must be on the immediately preceding non-empty line. Blank lines between marker and construct break the association."
@@ -58743,12 +58832,6 @@ msgstr ""
 msgid "`allow`: pre-authorized. Additionally, `sandbox.autoAllowBashIfSandboxed: true` pre-authorizes any Bash command that runs sandboxed and matches no `deny`/`ask` rule. Agents without an equivalent OS-level sandbox MUST treat unmatched Bash as `ask`."
 msgstr ""
 
-msgid "`allowed_consumers` MUST contain explicit client `application_id` values. Discovery MUST require the provider to allow the consumer and the consumer to support the provider's transport and authentication scheme. Authorized but unrenderable entries MUST fail reconciliation with a machine-readable reason; they MUST NOT disappear silently."
-msgstr ""
-
-msgid "`allowed_consumers` creates no network edge. A client reaches a provider only when the provider declares a `kind: mcp_client` consumer in its `meta/networks.yml`, or when the client happens to declare that provider as a service for an unrelated reason. Four of twenty providers declare the opening (gitlab, homeassistant, moodle, nextcloud); the other sixteen admit consumers they cannot serve, four of them enabled (baserow, gitea, jenkins, mattermost). Measured: deploying Hermes fails at its own probe with `All connection attempts failed` against `http://prometheusmcp:8080/mcp`, because `hermes` joins `[gitlab, hermes, homeassistant, litellm, moodle]` while `prometheusmcp` joins `[prometheus]` alone, and the adapter sidecar's isolation check asserts exactly that single attachment. Open WebUI reaches Baserow only because it also declares `services.baserow`. Per-pair networks therefore have to replace `kind: mcp_client`, which opens a provider to every client rather than to the admitted one."
-msgstr ""
-
 msgid "`ansible.builtin.package` ships as a documentation-only stub; its logic lives in Ansible's action plugin. The action plugin here executes modules directly, so it must swap this marker for the host's `ansible_facts.pkg_mgr`."
 msgstr ""
 
@@ -58829,6 +58912,9 @@ msgid "`auth_subject: service_account`: [`tasks/utils/mcp/token.yml`](./tasks/ut
 msgstr ""
 
 msgid "`auth_subject: user` and `auth: oidc` claim that an MCP call executes with the requesting end user's permissions. A `delegation:` block records the audit that backs the claim; without it, [`test_mcp_schema.py`](../../../../../../tests/lint/ansible/services/test_mcp_schema.py) rejects the role."
+msgstr ""
+
+msgid "`auth_subject: user` may be set only after the exact client and server prove authorization-code or token-exchange behaviour, token refresh, audience binding, revocation and expiry. A static bearer issued to the deployment is not on-behalf-of and stays `service_account`. Client-side group gating controls access to that service account; it does not recreate the caller's permissions."
 msgstr ""
 
 msgid "`auth_subject: user` or `auth: oidc` requires a `delegation` block; see [delegation.md](mcp/delegation.md)."
@@ -59066,6 +59152,12 @@ msgid "`dev_nix_enable_shell_snippet`   Whether to install a profile snippet for
 msgstr ""
 
 msgid "`dev_nix_installer_version`   Nix version to install via the official installer."
+msgstr ""
+
+msgid "`direction: client` unless a pinned authenticated bridge proves server behaviour. Raw MCP bearers are never persisted in JSON."
+msgstr ""
+
+msgid "`direction: client` unless a pinned authenticated stdio-to-HTTP bridge is added; the server-side path is `server_stdio_only`."
 msgstr ""
 
 msgid "`direction: server | both` requires `auth`, `credential`, a complete `endpoint`, and at least one admitted client."
@@ -59657,7 +59749,7 @@ msgstr ""
 msgid "`n8n <https://n8n.io/>`__ is an open-source workflow automation platform. Connect services, transform data, and build integrations using a visual low-code editor or custom JavaScript/Python nodes."
 msgstr ""
 
-msgid "`n8n_workflow`: a checked-in workflow with a stable ownership marker, explicit input schema, explicit connected tools, and bearer-protected SSE trigger;"
+msgid "`n8n_workflow`: a checked-in workflow with a stable ownership marker, explicit input schema, explicit connected tools, and a bearer-protected trigger;"
 msgstr ""
 
 msgid "`name.sh` resolves the concrete repository name once for callers It prefers explicit env overrides (`INFINITO_IMAGE_REPOSITORY`, `REPO_PREFIX`) before GitHub or git metadata."
@@ -59804,7 +59896,7 @@ msgstr ""
 msgid "`priority` names the roles that lead. They sort to the head of the list and the split forces a chunk boundary at the priority/regular seam, so a chunk is either all priority or all regular — the seam chunk stays short rather than being topped up. That is what guarantees every priority row is deployed before the first regular one starts. Priority rows wear a trailing `⭐` in their job name and never move with the sweep offset."
 msgstr ""
 
-msgid "`prometheus_readonly`: query, query-range, labels, metadata, and targets with explicit lookback, sample, response, and timeout limits;"
+msgid "`prometheus_readonly`: query, query-range, labels, metadata and targets with explicit lookback, sample, response and timeout limits;"
 msgstr ""
 
 msgid "`provides:` is only used when the public service name differs from the entity name."
@@ -59882,7 +59974,7 @@ msgstr ""
 msgid "`resource_readonly` or `n8n_workflow`"
 msgstr ""
 
-msgid "`resource_readonly`: checked-in rules for exposing a bounded, non-secret published content set as MCP resources rather than pretending it is an application action API."
+msgid "`resource_readonly`: checked-in rules for exposing a bounded, non-secret published content set as MCP resources rather than pretending it is an action API."
 msgstr ""
 
 msgid "`role` MUST appear under `rbac.roles.<role>` or be the implicit `administrator` that the role-list contract auto-adds."
@@ -59963,7 +60055,7 @@ msgstr ""
 msgid "`runner_docker_base` defaults to `/mnt/docker`. Override via inventory `host_vars` for non-standard machines."
 msgstr ""
 
-msgid "`s3_prefix`: list, head, and get through a dedicated read-only policy restricted to named buckets and prefixes;"
+msgid "`s3_prefix`: list, head and get through a dedicated read-only policy restricted to named buckets and prefixes;"
 msgstr ""
 
 msgid "`sandbox.allowUnsandboxedCommands: false`: MUST NOT use per-call escape hatches (e.g. `dangerouslyDisableSandbox`)."
@@ -60092,6 +60184,9 @@ msgstr ""
 msgid "`start_period` therefore bounds it: once the window closes the cadence falls back to `interval`, so a service that becomes ready just after the window pays a full tick anyway. The window has to outlast a realistic boot, not merely a fast one, which is why it is measured in minutes rather than sized to `interval`. It costs nothing while the container works, only the time until a broken one is called unhealthy."
 msgstr ""
 
+msgid "`stdio_only`, not `hosted_only`. The audit of `discourse/discourse-mcp` at `v0.3.1` closed the sidecar path: ownership, licence, pinning and read-only default pass, but the HTTP transport serves one session per process. Nothing is enabled until upstream supports concurrent sessions."
+msgstr ""
+
 msgid "`streamable_http` (stateless); SSE is not served"
 msgstr ""
 
@@ -60113,7 +60208,7 @@ msgstr ""
 msgid "`svc-ai-litellm` pulls `svc-ai-ollama` and `svc-ai-lmstudio` with it, so a consumer that enables the gateway adds roughly 6 GB to its round. Variant 0 is the fallback every higher round lands on, so a heavy shared dependency pinned there appears in every round: with the gateway on variant 0 of `web-app-matrix`, `web-app-mattermost` and `web-app-zammad`, the `web-app-nextcloud` rounds that pin those partners exceed the 64 GB budget guarded by `tests/integration/roles/meta/variants/test_resource_budget.py`."
 msgstr ""
 
-msgid "`svc-ai-mcp-adapter` carries no MCP surface of its own. It is the adapter runtime a provider role instantiates, so its disposition is `enabler` and it MUST NOT appear in discovery as a provider or a consumer."
+msgid "`svc-ai-mcp-adapter` carries no MCP surface of its own. It is the adapter runtime a provider role instantiates, so its disposition is `enabler` and it never appears in discovery as a provider or a consumer."
 msgstr ""
 
 msgid "`svc-ai-mcp-adapter` validates the platform's OIDC access token, so an adapter-backed provider is the one surface that can declare `auth: oidc` with `auth_subject: user`. Only Open WebUI can consume it:"
@@ -60406,6 +60501,9 @@ msgstr ""
 msgid "`type` is one of `openapi_allowlist`, `graphql_allowlist`, `named_query`, `s3_prefix`, `prometheus_readonly`, `n8n_workflow`, `resource_readonly`. `graphql_allowlist`, `named_query`, `s3_prefix` and `resource_readonly` additionally require a non-empty `adapter.scope` naming the exact buckets, prefixes, collections or queries reachable. `openapi_allowlist` and `graphql_allowlist` require a checked-in `specification_path` under the role's own `files/`."
 msgstr ""
 
+msgid "`unreviewed_third_party`, not `hosted_only`. The review ran and selected no module; re-review if Odoo SA or the OCA publishes a server."
+msgstr ""
+
 msgid "`update/` reuses the already-initialized inventory."
 msgstr ""
 
@@ -60490,7 +60588,7 @@ msgstr ""
 msgid "`web-app-hermes` is deployed there with privileged host access (`/dev`, GPIO, sensors, cameras, host network). The trust boundary is the whole device (Decision #12), so there is no microVM around the agent here."
 msgstr ""
 
-msgid "`web-app-keycloak` MUST NOT expose its administration API as a general MCP tool server. It MAY provide OAuth authorization infrastructure for MCP servers by provisioning an explicit resource/audience, client policy, scope, and redirect contract per provider. Experimental token exchange MUST remain disabled for MCP until the exact Keycloak, client, and server versions pass user-delegation and revocation tests."
+msgid "`web-app-keycloak` does not expose its administration API as a tool server. It provides OAuth infrastructure for MCP servers by provisioning an explicit resource, client policy, scope and redirect contract per provider, with experimental token exchange disabled until the exact versions pass user-delegation and revocation tests."
 msgstr ""
 
 msgid "`web-app-keycloak` provides `oidc`"
@@ -60507,9 +60605,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "`web-app-matrix` is the one role that already ships an AI credential and points it at the vendor: `meta/secrets.yml` declares `chatgpt_bridge_openai_api_key` with the validation `^sk-[a-zA-Z0-9]{40,}$`. That pattern enforces OpenAI's own key format and therefore **rejects a LiteLLM virtual key by construction**, so the schema has to change before the bridge can reach the gateway at all."
-msgstr ""
-
-msgid "`web-app-n8n` MUST be added as `direction: both` for the exact pinned 1.100.1 behavior: an SSE client and a Streamable HTTP server (`transport: streamable_http`, MCP Server Trigger typeVersion 2). The deployment MUST use the public credential and workflow APIs through a least-scope API key persisted by the normal token store."
 msgstr ""
 
 msgid "`web-app-opencloud` is the trigger role for this requirement: its `services.yml` was migrated to the dynamic-flag form for `ldap.enabled`, both variants pin the LDAP branch on, but [files/playwright/playwright.spec.js](../../roles/web-app-opencloud/files/playwright/playwright.spec.js) has only `test.skip(!oidcEnabled, …)` gates. Closing the gap consistently across the role tree is what this requirement tracks."
@@ -60531,9 +60626,6 @@ msgid "`web-svc-cdn` provides the primary service key `cdn`"
 msgstr ""
 
 msgid "`web-svc-cdn`'s only truthy service roots are `matomo` and `prometheus` (both conditional). Everything else hangs beneath them."
-msgstr ""
-
-msgid "`web-svc-collabora` and `web-svc-onlyoffice` MUST be reached through the owning document application's MCP boundary, such as Nextcloud or OpenCloud, rather than receiving a second independent service-account tool surface."
 msgstr ""
 
 msgid "`weighted` is decision 9's score. It ranks on standing preferences and, once the filter has run, ignores the prompt entirely: the same candidate set returns the same winner whatever was asked. The name is the mechanism, and it names its own configuration: `router_strategy: weighted` is the strategy that reads `router_weights`, which `system_one` ignores."
@@ -60589,6 +60681,9 @@ msgstr ""
 msgid "a bundle definition"
 msgstr ""
 
+msgid "a catalog entry."
+msgstr ""
+
 msgid "a catalog message id, singular or a plural tuple."
 msgstr ""
 
@@ -60622,6 +60717,9 @@ msgstr ""
 msgid "a docker duration such as ``20s`` or ``15m``, or a bare count."
 msgstr ""
 
+msgid "a documented blocker."
+msgstr ""
+
 msgid "a first-level key of a role's services map."
 msgstr ""
 
@@ -60649,6 +60747,12 @@ msgstr ""
 msgid "a path in the caller's own mount namespace that sits on the same filesystem as the daemon's storage. Consulted only when the data root the daemon reports does not resolve here."
 msgstr ""
 
+msgid "a pinned, isolated upstream sidecar;"
+msgstr ""
+
+msgid "a pinned, source-audited upstream plugin;"
+msgstr ""
+
 msgid "a preference"
 msgstr ""
 
@@ -60659,6 +60763,9 @@ msgid "a regular expression the value must match, or None."
 msgstr ""
 
 msgid "a remote ``[user@]host[:/path]`` (its backup tree is rsync-pulled first),"
+msgstr ""
+
+msgid "a repository-owned allowlist adapter or a repository-owned n8n workflow;"
 msgstr ""
 
 msgid "a role activation map"
@@ -60695,6 +60802,9 @@ msgid "a source message."
 msgstr ""
 
 msgid "a stored `openAiApi` credential carries `url` plus `apiKey`. The built-in assistant is out of reach: 1.95.3 exposes only `N8N_AI_ASSISTANT_BASE_URL`, which expects n8n's own assistant service rather than an OpenAI-compatible endpoint, and no `N8N_INSTANCE_AI_MODEL_URL` exists in that release"
+msgstr ""
+
+msgid "a supported native MCP endpoint with an enforceable tool policy;"
 msgstr ""
 
 msgid "a swapfile about the same size as RAM"
@@ -61110,9 +61220,6 @@ msgstr ""
 msgid "baudolo owns these values and writes them into every generation's manifest, so :func:`utils.recovery.manifest.layout_of` is what callers ask. These literals answer only for generations written before the manifest existed - those cannot describe themselves, and nothing else can tell a reader what they used."
 msgstr ""
 
-msgid "be disabled until the operator enables that workflow adapter;"
-msgstr ""
-
 msgid "bearer key the server accepts"
 msgstr ""
 
@@ -61136,9 +61243,6 @@ msgid "bind/volume default to rw (False); config/secret are conceptually read-on
 msgstr ""
 
 msgid "blocked (11)"
-msgstr ""
-
-msgid "blocked direct path"
 msgstr ""
 
 msgid "blocker"
@@ -61971,9 +62075,6 @@ msgstr ""
 msgid "cli/build/tree/__main__.py  -> parts=(\"build\",\"tree\"), module=\"cli.build.tree\""
 msgstr ""
 
-msgid "client candidate"
-msgstr ""
-
 msgid "cluster-wide ``compose`` or ``swarm``."
 msgstr ""
 
@@ -62069,9 +62170,6 @@ msgid "conflicting local tags (``would clobber existing tag``)"
 msgstr ""
 
 msgid "conflicting local tags (`would clobber existing tag`)"
-msgstr ""
-
-msgid "connect only explicitly selected workflow tools with checked-in input schemas;"
 msgstr ""
 
 msgid "consumer S3 access key granted access to the bucket."
@@ -62612,9 +62710,6 @@ msgstr ""
 msgid "expose only the configuration the dependent roles need"
 msgstr ""
 
-msgid "expose read-only operations first, with mutations in a separate opt-in variant and role."
-msgstr ""
-
 msgid "extension"
 msgstr ""
 
@@ -62742,9 +62837,6 @@ msgid "fully qualified collection name, namespace and name."
 msgstr ""
 
 msgid "ganesha: userspace, runs in the swarm DinD test node."
-msgstr ""
-
-msgid "gateway candidate"
 msgstr ""
 
 msgid "generated on the fly when `INFINITO_CACHE_PACKAGE_FRONTEND_IP` is set; emits `build.extra_hosts` for every service that has a `build:` key"
@@ -62921,9 +63013,6 @@ msgstr ""
 msgid "installing tools pinned to a `stable` tag"
 msgstr ""
 
-msgid "interactive blocker"
-msgstr ""
-
 msgid "internal (the sidecar is reachable on the container network only; the hub's own MCP route is not published to clients)"
 msgstr ""
 
@@ -62964,9 +63053,6 @@ msgid "inventory_args: passed to cli.administration.inventory.provision"
 msgstr ""
 
 msgid "invokable is defined by categories.yml via _get_invokable_paths()/_is_role_invokable()"
-msgstr ""
-
-msgid "isolated-sidecar candidate"
 msgstr ""
 
 msgid "it does not parse, or names a mode or onion state that does not exist;"
@@ -63296,9 +63382,6 @@ msgstr ""
 msgid "n/a"
 msgstr ""
 
-msgid "n8n 1.100.1 Integration"
-msgstr ""
-
 msgid "n8n client, trigger, and public provisioning API"
 msgstr ""
 
@@ -63309,9 +63392,6 @@ msgid "name:      the library/source name (used in the Dockerfile context)"
 msgstr ""
 
 msgid "named roots + orphaned closure"
-msgstr ""
-
-msgid "native client and server candidate"
 msgstr ""
 
 msgid "navigator"
@@ -63479,6 +63559,12 @@ msgstr ""
 msgid "one entry per file, each the file's lines."
 msgstr ""
 
+msgid "one entry per message: the translation, a ``Rejected``, or ``None`` where the server never answered."
+msgstr ""
+
+msgid "one entry per source: the translation, a ``Rejected`` carrying what came back and why it was turned down, or None when the server never answered."
+msgstr ""
+
 msgid "one name, or a list of prefixes plus exactly one probe."
 msgstr ""
 
@@ -63495,12 +63581,6 @@ msgid "one or more apps passed via `apps`"
 msgstr ""
 
 msgid "one or more apps passed via `apps` or as a positional argument"
-msgstr ""
-
-msgid "one translation per entry, ``None`` where it was discarded."
-msgstr ""
-
-msgid "one translation per source, None where it was discarded."
 msgstr ""
 
 msgid "onion state"
@@ -63745,9 +63825,6 @@ msgid "playwright.spec.js agent procedure"
 msgstr ""
 
 msgid "plugin"
-msgstr ""
-
-msgid "plugin candidate"
 msgstr ""
 
 msgid "plugin-provided, no core surface"
@@ -64350,9 +64427,6 @@ msgstr ""
 msgid "proxy roles"
 msgstr ""
 
-msgid "publish its MCP endpoint only after activation and an authenticated MCP handshake;"
-msgstr ""
-
 msgid "pull Playwright reports from the manager into `/tmp/playwright-artifacts/<distro>/<app>`"
 msgstr ""
 
@@ -64573,9 +64647,6 @@ msgid "reproduction steps or a proof of concept"
 msgstr ""
 
 msgid "requests the server turned down, retries included."
-msgstr ""
-
-msgid "require Bearer authentication rather than the upstream `none` option;"
 msgstr ""
 
 msgid "required"
@@ -64842,6 +64913,9 @@ msgstr ""
 msgid "same or above the service key or its `healthcheck:` line"
 msgstr ""
 
+msgid "same or above, `entry block` in `.po`"
+msgstr ""
+
 msgid "same or above; `argv:` inspect item"
 msgstr ""
 
@@ -64957,9 +65031,6 @@ msgid "shell in docker"
 msgstr ""
 
 msgid "sidecar"
-msgstr ""
-
-msgid "sidecar candidate"
 msgstr ""
 
 msgid "simpleicons"
@@ -65355,6 +65426,9 @@ msgid "the consumer role whose file declares the bond."
 msgstr ""
 
 msgid "the consuming role's own override, when it declares ``config_key``;"
+msgstr ""
+
+msgid "the criterion it broke."
 msgstr ""
 
 msgid "the daemon is unreachable or reports no data root. Guessing     a path here would silently measure the wrong filesystem and report a     roomy host, which is the failure this module exists to prevent."
@@ -65959,6 +66033,12 @@ msgstr ""
 msgid "the whole drill for one distro; collect + teardown run from its `EXIT` trap"
 msgstr ""
 
+msgid "this document"
+msgstr ""
+
+msgid "this document, Acceptance Criteria"
+msgstr ""
+
 msgid "this role itself"
 msgstr ""
 
@@ -66077,9 +66157,6 @@ msgid "upstream timeout every calling route carries."
 msgstr ""
 
 msgid "usable cores."
-msgstr ""
-
-msgid "use a deterministic Infinito name and tag;"
 msgstr ""
 
 msgid "user lookup (``core_user_get_users_by_field``)"
@@ -67024,9 +67101,6 @@ msgstr ""
 msgid "version 19 hardcodes a vendor model for AI server actions; a configurable endpoint needs third-party modules"
 msgstr ""
 
-msgid "version-gated native candidate"
-msgstr ""
-
 msgid "volume entry mapping; ``nfs: false`` opts it out of the rewrite."
 msgstr ""
 
@@ -67057,6 +67131,9 @@ msgstr ""
 msgid "what ``tune`` returned."
 msgstr ""
 
+msgid "what came back and why it was turned down, ``None`` when the server never answered at all."
+msgstr ""
+
 msgid "what came back for it."
 msgstr ""
 
@@ -67070,6 +67147,9 @@ msgid "what the pulling role demands."
 msgstr ""
 
 msgid "what the run permits, already narrowed by its own input."
+msgstr ""
+
+msgid "what the server produced."
 msgstr ""
 
 msgid "what to call the axis in the refusal."
