@@ -4,6 +4,14 @@
 
 As an operator, I want every AI agent of the platform (team agents, agents users start from a catalog of employee profiles, the robot and coding agents) to be defined in one `agents/` tree, run on one pluggable runtime contract, act under its own account, be steered by deterministic Python routines, take its work from one Kanban board and be bounded by one RBAC-based agent firewall, so that agents can maintain, design, tune and implement the platform autonomously while I control who can do what, where.
 
+## Summary
+
+- Goal: the User Story above.
+- Model: [Repository layout](#repository-layout), [Agent roles](#agent-roles), [Profile catalog](#profile-catalog), [Role files](#role-files).
+- Identity and limits: [Identity and credentials](#identity-and-credentials), [Account naming](#account-naming), [Model selection](#model-selection), [Agent firewall](#agent-firewall), [Safety controls](#safety-controls).
+- Runtime and work: [Runtime contract](#runtime-contract), [Lifecycle](#lifecycle), [Orchestrator](#orchestrator), [Routines](#routines), [Board](#board), [Remote board and detached instances](#remote-board-and-detached-instances).
+- Delivery: [Local setup and integration workflows](#local-setup-and-integration-workflows), [Verification](#verification), [Lint tests](#lint-tests), [Iteration plan](#iteration-plan), [Acceptance Criteria](#acceptance-criteria).
+
 ## Scope
 
 In scope:
@@ -40,6 +48,9 @@ Where an earlier requirement contradicts this one, this one wins. The earlier fi
 | [037](037-per-user-agents.md) | The agent holds no model credential; the broker relays with its own key | Every agent, user-started or team, has its own LiteLLM virtual key |
 | [037](037-per-user-agents.md) | The agent acts for the caller, owner only in the OpenAI `user` field | Every agent acts under its own account bound to an owner |
 | [037](037-per-user-agents.md) | The broker hard-enables Hermes and OpenClaw | The broker spawns any discovered runtime |
+| [037](037-per-user-agents.md) | Open WebUI offers the models `hermes` and `openclaw` | Open WebUI offers one model `agent/<role>` per catalog profile |
+| [037](037-per-user-agents.md) | The `agent-user` group grants a personal agent | The group `agent-<role>` grants starting that profile |
+| [037](037-per-user-agents.md) | One `model` key per agent | A `models` list per role, chosen within by `svc-ai-s1` |
 | [035](035-mcp-proxy-expansion.md) | Hermes/OpenClaw gate admits only `administrator` and `mcp` groups | The agent firewall decides access per agent |
 | [036](036-native-ai-gateway-integration.md), [040](040-translation-gateway.md) | Peer presence via `'<role>' in group_names` | Peer presence via a services lookup |
 | [038](038-system-one-model-router.md) | `router_strategy` derives from `services.jeff.enabled` | It derives from `services.s1.enabled` |
@@ -141,30 +152,105 @@ flowchart LR
 🟥 today, 🟩 after the restructuring.
 
 - `AGENTS.md` holds the role's operating rules, `SOUL.md` its persona; both extend `agents/SOUL.md`.
-- `agent.yml` holds the machine-readable fields: `runtime`, `lifecycle`, `triggers`, `repositories`, `firewall_roles`, `credentials`, `owner`, `models`, `quotas`, `write_enabled`.
+- `agent.yml` holds the machine-readable fields: `runtime`, `lifecycle`, `triggers`, `repositories`, `firewall_roles`, `credentials`, `owner`, `models`, `quotas`, `write_enabled`, `skills`.
+
+Every agent is a role, and every role is built the same way:
+
+- A role has exactly one soul: its `SOUL.md`, which opens with an `## Objective` section stating in one sentence what the role works towards.
+- A role runs one or more skills, listed in `agent.yml` `skills`; a skill may serve several roles.
+- A skill may build on any number of routines, listed in its frontmatter as `routines`; a routine may serve several skills. A skill without routines is a pure rule skill (for example a file-type rule).
+- A routine never calls a skill, and a skill never calls a role: work flows from the role through its skills down to the routines.
+
+```mermaid
+flowchart LR
+  subgraph AGENT["🤖 Agent = role"]
+    R["🎭 Role<br/>AGENTS.md, agent.yml"]
+    SO["💫 Soul<br/>SOUL.md"]
+    OB["🎯 Objective<br/>one sentence"]
+  end
+  subgraph SKILLS["🧰 Skills: agents/skills/"]
+    S1["🧰 Skill A"]
+    S2["🧰 Skill B"]
+    S3["🧰 Skill C"]
+  end
+  subgraph ROUTINES["🧭 Routines: agents/routines/"]
+    T1["🧭 Routine 1"]
+    T2["🧭 Routine 2"]
+    T3["🧭 Routine 3"]
+  end
+  R ==>|"1 has 1"| SO
+  SO ==>|"1 states 1"| OB
+  R -->|"1 runs n"| S1
+  R -->|"1 runs n"| S2
+  R -->|"1 runs n"| S3
+  S1 -->|"n builds on m"| T1
+  S1 --> T2
+  S2 --> T2
+  S3 --> T2
+  S3 --> T3
+  subgraph EX["🔧 Example: maintainer"]
+    EXR["🎭 maintainer"]
+    EXSO["💫 maintainer/SOUL.md"]
+    EXO["🎯 Keep the default branch green<br/>and every alert answered"]
+    EXS1["🧰 triage"]
+    EXS2["🧰 i8-commit"]
+    EXT1["🧭 ci-failure-collect"]
+    EXT2["🧭 quality-gate"]
+    EXT3["🧭 ci-evidence"]
+    EXR ==> EXSO ==> EXO
+    EXR --> EXS1
+    EXR --> EXS2
+    EXS1 --> EXT1
+    EXS1 --> EXT3
+    EXS2 --> EXT2
+    EXS2 --> EXT3
+  end
+  classDef role fill:#ede9fe,stroke:#6d28d9,color:#2e1065
+  classDef soul fill:#fef9c3,stroke:#a16207,color:#422006
+  classDef skill fill:#e0f2fe,stroke:#0369a1,color:#082f49
+  classDef routine fill:#dcfce7,stroke:#15803d,color:#052e16
+  class R,EXR role
+  class SO,OB,EXSO,EXO soul
+  class S1,S2,S3,EXS1,EXS2 skill
+  class T1,T2,T3,EXT1,EXT2,EXT3 routine
+  style AGENT fill:#f5f3ff,stroke:#6d28d9
+  style SKILLS fill:#f0f9ff,stroke:#0369a1
+  style ROUTINES fill:#f0fdf4,stroke:#15803d
+  style EX fill:#fafafa,stroke:#475569
+```
+
 - The root `AGENTS.md` becomes an entry point that links into `agents/` and keeps the interactive-session rules (permissions, sandbox, no push).
-- `docs/agents/action/*` become routines, `docs/agents/files/*` become skills, `docs/agents/meta/*` go into `agents/SOUL.md`. `docs/agents/` is deleted afterwards.
+- `docs/agents/action/*` pages with a fixed sequence of steps become routines; pages without one become skills; index pages fold into `agents/README.md`. `docs/agents/files/*` become skills, `docs/agents/meta/*` go into `agents/SOUL.md`. `docs/agents/` is deleted afterwards.
+
+| `docs/agents/action/` page | Becomes |
+|---|---|
+| `README.md`, `debug/README.md`, `iteration/README.md` | `agents/README.md` |
+| `commit.md`, `pull-request.md`, `push-trigger-pull.md`, `requirements.md`, `testing.md`, `verify-parallel.md` | routine |
+| `debug/ci.md`, `debug/local.md`, `debug/log.md` | routine |
+| `design.md`, `develop.md` | routine |
+| `iteration/compose.md`, `iteration/playwright.md`, `iteration/roundtrip.md`, `iteration/runner.md`, `iteration/swarm.md`, `iteration/workflow.md` | routine |
+| `ci-trigger-priority.md`, `refactor.md` | skill |
 
 ### Agent roles
 
 | Role | Work | Default runtime | Lifecycle | Triggers |
 |---|---|---|---|---|
-| maintainer | Fixes issues, security alerts and failed CI runs | Hermes | always_on | GitHub webhooks, schedule |
-| designer | Iterates over every app and improves its design | Claude Code | always_on | schedule, board assignment |
-| tuner | Measures and improves performance | OpenClaw | always_on | schedule, board assignment |
-| implementer | Implements work packages assigned to it | Claude Code | always_on | board assignment |
+| maintainer | Fixes issues, security alerts and failed CI runs | Hermes | on_demand | GitHub webhooks, schedule |
+| designer | Iterates over every app and improves its design | Claude Code | on_demand | schedule, board assignment |
+| tuner | Measures and improves performance | OpenClaw | on_demand | schedule, board assignment |
+| implementer | Implements work packages assigned to it | Claude Code | on_demand | board assignment |
 | robot | Acts on a dedicated device with hardware access | Hermes | always_on | channel message, schedule |
-| reviewer | Reviews every agent pull request before a human merges it | Claude Code | always_on | agent pull request opened or updated |
-| planner | Turns issues, feedback and owner wishes into `Proposed` work packages, removes duplicates, grooms the board | Hermes | always_on | new issue, channel message from a human, schedule |
-| coordinator | Assigns CI slots and runners, orders merges, merges sibling branches, detects version drift between branches | Hermes | always_on | CI queue change, pull request ready, branch divergence, schedule |
-| operator | Runs the deployed instances: alarms, backups, certificates, disk space, incidents | Hermes | always_on | alarm from `sys-ctl-alm-*`, schedule |
-| tester | Hardens specs, runs negative controls, closes Playwright coverage gaps | Claude Code | always_on | schedule, changed spec, agent pull request |
-| translator | Fills gettext catalogs, suggests Weblate translations through `web-svc-translate` | Hermes | always_on | new strings, Weblate change, schedule |
-| documenter | Keeps role READMEs and contributor docs in line with the code | Claude Code | always_on | merged pull request touching a role, schedule |
-| release | Prepares versions, tags and release notes | Hermes | always_on | coordinator reports the default branch green, schedule |
-| security | Audits the repository: code, dependencies, configuration | Claude Code | always_on | schedule, new dependency, agent pull request |
-| hacker | Tests the running instances like an attacker, files security reports, emails on failures | OpenClaw | always_on | deploy finished, schedule |
-| support | Drafts answers to support requests, sends them after approval, files work packages for defects and wishes | Hermes | always_on | new Zammad ticket, support email, support room message |
+| reviewer | Reviews every agent pull request before a human merges it | Claude Code | on_demand | agent pull request opened or updated |
+| planner | Turns issues, feedback and owner wishes into `Proposed` work packages, removes duplicates, grooms the board | Hermes | on_demand | new issue, channel message from a human, schedule |
+| coordinator | Assigns CI slots and runners, orders merges, merges sibling branches, detects version drift between branches | Hermes | on_demand | CI queue change, pull request ready, branch divergence, schedule |
+| operator | Runs the deployed instances: alarms, backups, certificates, disk space, incidents | Hermes | on_demand | alarm from `sys-ctl-alm-*`, schedule |
+| tester | Hardens specs, runs negative controls, closes Playwright coverage gaps | Claude Code | on_demand | schedule, changed spec, agent pull request |
+| translator | Runs every translation command, opens one pull request per language, verifies the translations, and optimises the translation algorithms; suggests Weblate translations through `web-svc-translate` | Hermes | on_demand | new or changed strings on the default branch, Weblate change, schedule |
+| documenter | Keeps role READMEs and contributor docs in line with the code | Claude Code | on_demand | merged pull request touching a role, schedule |
+| release | Prepares versions, tags and release notes | Hermes | on_demand | coordinator reports the default branch green, schedule |
+| security | Audits the repository: code, dependencies, configuration | Claude Code | on_demand | schedule, new dependency, agent pull request |
+| hacker | Tests the running instances like an attacker, files security reports, emails on failures | OpenClaw | on_demand | deploy finished, schedule |
+| support | Drafts answers to support requests, sends them after approval, files work packages for defects and wishes | Hermes | on_demand | new Zammad ticket, support email, support room message |
 | user-started | Any role of the catalog, started by a user (see Profile catalog) | the role's runtime | on_demand | start from Open WebUI, n8n or Flowise |
 
 Every field of `agent.yml` has a default and is overridable from the inventory under `agents.<role>`, except `agents.hacker.targets`, which has no default and must be set before the hacker runs. `write_enabled` defaults to `false`.
@@ -244,7 +330,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  U(["👤 User with group agent-impl"]) -->|"🖱️ start profile implementer"| UI["💬 Open WebUI, n8n or Flowise"]
+  U(["👤 User with group agent-implementer"]) -->|"🖱️ start profile implementer"| UI["💬 Open WebUI, n8n or Flowise"]
   UI -->|"agent/implementer"| BR["🐣 Broker"]
   BR -->|"🔐 check group + intersect rights"| FW["🛡️ Firewall compiler"]
   BR -->|"🆕 provision impl0alice"| PV["🏭 Provisioner<br/>LDAP, Gitea, OpenProject,<br/>Nextcloud, Matrix"]
@@ -269,7 +355,10 @@ flowchart LR
 - One pull request per issue, branched from the upstream default branch.
 - Never merge. Push only to the agent's own fork.
 - Run the quality gate before handover and judge it by its table.
-- Post pull request comments and review replies only after the push, so the SHA resolves.
+- Post pull request comments and review replies only after the push, so the SHA resolves, and only after the next automated review on that push has been read.
+- Justify every rejected review finding with two answers: is the defect latent or live, and does it fail loud or silent.
+- Set labels before pushing, never after; every label event starts a new run and the superseded-run workflow cancels the running one.
+- Express a new behaviour difference between environments as a declared capability (a run fact such as `INFINITO_GHCR_MIRROR` or `INFINITO_CACHE_STACK`), never as a check of the runtime identity (`runs_on_github`, `RUNTIME`). Tests that decide on the environment clear every capability variable they do not set.
 - Every pull request and issue comment ends with the maintenance bot signature line.
 - No explanatory comments, no em or en dashes.
 - An error in the agent's own posted text is corrected at once and named.
@@ -347,6 +436,54 @@ flowchart LR
 
 - Machine translations go through `web-svc-translate`.
 - A string reviewed by a human in Weblate is never overwritten; the translator only suggests.
+- The translator runs the translation commands; no other routine does: `make i18n-extract`, `make i18n-prune`, `make i18n-translate`, `make i18n-retry` and `make i18n-tune`.
+- One pull request per language (`update/i18n-<language>-<date>`), carrying only that language's catalogs; algorithm changes go into their own pull requests, never mixed with catalog updates.
+- The language set is what `domain_languages()` returns for each domain: every non-source language of `meta/languages.yml`. A pull request is opened only for a language whose catalogs changed; a language that has no catalog for a domain yet gets it created in its first pull request.
+- A language pull request is opened only after its verification passed: every entry filled and not fuzzy, `msgfmt --check` clean, placeholders and protected spans identical to the source, glossary terms kept, and a sampled quality judgement by the chat judge (`utils/i18n/judge.py`, a chat model through `svc-ai-litellm`, three written-out levels, `temperature: 0`) at or above the language's last accepted level. A judge reply without a level aborts the verification instead of scoring.
+- An algorithm change (router parameters such as fall-through order, failure threshold and settle rule; an engine's declared capabilities such as `services.libretranslate-engine.serves`; masking; damage predicate; glossary; client settings) is opened only with a benchmark: a fixed evaluation set per language built from human-reviewed Weblate strings, scored by the chat judge before and after; it must improve at least one language and lower none.
+- The translator never reads or writes a per-language engine: `meta/languages.yml` holds only name, native name and direction, and which engine answers a language is the router's decision.
+- Algorithm changes to `web-svc-translate` and `svc-ai-s1` are announced to the owner of the translation gateway before the pull request opens.
+
+Translator routine:
+
+```mermaid
+flowchart TD
+  T1(["🔔 New strings, Weblate change or schedule"])
+  D1["📥 make i18n-extract"]
+  D2["✂️ make i18n-prune<br/>(damaged protected spans)"]
+  subgraph PERLANG["🌍 For each language"]
+    D3["🤖 make i18n-translate<br/>domain=core,docs languages=xx"]
+    D4["🔁 make i18n-retry<br/>refused entries"]
+    D5{"✅ Verification:<br/>filled, msgfmt, placeholders,<br/>spans, glossary"}
+    D6{"🧠 Chat judge level on a sample<br/>at least the last accepted?"}
+    D7["📝 Pull request<br/>update/i18n-xx-date"]
+    D8(["🛑 Report the language,<br/>no pull request"])
+    D3 --> D4 --> D5
+    D5 -->|"✅"| D6
+    D5 -->|"❌"| D8
+    D6 -->|"✅"| D7
+    D6 -->|"❌"| D8
+  end
+  L1{{"🧠 Where do failures cluster?<br/>engine, masking, glossary, settings"}}
+  D9["🧪 Benchmark before and after<br/>on reviewed Weblate strings"]
+  D10{"📈 Better in one language,<br/>worse in none?"}
+  D11["📝 Algorithm pull request,<br/>owner informed"]
+  D12(["🗑️ Discard the change"])
+  T1 --> D1 --> D2 --> PERLANG
+  D8 --> L1 --> D9 --> D10
+  D10 -->|"✅"| D11
+  D10 -->|"❌"| D12
+  classDef trigger fill:#dbeafe,stroke:#1d4ed8,color:#0b1b3f
+  classDef det fill:#dcfce7,stroke:#15803d,color:#052e16
+  classDef llm fill:#ede9fe,stroke:#6d28d9,color:#2e1065
+  classDef good fill:#ccfbf1,stroke:#0f766e,color:#042f2e
+  classDef stop fill:#fee2e2,stroke:#b91c1c,color:#450a0a
+  class T1 trigger
+  class D1,D2,D3,D4,D5,D7,D9,D10,D11 det
+  class D6,L1 llm
+  class D12,D8 stop
+  style PERLANG fill:#f0fdf4,stroke:#15803d
+```
 
 `agents/roles/documenter/AGENTS.md`:
 
@@ -398,7 +535,9 @@ Implementations: `web-app-hermes`, `web-app-openclaw`, and Claude Code inside th
 `svc-ai-agent-broker` owns the lifecycle of every agent instance:
 
 - `always_on`: the instance is ensured at deploy time and restarted when it exits.
-- `on_demand`: the instance is spawned on first request and reaped after idle timeout.
+- `on_demand`: the instance is spawned on first request and reaped after idle timeout. Team roles are `on_demand`: their triggers land on the orchestrator, which always runs and wakes the agent.
+- `agents.max_running` caps the number of agent instances running at once; further starts wait in a queue in trigger order.
+- Resources come from each runtime's own resource keys in its `meta/services.yml`; the agents bundle fits its budget when `agents.max_running` times the largest runtime reservation plus the infrastructure stays within the repository's per-variant budget.
 
 ```mermaid
 stateDiagram-v2
@@ -437,15 +576,16 @@ stateDiagram-v2
 
 ### Account naming
 
-- One constant, `IAM_ACCOUNT_MAX_LENGTH`, is the smallest username limit of all roles in the repository; today it is 18 (Bluesky handle front, after the login broker stops prefixing `kc-`). Every role that creates accounts declares its own username limit in its metadata, and a lint fails when a limit is below the constant.
-- Agent accounts are `<role code>0<suffix>`, at most `IAM_ACCOUNT_MAX_LENGTH` characters:
+This naming is a breaking change and ships in a major release; existing accounts are not migrated.
+
+- One constant, `IAM_ACCOUNT_MAX_LENGTH`, is the smallest username limit of all roles agents can get an account in; today it is 20 (Discourse default, Decidim). Every role that creates accounts declares its own username limit in its metadata and whether agents may get an account there; a lint fails when an agent-reachable limit is below the constant.
+- Agents get no account in `web-app-bluesky`; its login broker keeps prefixing human handles with `kc-`, which protects the PDS's reserved handles.
+- Human usernames are `[a-z1-9]{3,15}`: no `0`, and at most `IAM_ACCOUNT_MAX_LENGTH` minus five characters. `IAM_USERNAME_MAX_LENGTH` becomes 15. The rule applies to every user of `lookup('users')`, system accounts included; names in the repository that do not fit are renamed.
+- Agent accounts are `<role code>0<suffix>`:
   - the role code is exactly four characters of `[a-z1-9]` and unique per role;
   - the digit `0` is the separator and appears nowhere else;
-  - the suffix is the instance id for team agents and the owner's username for user-started agents; when the result would exceed the limit, the suffix is a base32 hash (`[a-z2-7]`) of the owner's username or the instance id, cut to fit, and lengthened by the provisioner on a collision.
-- Human usernames are `[a-z1-9]{3,13}`: no `0`, and at most `IAM_ACCOUNT_MAX_LENGTH` minus five characters, so a role code and the separator always fit in front of them. `IAM_USERNAME_MAX_LENGTH` becomes 13.
-- The Keycloak username pattern accepts both forms; the OpenLDAP length constraint becomes `IAM_ACCOUNT_MAX_LENGTH`. Only the provisioner creates names that contain `0`.
-- Existing human accounts that contain `0` are listed by the deploy and must be renamed before agents start on that instance. Existing human accounts longer than 13 characters keep their names; their agents use the hash suffix.
-- `web-app-bluesky`'s login broker stops prefixing handles with `kc-` and migrates existing `kc-` handles.
+  - the suffix is the instance id (`[a-z1-9]{1,15}`) for team agents and the owner's username for user-started agents, so every agent name fits `IAM_ACCOUNT_MAX_LENGTH` without shortening.
+- The Keycloak username pattern accepts both forms; the OpenLDAP length constraint becomes `IAM_ACCOUNT_MAX_LENGTH`. Only the provisioner creates names that contain `0`; the deploy and the reaper disable and report every account of the agent form without a provisioner record.
 
 | Role | Code | Role | Code | Role | Code | Role | Code |
 |---|---|---|---|---|---|---|---|
@@ -463,6 +603,7 @@ stateDiagram-v2
   - the agents use their own `History` table, `agent_model_history`, with `request_class` set to `<agent role>:<task class>`;
   - `History.wins()` results are filtered against the agent's current `models` list before use, so a model removed from the list stops counting;
   - `Sampler.due()` decides which requests pay for a `judge_answers` comparison, and its verdict goes into `History.record()`.
+  - `judge_answers` stays the judge for agent model selection, which asks a choice question over English and code replies; the chat judge of the translator does not replace it. Its fitness is proven by a negative control before it decides anything: given one reply that answers the request and one that plainly does not, it picks the answering one for every reply shape the router sees. If it fails, the choice of another judge goes to the operator.
 
 ### Forge working model
 
@@ -471,7 +612,7 @@ stateDiagram-v2
 - The agent forks each repository into the account it is worked through, creates branches in the fork, pushes there and opens pull requests against the upstream.
 - Every push names its remote and ref explicitly; no push relies on `remote.pushDefault` or an upstream setting.
 - CI runs triggered by an agent's fork pull request see no repository secret and no write token.
-- The agent never pushes to the upstream, never force-pushes a branch it did not create, and never merges.
+- The agent never pushes to the upstream and never merges. It force-pushes only branches it created in its own fork, and only after an `ask` approval; every other force-push is denied.
 - Commits are signed with the agent's SSH signing key.
 
 ### Workspaces
@@ -563,7 +704,14 @@ Shared deterministic tool nodes (no model call):
 - audit the diff for comments and dashes before a commit;
 - check that every number in a commit, pull request or comment text occurs in the run's evidence;
 - locate the log line where a change ran in the CI job log; when that run was cancelled by a later merge, follow the next run whose head contains the fix;
-- design pipeline: render a second palette, build the gallery, diff it against the role manifest, scan for off-palette areas.
+- design pipeline: render a second palette, build the gallery, diff it against the role manifest, scan for off-palette areas;
+- test against another ref: check the ref out into a temporary worktree, run the test there with `python -P` and without the env loader, and print the imported module's `__file__`, so a negative control against an older state cannot silently test the current tree;
+- budget analysis: when a job ends with exit `124`, parse its duration and budget block, sum the most expensive task classes from `profile_tasks`, and compare them with earlier runs of the same job;
+- recognise a run cancelled by a superseding run (its red "Finish pipeline" step) as not a failure;
+- check the branch name prefix before the first push against the allowed list (`feature`, `fix`, `update`, `chore`, `dependabot`, `alert-autofix`); a wrong prefix after a push is repaired by a new pull request that references the old one, never by a rename;
+- mark check runs that a new pull request inherits from the old one through the same commit SHA as stale;
+- on `toomanyrequests` and similar rate limits, check whether the failing pull went through the mirror or the cache, and compare it with the jobs that did not fail;
+- for every new environment key, run the affected test suites once with the key set to `true` and once to `false`.
 
 Shared model nodes: cluster boundaries, root cause (with the dialectic skill), failure class, fix design and scope, infra race versus code defect, selector and token mapping, visual review of screenshots, upstream limit versus fixable, break risk, bundling, commit and pull request text, verification of review findings against the code, cross-agent triage.
 
@@ -598,6 +746,9 @@ Failure classes of the maintainer routine:
 | Branch version drift | pins differ between branches that meet in a merge | align the pin before the merge |
 | Infra race | lint install race, registry 429, cache transfer timeout | fix order or preseed, rerun once, never patch the product |
 | Egress denial | readiness probe stalls | report the denied target, fix the firewall grant |
+| Budget kill | exit `124` while the tests that ran are green | budget analysis against earlier runs, fix the slowest task class, never raise the budget blindly |
+| Superseded run | red "Finish pipeline" after a label event or a newer push | not a failure; wait for the superseding run |
+| External but structural | an external limit (registry rate limit, quota) hits some jobs but not others | a retry is no fix: prove why the other jobs are protected, then close the design gap that left these exposed |
 
 Legend for the routine diagrams: 🔵 trigger, 🟢 ⚙️ deterministic step (no model call), 🟣 🧠 model judgement, 🟡 👤 human or owner, ✅ finished, 🛑 stops with a report. Diamonds are yes/no checks, hexagons are judgement calls.
 
@@ -846,7 +997,8 @@ Make targets the tool nodes need:
 - evaluate a Playwright trace (navigation chain, cookie attributes without values);
 - print one test's JUnit failure and system-out;
 - query Prometheus probes per app;
-- build a design gallery, diff its manifest, scan off-palette areas, render a contact sheet.
+- build a design gallery, diff its manifest, scan off-palette areas, render a contact sheet;
+- run a test against another ref in a temporary worktree and print the imported module path (`make test-ref ref=<ref> test=<path>`).
 
 Defects to fix in existing targets:
 
@@ -858,13 +1010,16 @@ Defects to fix in existing targets:
 - the install stamp goes stale after a commit hook run;
 - `make quality-high` dispatches lints in parallel while a lint install still writes shared packages;
 - the npm cache is read-only inside the sandbox (`EROFS`);
-- a leftover `<slot>_default` network makes a slot look free while its subnet is taken.
+- a leftover `<slot>_default` network makes a slot look free while its subnet is taken;
+- `make worktree-up` hands out slots (for example 50) whose derived swarm lab subnet is invalid (`192.168.294.x`);
+- the Edit and Write tools turn `\uXXXX` in source code into the real character, in regex classes even into private-use and surrogate characters; agents need a skill rule to write escapes as `\U0000XXXX` or `\N{NAME}`.
 
 ### Board
 
 - OpenProject is the single source of requirements and work items. The URL and project come from the inventory; the default is the platform's own `web-app-openproject`.
-- A requirement is a work package with a user story and a checklist of acceptance criteria.
-- Agents create requirements as `Proposed`. Only a human sets `Approved` or `Rejected`, in their own OpenProject session (OpenProject UI or Open WebUI through SSO); no agent account and no channel reply can set them. The implementer only takes `Approved` work packages assigned to its role group (see Remote board and detached instances, Claim).
+- A requirement is a work package with a user story and a checklist of acceptance criteria. Every criterion carries a stable id; the ids and their proof kind are kept in the repository (`agents/criteria.yml`), so lints and scenarios never depend on the board being reachable.
+- The requirements project is publicly readable (anonymous read role); the confidential security project is not.
+- The orchestrator creates requirements as `Proposed` on an agent's behalf, under that agent's own identity (its OIDC JWT); no agent writes to the board directly. Only a human sets `Approved` or `Rejected`, in their own OpenProject session (OpenProject UI or Open WebUI through SSO); no agent account and no channel reply can set them. The implementer only takes `Approved` work packages assigned to its role group (see Remote board and detached instances, Claim).
 - The maintainer may start work without the `Approved` gate only on failed runs of the own repository's CI and on security alerts. Issues from non-collaborators and fork pull request runs go through the planner and the gate.
 
 ```mermaid
@@ -900,7 +1055,7 @@ stateDiagram-v2
 Agents also run from a throwaway Infinito.Nexus instance on a developer's machine (a worktree or compose stack) and work against a live instance elsewhere.
 
 - Everything on the live instance is the truth: board, forges, Nextcloud, channels. A throwaway instance holds nothing that is not also there.
-- Identity: every agent of a throwaway instance has its own accounts on the live instance, named `<role code>0<instance id>` (see Account naming); `agents.instance` in the inventory names the instance.
+- Identity: every agent of a throwaway instance has its own accounts on the providers of the live instance, named `<role code>0<instance id>` (see Account naming); `agents.instance` in the inventory names the instance. GitHub is the exception: one account per role, with a token and signing key per instance (see Identity and credentials).
 - Every `account` provider (OpenProject, Nextcloud, Gitea, GitLab, Matrix, mail, Zammad and declared ones) may point to a remote base URL; the platform's own app stays the default.
 - Instance API: the live orchestrator offers one API for throwaway instances, covering registration, provisioning, leases and audit ingest.
   - Registration: an instance registers its name together with a public key; a later registration of the same name with a different key is refused, the same key takes over.
@@ -914,8 +1069,9 @@ Agents also run from a throwaway Infinito.Nexus instance on a developer's machin
   - providers whose client owns a session (Matrix, XMPP, IMAP and SMTP): the orchestrator's channel adapter logs in itself and keeps the session outside the workspace; Matrix device and end-to-end keys survive teardowns through server-side key backup.
 - Secrets that must survive a teardown (login credentials, the Matrix recovery key, the instance key) live in the developer's encrypted inventory; optionally in OpenBao on the live instance, through one AppRole per instance limited to `agents/<instance id>/*` with a short SecretID lifetime. They are never kept only in `sys-token-store`, which a teardown deletes.
 - Triggers: webhooks only when the instance is publicly reachable; otherwise the orchestrator polls the provider APIs (OpenProject work packages filtered by `updatedAt` since the last sync, workflow runs and issues with conditional requests, tickets) every `agents.poll_interval` seconds (default 120) with jitter, and hands each change to the same handler a webhook would reach.
-- Claim: humans assign a work package to the OpenProject group of a role (`agents-<role code>`). An agent claims it by reading it, checking `Approved` and the group assignee, then setting itself as assignee and `In progress` in one update carrying `lockVersion`; a `409` means another instance took it first. OpenProject workflows allow agent accounts only `Approved` -> `In progress` -> `Review`.
-- Board writes: agents never write to the board directly; the orchestrator writes on their behalf, so no agent needs board egress. Each agent's egress to remote hosts is derived from its own `account` grants, exact hosts only.
+- Claim: humans assign a work package to the OpenProject group of a role, which carries the same name as the role's RBAC group (`agent-<role>`). An agent claims it by reading it, checking `Approved` and the group assignee, then setting itself as assignee and `In progress` in one update carrying `lockVersion`; a `409` means another instance took it first. OpenProject workflows allow agent accounts only `Approved` -> `In progress` -> `Review`.
+- Board writes: agents never write to the board directly; the orchestrator writes on their behalf under the agent's own identity, so no agent needs board egress.
+- When the live instance is unreachable, a throwaway instance writes nothing: claims, board writes, pushes and channel posts stop until the lease is renewed. Alarms go out through `sys-ctl-alm-*`; repairing the live instance is a human deploy. Each agent's egress to remote hosts is derived from its own `account` grants, exact hosts only.
 - Home sync: an allowlist of each harness home syncs to the agent's Nextcloud account on the live instance: memory, skill state, run reports and galleries. Session transcripts (`projects/*.jsonl`, `history.jsonl` and their equivalents) never sync.
   - A sidecar outside the workspace uploads a secret-scanned snapshot of the allowlist over WebDAV at every routine checkpoint and at teardown; a scan hit stops the upload. Start restores the latest snapshot. Nextcloud versioning keeps earlier snapshots, so the owner can roll memory back.
 - Channels: every channel for which credentials exist may live on a remote instance; the local instance's channel is the default.
@@ -979,7 +1135,8 @@ Evaluation: `deny` beats `ask` beats `allow`; an unmatched request is denied. A 
 
 Accounts:
 
-- `github`, `gitea` and `gitlab` are built-in providers. Any other external service (another forge, a registry, a SaaS API) is declared once in `agents/firewall/providers/` with its base URL and API flavour, and is then usable as `account(<provider>/<account>)`.
+- `github`, `gitea` and `gitlab` are built-in providers. Any other external service (another forge, a registry, a SaaS API) is declared once in `agents/firewall/providers/` with its base URL and API flavour, and is then usable as `account(<provider>/<label>)`.
+- The label after the provider is a logical name of the account slot, by convention the role name (`account(gitea/maintainer)`); the provisioner or the inventory resolves it to the actual username (`mant0<suffix>`, or the manually created GitHub account of the role).
 - An agent's `account` grants form an ordered list: the order of its `firewall_roles` binding, then the rule order inside each role, with inventory overrides able to reorder it.
 - The first active `account` grant is always the agent's default account: every routine step that needs an account and names none uses it.
 
@@ -1000,15 +1157,15 @@ Baseline roles shipped in `agents/firewall/`, taken from the field data of the r
 | `forge-reader` | `egress(github.com)`, `egress(api.github.com)`; read runs, jobs, artifacts, pull requests, issues, code scanning, other branches | | |
 | `package-consumer` | registries through the registry cache, PyPI and npm through the package cache, Galaxy archives | | direct registry egress |
 | `interactive` | everything of `workspace`, `forge-reader`, `package-consumer`; cross-session messages | `git commit`, issue comment and close | any push |
-| `autonomous-contributor` | everything of `workspace`, `forge-reader`, `package-consumer`; signed commit and push to the agent's own fork; open pull requests | | push to the upstream, merge, force-push to a branch the agent did not create, repository settings, reading secrets |
-| `maintainer` | everything of `autonomous-contributor`; pull request and issue comments, review replies | alert dismiss, issue close, force-push to its own bot branches, deleting a resource it did not create | |
+| `autonomous-contributor` | everything of `workspace`, `forge-reader`, `package-consumer`; signed commit and push to the agent's own fork; open pull requests | force-push to a branch the agent created in its own fork | push to the upstream, merge, any other force-push, repository settings, reading secrets |
+| `maintainer` | everything of `autonomous-contributor`; pull request and issue comments, review replies | alert dismiss, issue close, deleting a resource it did not create | |
 | `designer` | everything of `autonomous-contributor`; publishing galleries under its own artifact account | | comments outside its own pull requests |
 | `reviewer` | everything of `forge-reader`; review comments on agent pull requests | | push, merge, review of its own pull requests |
 | `planner` | everything of `forge-reader`; create and update work packages, read channels and tickets | | set `Approved` or `Rejected` |
 | `coordinator` | everything of `forge-reader`; hold the CI lock, dispatch workflow runs, merge into feature branches of its own fork | cancel a running workflow | merge into the default branch |
 | `operator` | read metrics, logs and backups of the own instances; make targets on the own instances | backup restore, data purge, production service restart | foreign instances |
 | `tester`, `documenter` | everything of `autonomous-contributor` | | |
-| `translator` | everything of `autonomous-contributor`; Weblate suggestions, `web-svc-translate` | | mark a Weblate string as reviewed |
+| `translator` | everything of `autonomous-contributor`; Weblate suggestions, `web-svc-translate`, the `i18n-*` make targets | | mark a Weblate string as reviewed |
 | `release` | everything of `forge-reader` | create a tag or a release | push to the default branch |
 | `security` | everything of `forge-reader`; work packages in the confidential security project | | egress to running instances |
 | `hacker` | egress only to `agents.hacker.targets` through the front proxy; scanners in its workspace; work packages in the confidential security project; email to the security contact | every run against a production target | any other egress, internal ports, destructive requests, denial-of-service tooling |
@@ -1062,6 +1219,7 @@ An `ask` match pauses the routine (LangGraph interrupt) and asks the owner throu
 ### Safety controls
 
 - Kill switch: `make agents-stop` blocks every agent's LiteLLM key, stops every broker-managed container and disables every agent LDAP account; `make agents-start` reverses it. The Open WebUI stop button and the owner's channel command `stop all agents` call the same target.
+- Bootstrap: `make agents-bootstrap` prints one table of every setup item (required: provisioner reachable, OpenProject role groups, inventory keys; optional: GitHub accounts, tokens and signing keys per role, OpenBao). Required items that are missing fail it; optional ones show as inactive. The provisioner creates the OpenProject role groups itself. The broker deploy runs the same check as a preflight.
 - Audit: every tool call, firewall decision, approval and channel message of an agent is written to an audit database through an insert-only role (no update, no delete) with a hash chain over the entries; the redacted audit trail of `svc-ai-mcp-adapter` feeds into it.
 
 ```mermaid
@@ -1104,8 +1262,8 @@ sequenceDiagram
 
 - Inventory: `inventories/bundles/servers/agents/` (`inventory.yml` plus `README.md`) deploys the complete agent infrastructure against localhost with `make compose-deploy`. It contains every role this requirement names, plus `web-app-gitea`, `web-app-matrix`, `web-app-openproject`, `web-app-nextcloud`, `web-app-zammad`, `web-app-weblate`, `web-app-keycloak`, `svc-db-openldap`, `svc-db-postgres`, `svc-ai-ollama`, `svc-ai-litellm` and a local mail sink for the email channel.
 - Workflow `call-test-agents-local.yml` deploys that bundle and runs every agent scenario. `make agents-verify` runs it locally through act.
-- Workflow `call-test-agents-saas.yml` integrates the agents into the full SaaS server system: the role set of `call-test-deploy.yml` plus the agents bundle, every Playwright spec of the deployed roles, every agent scenario, local models only. `make agents-integration` runs it locally through act.
-- Triggers: `call-test-agents-local.yml` runs from `entry-pr-change-orchestrate.yml` on every pull request that touches `agents/` or an AI role; `call-test-agents-saas.yml` runs on manual dispatch, nightly, and is required before `feature/agents` merges.
+- Workflow `call-test-agents-saas.yml` integrates the agents into the full SaaS server system: the app matrix of `call-test-deploy.yml`, each app deployed together with the agents bundle, every Playwright spec of the deployed app, every agent scenario, local models only. The CI runs the matrix in parallel; `make agents-integration` runs the same file locally through act, one app after the other.
+- Triggers: `call-test-agents-local.yml` runs from `entry-pr-change-orchestrate.yml` on every pull request that touches `agents/` or an AI role; `call-test-agents-saas.yml` runs on manual dispatch, nightly, and is required before `feature/agents` merges into `main`.
 - `make agents-verify mode=compose|swarm` selects the deploy mode; without `mode` both run in sequence.
 - `make agents-verify scenario=<id>` runs one scenario against the already running stack without redeploying, for the edit-test loop.
 - A deliberately vulnerable fixture app with seeded findings is the hacker's scenario target; its role fails hard when deployed by any inventory other than the agents bundle.
@@ -1115,7 +1273,8 @@ sequenceDiagram
   - a local model behind `svc-ai-litellm` answers the Claude model aliases through the gateway's Anthropic-protocol endpoint;
   - webhooks are delivered by the scenario runner to the orchestrator's webhook endpoint.
 - The real GitHub and Anthropic scenarios run only when their credentials are set in the inventory, and are reported as `skipped`, never as `passed`, otherwise.
-- Every scenario has an id, lives in `agents/scenarios/`, and maps to exactly one acceptance criterion of this file.
+- Proof kinds: a criterion whose wording asks for a probe, a refusal, a time bound or a restart is proven by a scenario in `agents/scenarios/`; every other criterion is proven by a lint or a unit test. Every lint and unit proof ships a fixture that turns it red. `agents/criteria.yml` maps each criterion id to its proof kind and its proof.
+- Model nodes in scenarios run against recorded stub replies keyed by node and fixture, refreshed by one re-record target. Injection scenarios use hostile stubs that follow the injected instruction, so they prove the structure holds whatever the model does. Live models run only in the end-to-end scenarios, the `judge_answers` negative control and the Claude Code path, on a tool-calling local model.
 - The run ends with one table: scenario id, mode, result, duration, log path.
 - Swarm mode runs on a worktree slot between 3 and 10.
 - Images larger than the registry cache transfer limit (for example the Ollama models) are preseeded by host pull and load before the deploy.
@@ -1152,11 +1311,12 @@ SaaS integration (`call-test-agents-saas.yml`):
 flowchart LR
   MK(["⌨️ make agents-integration"]) --> ACT["🎬 act runs<br/>call-test-agents-saas.yml"]
   NI(["🌙 nightly, manual,<br/>before feature/agents merges"]) --> CI["☁️ CI runs<br/>call-test-agents-saas.yml"]
-  ACT --> SET["🧩 Role set of call-test-deploy.yml<br/>+ agents bundle"]
-  CI --> SET
+  ACT --> SET["🧩 App matrix of call-test-deploy.yml,<br/>each app + agents bundle<br/>(local: one after the other)"]
+  CI --> SET2["🧩 Same matrix<br/>(CI: in parallel)"]
   SET --> LM["🧠 Local models only<br/>(Ollama behind LiteLLM)"]
-  LM --> DEP["🚀 Deploy the full server system"]
-  DEP --> PW["🎭 Every Playwright spec<br/>of the deployed roles"]
+  SET2 --> LM
+  LM --> DEP["🚀 Deploy app + agents bundle"]
+  DEP --> PW["🎭 Every Playwright spec<br/>of the deployed app"]
   DEP --> SCN["🧪 Every agent scenario"]
   PW --> TAB(["📊 One result table"])
   SCN --> TAB
@@ -1164,9 +1324,58 @@ flowchart LR
   classDef step fill:#dcfce7,stroke:#15803d,color:#052e16
   classDef out fill:#ede9fe,stroke:#6d28d9,color:#2e1065
   class MK,NI cmd
-  class ACT,CI,SET,LM,DEP,PW,SCN step
+  class ACT,CI,SET,SET2,LM,DEP,PW,SCN step
   class TAB out
 ```
+
+### Verification
+
+How every criterion of this file is proven and checked off:
+
+1. Per change: a unit test or lint with its red fixture, then `make compose-deploy mode=update` of the touched role only, then an in-container probe through `make compose-exec`, then `make agents-verify scenario=<id>`.
+2. Per phase: a gate runs `call-test-agents-local.yml` through act in compose mode; each phase is its own pull request into `feature/agents`.
+3. SaaS integration: the full app matrix with the agents bundle, locally through act one app after the other, and in the CI in parallel.
+4. Swarm: proven only by the CI on `infinito-nexus/core`; locally every run uses compose while the swarm NFS probe failure on the host kernel stays open.
+5. CI: only after the store-i18n CI agent reports done and the shared gate blockers are resolved. A CI run counts as proof only through the job-log line where the change ran, never through its green status alone.
+6. External credentials (GitHub accounts per role, Anthropic `api_key` and `subscription`): their scenarios report `skipped` until the operator supplies the credentials for the final acceptance; the criteria stay open until a real run passes.
+7. Board migration: proven against the local OpenProject of the agents bundle; the real migration to the live board runs last, with the operator's token and approval.
+8. Checking off: a criterion is checked as soon as its proof is green, and the proof (scenario log, lint or unit id, CI job-log line) is recorded in `agents/criteria.yml`. Human steps in scenarios (approvals, merges, `Approved`) are played by the test personas `biber` and `mapache`.
+9. Swarm runs, when the CI needs local reproduction, use a worktree slot between 3 and 10.
+
+### Lint tests
+
+Every rule of this requirement that can be checked without a running stack has a lint test under `tests/lint/agents/`. Each lint runs in `make test-lint`, runs alone through the lint target for one role or one file, and ships a fixture that turns it red. `agents/criteria.yml` points every lint-proven criterion to its lint id.
+
+| Id | Rule the lint enforces |
+|---|---|
+| L01 | `agent.yml` has every field; runtime, lifecycle, triggers and firewall roles name known values; `write_enabled` defaults to `false` |
+| L02 | every role has `AGENTS.md`, `SOUL.md` and `agent.yml`; every `SOUL.md` opens with a one-sentence `## Objective` and links `agents/SOUL.md` |
+| L03 | every skill a role lists exists in `agents/skills/`; every routine a skill lists exists in `agents/routines/`; every role lists at least one skill |
+| L04 | layering: no routine imports or calls a skill, no skill calls a role |
+| L05 | role codes: four characters of `[a-z1-9]`, unique, one per role |
+| L06 | every user of `lookup('users')`, system accounts included, matches `[a-z1-9]{3,15}`; instance ids match `[a-z1-9]{1,15}` |
+| L07 | every account-creating role declares its username limit and whether agents may get an account there; `IAM_ACCOUNT_MAX_LENGTH` equals the smallest agent-reachable limit; `web-app-bluesky` is not agent-reachable |
+| L08 | firewall rules parse; every `account` provider is built in or declared in `agents/firewall/providers/`; every `${VAR}` names a known deploy variable |
+| L09 | every agent role binds at least one firewall role; every baseline role of the design exists |
+| L10 | `app` grants that map to a privileged group are flagged |
+| L11 | autonomous roles deny writes to the protected paths |
+| L12 | user-started agents get `account` grants only for provisioned providers |
+| L13 | no hardcoded runtime list in `svc-ai-agent-broker` or `svc-ai-agent-orchestrator`; the broker hard-enables no runtime |
+| L14 | routine tool nodes use no `git -C`, no `git --git-dir`, no shell loops, no chained statements, no direct `docker exec` |
+| L15 | every push in a routine names its remote and ref; branch names use an allowed prefix |
+| L16 | no routine reads a raw Playwright report; no tool node prints a raw task block, argv or environment |
+| L17 | only designated model nodes import the gateway client; nodes that read untrusted input have no tools |
+| L18 | environment differences are declared capabilities: no new branch on `runs_on_github` or `RUNTIME` in role logic |
+| L19 | no private-use or surrogate characters in source files |
+| L20 | `support`, `planner`, `operator` and user-started agents default to local models only |
+| L21 | the translator reads no engine from `meta/languages.yml`; there is no second sampler or history implementation besides `infinito_decider` |
+| L22 | `agents/criteria.yml` maps every criterion to exactly one proof kind and proof; criteria that ask for a probe, a refusal, a time bound or a restart are proven by a scenario |
+| L23 | every lint and unit proof has a red fixture |
+| L24 | the agents bundle inventory contains every role this requirement names; the vulnerable fixture app appears in no other inventory |
+| L25 | `call-test-agents-local.yml` and `call-test-agents-saas.yml` exist and are wired from `entry-pr-change-orchestrate.yml` and the nightly schedule |
+| L26 | `docs/agents/` does not exist and no file links to it; every former `docs/agents/action/` page is mapped as the mapping table says |
+| L27 | no secret value in `agents/` (gitleaks over the tree) |
+| L28 | every make target this requirement names exists and is documented in `make help` |
 
 ### Iteration plan
 
@@ -1175,6 +1384,8 @@ The plan the implementing agent follows without asking back: cheapest check firs
 - Inner loop, for every change: targeted unit test or lint, then `make compose-deploy mode=update` of the touched role only, then an in-container probe through `make compose-exec`, then `make agents-verify scenario=<id>` against the running stack. A full workflow run happens only at a phase gate.
 - Blockers never stop the plan: a missing external credential reports its scenario `skipped`; a real upstream limit stays an open criterion with its reason; an operator-only fact goes to the owner as an `ask` while the next phase continues.
 - No CI deploy of `feature/agents` before the store-i18n CI agent reports done; until then, every gate runs through act.
+- Every phase is its own pull request into `feature/agents`, merged in order once its own criteria are green; account naming is a pull request of its own, since it changes every user's name rules. `call-test-agents-saas.yml` is required only before `feature/agents` merges into `main`.
+- Requirement hygiene runs before the board migration, and the migration runs last, after every other criterion is green.
 
 ```mermaid
 flowchart TD
@@ -1243,10 +1454,14 @@ flowchart TD
 - [ ] `docs/agents/` no longer exists, and no file in the repository links to it.
 - [ ] The root `AGENTS.md` links to `agents/` and keeps the permission, sandbox and push rules for interactive sessions.
 - [ ] A lint test fails when an `agent.yml` misses a field or names an unknown runtime, lifecycle, trigger or firewall role.
+- [ ] Every role lists at least one skill in `agent.yml` `skills`, and a lint fails on a skill that does not exist in `agents/skills/`.
+- [ ] Every skill in `agents/skills/` declares its frontmatter `routines` (possibly empty for a pure rule skill), and a lint fails on a routine that does not exist in `agents/routines/`.
+- [ ] Every role's `SOUL.md` opens with an `## Objective` section of one sentence, and a lint fails otherwise.
+- [ ] A lint fails when a routine calls a skill or a skill calls a role.
 
 ### Routines
 
-- [ ] Every former `docs/agents/action/*` page exists as a LangGraph routine under `agents/routines/`.
+- [ ] Every former `docs/agents/action/*` page exists in the form the mapping table names: a LangGraph routine under `agents/routines/`, a skill under `agents/skills/`, or a section of `agents/README.md`.
 - [ ] The maintainer, designer and implementer routines implement the graphs drawn under Routines, and `python -m agents.routines show <routine>` prints a Mermaid graph with the same nodes and edges.
 - [ ] `python -m agents.routines run <routine>` executes a routine end to end with a stub model node in a unit test.
 - [ ] Every `agents/skills/i8-*` skill that routed to a `docs/agents/action/*` page routes to the matching routine.
@@ -1264,11 +1479,21 @@ flowchart TD
 - [ ] Two stack commands of one agent never run at the same time, and nothing starts on the machine while the quality gate runs.
 - [ ] The hang watchdog fires on 15 minutes of silence and does not fire on a long build that keeps writing output.
 - [ ] A failure classified as deterministic is not retried, and a flaky one is retried once.
+- [ ] A negative control run through `make test-ref` against an older ref imports the module from that ref's worktree, and the printed `__file__` proves it.
+- [ ] A job that ends with exit `124` is classified as a budget kill, and the report names the most expensive task classes compared with earlier runs.
+- [ ] A run cancelled by a superseding run is not reported as a failure.
+- [ ] The maintainer routine sets labels before the push, and posts review replies only after the push and after the next automated review was read.
+- [ ] A branch with a prefix outside the allowed list is refused before the first push (unit test), and a local lint applies the same list.
+- [ ] Check runs a new pull request inherits through the same commit SHA from an older pull request are reported as stale, not as failures.
+- [ ] A seeded rate-limit failure is classified as external but structural, and the report states whether the pull went through the mirror or the cache.
+- [ ] Adding a new environment key runs the affected suites with `true` and with `false`, and a test that does not clear the key fails one of the two runs (fixture).
+- [ ] `agents/skills/` holds the rule that environment differences are declared capabilities, never runtime-identity checks, and a lint flags new `runs_on_github` or `RUNTIME` branches in role logic.
 - [ ] An `ask` hit outside a declared gate node is reported as a firewall misconfiguration.
 
 ### Tooling gaps
 
 - [ ] Each make target listed under Tooling gaps exists, is documented in `make help` and is called by the routine that needs it.
+- [ ] The lint for one role or one file reports a key-order error in `default.env` and a prefix-group error in a handler file name within one minute, without the full gate.
 - [ ] `make compose-role-sync task=<task> pw=<args>` runs the spec.
 - [ ] `make compose-playwright` runs the current spec and `.env`.
 - [ ] `make design-palette sync=role` re-renders `.env`.
@@ -1279,6 +1504,8 @@ flowchart TD
 - [ ] The quality gate reports a lint failure in a new untracked file.
 - [ ] npm installs succeed inside the sandbox.
 - [ ] The slot picker refuses a slot whose subnet a leftover network still holds.
+- [ ] `make worktree-up` hands out only slots whose derived subnets, the swarm lab subnet included, are valid.
+- [ ] `agents/skills/` holds a rule for writing escapes in code (`\U0000XXXX` or `\N{NAME}`, never `\uXXXX` through the Edit or Write tool), and a lint flags private-use or surrogate characters in source files.
 - [ ] A routine fetch succeeds when a fork tag is clobbered.
 
 ### Runtime contract and lifecycle
@@ -1286,7 +1513,10 @@ flowchart TD
 - [ ] `web-app-hermes` and `web-app-openclaw` declare themselves as agent runtimes, and Claude Code in `web-app-workspace` does too.
 - [ ] The broker and the orchestrator find runtimes through a lookup; a grep finds no hardcoded runtime list in either role.
 - [ ] `svc-ai-agent-broker` no longer sets `enabled: true` on `hermes` or `openclaw`, and deploys with only one of them in the inventory.
-- [ ] An `always_on` team agent is running after deploy and is restarted after its container is killed.
+- [ ] An `always_on` agent (the robot) is running after deploy and is restarted after its container is killed.
+- [ ] A trigger for an `on_demand` team agent wakes it through the orchestrator, and the agent is reaped after its idle timeout.
+- [ ] With `agents.max_running` reached, a further start waits in the queue and runs when a slot frees, in trigger order.
+- [ ] A test proves that `agents.max_running` times the largest runtime reservation plus the infrastructure of the agents bundle fits the per-variant resource budget, and fails when it does not.
 - [ ] An `on_demand` user-started agent is spawned on first Open WebUI request and reaped after the idle timeout.
 - [ ] Changing `runtime` of a team agent in the inventory switches its runtime on the next deploy.
 
@@ -1340,9 +1570,11 @@ flowchart TD
 - [ ] An agent cannot set `Approved` or `Rejected`.
 - [ ] The maintainer starts a failed-run fix without the `Approved` gate.
 - [ ] Setting the board URL in the inventory makes every agent use that board instead of the local `web-app-openproject`.
-- [ ] Every open requirement under `docs/requirements/`, including this one, exists as an OpenProject work package with its acceptance criteria as checklist.
+- [ ] Every open requirement under `docs/requirements/`, including this one, exists as an OpenProject work package with its acceptance criteria as checklist, migrated after every other criterion of this file and after the requirement hygiene criteria are green.
 - [ ] `docs/requirements/` is deleted, and `docs/contributing/requirements.md` and the `i8-requirement-*` skills describe and use the OpenProject API.
-- [ ] The lints that read `docs/requirements/` are removed or retargeted.
+- [ ] The lints that read `docs/requirements/` are removed or retargeted to `agents/criteria.yml`, and no lint needs the board to be reachable.
+- [ ] An anonymous visitor reads the requirements project and cannot read the security project.
+- [ ] The orchestrator's board writes appear under the acting agent's identity in OpenProject's journal.
 
 ### Agent firewall
 
@@ -1376,11 +1608,14 @@ flowchart TD
 - [ ] Every agent authenticates to `svc-ai-mcp-adapter` with its own token; a token of one agent is refused for another, and the comparison is constant-time (unit test).
 - [ ] An MCP call to Gitea, GitLab, Zammad or Nextcloud reaches the application under the calling agent's own identity, visible in the application's log.
 - [ ] `make agents-stop` blocks every agent key, stops every agent container and disables every agent account within one minute; `make agents-start` restores them; the Open WebUI button and the owner's channel command trigger the same target.
+- [ ] `make agents-bootstrap` prints every setup item with its state, fails on a missing required item, shows missing optional items as inactive, and runs as a preflight of the broker deploy.
+- [ ] With the live instance unreachable, a throwaway instance makes no claim, board write, push or channel post (probe recorded).
 - [ ] Every tool call, firewall decision, approval and agent channel message appears in the audit database; an update or delete through the audit role is refused, and a tampered entry breaks the hash chain check.
 - [ ] Exceeding a quota in `agent.yml` stops the agent's next model call, tool call or forge write and reports the quota.
 - [ ] A request for a model outside the agent's `models` list is refused by `svc-ai-litellm`, and `support`, `planner`, `operator` and user-started agents reach no external model by default.
 - [ ] Within the allowed list, `svc-ai-s1` picks the model per request from the shared history in `infinito_decider`, and a grep finds no second sampler or history implementation.
 - [ ] After a model is removed from an agent's `models` list, its earlier `agent_model_history` rows no longer influence the choice (unit test).
+- [ ] Negative control for `judge_answers`: for prose, code, diff and structured replies, given one answering and one plainly non-answering reply, it picks the answering one; the result is recorded before the router uses its verdicts.
 - [ ] Orchestrator checkpoints are encrypted, contain no secret value (fixture test), and expire after the retention period.
 - [ ] A workspace cannot reach another workspace through the orchestrator (probe recorded).
 - [ ] CI runs triggered by an agent's fork pull request see no repository secret and no write token.
@@ -1411,14 +1646,14 @@ flowchart TD
 
 ### Account naming
 
-- [ ] `IAM_ACCOUNT_MAX_LENGTH` equals the smallest username limit declared by any role, and a lint fails when a role declares a smaller one or none.
+- [ ] `IAM_ACCOUNT_MAX_LENGTH` equals the smallest username limit declared by any agent-reachable role, and a lint fails when such a role declares a smaller one or none.
 - [ ] Every role code is four characters of `[a-z1-9]` and unique; a lint fails otherwise.
-- [ ] Agent account names match `<role code>0<suffix>` within `IAM_ACCOUNT_MAX_LENGTH`; an over-long suffix is replaced by a base32 hash, and a collision lengthens the hash.
-- [ ] Keycloak and OpenLDAP accept human names of `[a-z1-9]{3,13}` and agent names of the documented form, and refuse a human name containing `0`.
-- [ ] A lint refuses a user in `lookup('users')` whose name contains `0` or exceeds 13 characters.
-- [ ] A deploy lists every existing human account containing `0`, and agents do not start on that instance until those accounts are renamed.
-- [ ] An agent account of the longest form is accepted by every application that creates accounts, Bluesky included (one scenario per application).
-- [ ] The Bluesky login broker creates handles without the `kc-` prefix, and existing `kc-` handles are migrated.
+- [ ] Agent account names match `<role code>0<suffix>` within `IAM_ACCOUNT_MAX_LENGTH`, and instance ids match `[a-z1-9]{1,15}` (lint).
+- [ ] Keycloak and OpenLDAP accept human names of `[a-z1-9]{3,15}` and agent names of the documented form.
+- [ ] A lint refuses any user in `lookup('users')`, system accounts included, whose name contains `0`, a character outside `[a-z1-9]`, or more than 15 characters; every user in the repository passes it.
+- [ ] An account of the agent form without a provisioner record is disabled and reported by the deploy and by the reaper (fixture account created through the admin console).
+- [ ] An agent account of the longest form is accepted by every agent-reachable application (one scenario per application), and no agent gets a Bluesky account.
+- [ ] A human of the longest form still gets a Bluesky handle with the `kc-` prefix.
 
 ### Profile catalog
 
@@ -1452,6 +1687,14 @@ flowchart TD
 - [ ] tester: a seeded spec that cannot fail is detected by its negative control and hardened in a pull request.
 - [ ] tester: a coverage gap between `meta/services.yml` and the specs becomes a pull request with the missing spec.
 - [ ] translator: new strings get machine translations through `web-svc-translate` as Weblate suggestions, and a human-reviewed string stays unchanged.
+- [ ] translator: a merge that adds translatable strings starts the translator routine, which runs `i18n-extract`, `i18n-prune`, `i18n-translate` and `i18n-retry` without a human running them.
+- [ ] translator: each language gets its own pull request with only that language's catalogs, and no language pull request contains algorithm changes.
+- [ ] translator: a language whose catalog fails verification (empty or fuzzy entry, `msgfmt --check` error, changed placeholder or protected span, lost glossary term) gets no pull request and is reported (one fixture per failure kind).
+- [ ] translator: a language whose sampled chat-judge level falls below its last accepted level gets no pull request, and a judge reply without a level aborts that language's verification.
+- [ ] translator: the language set equals `domain_languages()` for each domain, only languages with changed catalogs get a pull request, and a language without a docs catalog gets it created in its first pull request.
+- [ ] translator: no translator code reads an engine from `meta/languages.yml` (grep), and engine capability changes go through the engine's own `serves` declaration.
+- [ ] translator: an algorithm pull request carries the benchmark table per language, and a change that lowers any language's score is discarded (fixture).
+- [ ] translator: the evaluation set of each language is built from human-reviewed Weblate strings and is not used as translation input.
 - [ ] documenter: a merged pull request that changes a role's variables produces a README pull request that matches them, with the docs build green.
 - [ ] release: a green default branch produces a release draft with notes; the tag waits for approval.
 - [ ] security: a seeded vulnerable dependency becomes a work package in the confidential security project.
@@ -1494,17 +1737,28 @@ flowchart TD
 - [ ] [035](035-mcp-proxy-expansion.md) names `dsk-*` roles, has no stray fragment, and lists the AI roles added since it was written.
 - [ ] [037-gettext](037-gettext-catalogs-libretranslate.md) no longer calls the catalog server "038 - web-svc-api".
 
+### Lint tests
+
+- [ ] Every lint of the catalog (L01 to L28) exists under `tests/lint/agents/` and runs in `make test-lint`.
+- [ ] Every lint of the catalog runs alone through the lint target for one role or one file.
+- [ ] Every lint of the catalog has a fixture that turns it red, and the red run is recorded in its test.
+- [ ] The repository as delivered passes every lint of the catalog.
+- [ ] `agents/criteria.yml` names a catalog lint id for every lint-proven criterion, and a criterion pointing to a missing lint id fails L22.
+
 ### Local setup and integration workflows
 
 - [ ] `inventories/bundles/servers/agents/` deploys the complete agent infrastructure against localhost with `make compose-deploy`, and its README describes how.
 - [ ] `call-test-agents-local.yml` runs on pull requests touching `agents/` or an AI role, and `make agents-verify` runs the same file through act.
-- [ ] `call-test-agents-saas.yml` deploys the role set of `call-test-deploy.yml` plus the agents bundle, runs every Playwright spec of the deployed roles and every agent scenario with local models only, and `make agents-integration` runs the same file through act.
-- [ ] `call-test-agents-saas.yml` runs nightly and on manual dispatch, and is a required check before `feature/agents` merges.
+- [ ] `call-test-agents-saas.yml` deploys every app of the `call-test-deploy.yml` matrix together with the agents bundle, runs every Playwright spec of the deployed app and every agent scenario with local models only; the CI runs the matrix in parallel, and `make agents-integration` runs the same file through act one app after the other.
+- [ ] `call-test-agents-saas.yml` runs nightly and on manual dispatch, and is a required check before `feature/agents` merges into `main`; phase pull requests into `feature/agents` are gated only by their own criteria.
 - [ ] No request of a `call-test-agents-saas.yml` run reaches an external model provider (gateway log).
 - [ ] The iteration plan's inner loop works: a change to one role is verified by `make compose-deploy mode=update`, an in-container probe and `make agents-verify scenario=<id>` without a full workflow run.
-- [ ] `make agents-verify` deploys the agent infrastructure through act in compose and in swarm and runs every scenario.
+- [ ] `make agents-verify` deploys the agent infrastructure through act in compose and runs every scenario; the same workflow deploys and runs it in swarm in the CI.
 - [ ] `make agents-verify scenario=<id>` reruns one scenario against the running stack without a redeploy.
-- [ ] Every acceptance criterion of this file except this section has exactly one scenario in `agents/scenarios/`, and a lint test fails on a criterion without a scenario or a scenario without a criterion.
+- [ ] `agents/criteria.yml` maps every criterion id to its proof kind and its proof; a lint fails on a criterion without a proof, on a proof without a criterion, and on a criterion whose wording asks for a probe, a refusal, a time bound or a restart but whose proof is not a scenario.
+- [ ] Every lint and unit proof has a fixture that turns it red, and the red run is recorded.
+- [ ] Scenarios replay recorded stub replies for model nodes; `make agents-rerecord` refreshes them; an injection scenario with a hostile stub that follows the injection still makes no tool call outside the agent's grants.
+- [ ] Only the end-to-end scenarios, the `judge_answers` negative control and the Claude Code path call a live model, and that model supports tool calling.
 - [ ] Fork, push and pull request scenarios pass against the local `web-app-gitea`.
 - [ ] Claude Code scenarios pass against the local model behind the gateway's Anthropic-protocol endpoint.
 - [ ] Without GitHub or Anthropic credentials in the inventory, their scenarios report `skipped`.
@@ -1516,7 +1770,9 @@ flowchart TD
 ### End to end
 
 - [ ] Every new and changed role is green in compose and in swarm.
-- [ ] `make agents-verify` is green locally in both modes before the first CI deploy of `feature/agents`.
+- [ ] `make agents-verify` and `make agents-integration` are green locally in compose mode before the first CI deploy of `feature/agents`.
+- [ ] Every swarm criterion is proven by a CI run on `infinito-nexus/core`, with the job-log line where the change ran recorded in `agents/criteria.yml`.
+- [ ] The scenarios that need external credentials (GitHub per role, Anthropic `api_key` and `subscription`) pass in a final run with the operator's credentials.
 - [ ] The CI pipeline of `feature/agents` is green with the agent scenarios executed (each scenario id present in the job log).
 - [ ] The maintainer fixes a seeded failing test from a failed run through to an open pull request without human input.
 - [ ] The designer opens a pull request that changes the design of one app, with before and after gallery.
