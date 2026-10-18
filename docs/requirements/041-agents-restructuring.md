@@ -121,14 +121,105 @@ flowchart TB
   style PEOPLE fill:#f0fdf4,stroke:#15803d
 ```
 
+### Architecture
+
+```mermaid
+flowchart TB
+  subgraph REPO["📁 Repository"]
+    direction LR
+    ROLE["🎭 agents/roles/&lt;role&gt;<br/>AGENTS.md, SOUL.md,<br/>agent.yml, cron.yml"]
+    SKILL["🧰 agents/skills<br/>Markdown"]
+    ROUT["🧭 agents/routines<br/>Python graphs"]
+    FWR["🛡️ agents/firewall"]
+    LOGIC["⚙️ cli/ and utils/<br/>deterministic scripts"]
+  end
+  INV["🗂️ Inventory<br/>agents.&lt;role&gt; overrides,<br/>KeePass master keys"]
+  CFG(["🔀 lookup agent_config<br/>deep merge"])
+  subgraph CTRL["🎛️ Control plane"]
+    direction LR
+    ORCH["🧭 Orchestrator<br/>cron.yml runner, webhooks and polling,<br/>LangGraph runner, channels, audit"]
+    BRK["🐣 Broker<br/>lifecycle, max_running queue,<br/>KeePass, credential helper, tokens"]
+    FWC["🛡️ Firewall compiler"]
+    PROV["🏭 Provisioner and reaper<br/>instance API"]
+  end
+  subgraph WS["🧰 Workspace, Kata or gVisor"]
+    direction LR
+    RT["🤖 Runtime<br/>Hermes, OpenClaw, Claude Code"]
+    HOME["🏠 Harness home<br/>memory, transcripts, runs"]
+    SIDE["📦 Sync sidecar"]
+  end
+  subgraph SVC["🏗️ Shared services"]
+    direction LR
+    GW["🧠 LiteLLM + s1"]
+    MCP["🔌 MCP adapter"]
+    IAM["🪪 Keycloak + LDAP"]
+    PG["🗄️ Postgres<br/>checkpoints, audit"]
+  end
+  subgraph STORE["☁️ Storage"]
+    direction LR
+    NC["☁️ Nextcloud<br/>agent .kdbx + knowledge"]
+    BAO["🔐 OpenBao, optional<br/>master keys"]
+  end
+  subgraph WORK["👥 Work and people"]
+    direction LR
+    OP["📋 OpenProject"]
+    CH["📣 Matrix, email, Zammad"]
+    FG["🐙 GitHub, Gitea, GitLab"]
+    UI["💬 Open WebUI, n8n, Flowise"]
+  end
+  REPO --> CFG
+  INV --> CFG
+  CFG ==>|"merged roles, crons, rules"| CTRL
+  ROUT -->|"calls"| LOGIC
+  SKILL -->|"refers to"| ROUT
+  ORCH ==>|"runs routines in"| WS
+  BRK ==>|"spawns, releases credentials"| WS
+  FWC -->|"limits"| WS
+  FWC -->|"policy, groups"| SVC
+  PROV -->|"accounts"| IAM
+  RT -->|"thinks and acts via"| GW
+  RT -->|"tools via"| MCP
+  RT --- HOME
+  HOME --> SIDE
+  SIDE -->|"snapshot, secrets redacted"| NC
+  BRK <-->|"opens .kdbx"| NC
+  INV -.->|"master key"| BRK
+  BAO -.->|"master key"| BRK
+  ORCH -->|"checkpoints, audit"| PG
+  ORCH <-->|"tickets"| OP
+  ORCH <-->|"messages, approvals"| CH
+  RT -->|"fork, push, PR"| FG
+  UI -->|"start profiles, control"| ORCH
+  classDef repo fill:#e0f2fe,stroke:#0369a1,color:#082f49
+  classDef cfg fill:#fef9c3,stroke:#a16207,color:#422006
+  classDef ctrl fill:#fef3c7,stroke:#b45309,color:#451a03
+  classDef ws fill:#ede9fe,stroke:#6d28d9,color:#2e1065
+  classDef svc fill:#f1f5f9,stroke:#475569,color:#0f172a
+  classDef store fill:#ccfbf1,stroke:#0f766e,color:#042f2e
+  classDef work fill:#dcfce7,stroke:#15803d,color:#052e16
+  class ROLE,SKILL,ROUT,FWR,LOGIC repo
+  class INV,CFG cfg
+  class ORCH,BRK,FWC,PROV ctrl
+  class RT,HOME,SIDE ws
+  class GW,MCP,IAM,PG svc
+  class NC,BAO store
+  class OP,CH,FG,UI work
+  style REPO fill:#f0f9ff,stroke:#0369a1
+  style CTRL fill:#fffbeb,stroke:#b45309
+  style WS fill:#f5f3ff,stroke:#6d28d9
+  style SVC fill:#f8fafc,stroke:#475569
+  style STORE fill:#f0fdfa,stroke:#0f766e
+  style WORK fill:#f0fdf4,stroke:#15803d
+```
+
 ### Repository layout
 
 ```
 agents/
   SOUL.md                     shared base persona (from docs/agents/meta/)
   roles/
-    <role>/      AGENTS.md  SOUL.md  agent.yml   one directory per role of the table below
-  skills/                     replaces skills/ (i8-* skills) and docs/agents/files/
+    <role>/      AGENTS.md  SOUL.md  agent.yml  cron.yml   one directory per role of the table below
+  skills/                     Markdown skills, replaces skills/ (i8-* skills) and docs/agents/files/
   routines/                   Python package, one LangGraph graph per routine
   firewall/                   RBAC roles with allow/ask/deny rules
   scenarios/                  one verification scenario per acceptance criterion
@@ -152,13 +243,15 @@ flowchart LR
 🟥 today, 🟩 after the restructuring.
 
 - `AGENTS.md` holds the role's operating rules, `SOUL.md` its persona; both extend `agents/SOUL.md`.
-- `agent.yml` holds the machine-readable fields: `runtime`, `lifecycle`, `triggers`, `repositories`, `firewall_roles`, `credentials`, `owner`, `models`, `quotas`, `write_enabled`, `skills`.
+- `agent.yml` holds the machine-readable fields: `runtime`, `lifecycle`, `triggers` (events only), `repositories`, `firewall_roles`, `credentials`, `keepass`, `owner`, `models`, `quotas`, `write_enabled`, `skills`.
+- `cron.yml` holds the role's scheduled starts as a list; each entry has a `name`, a UTC cron expression `schedule`, the `routine` it starts, an optional `condition` (for example a load rule) and an `action` (`start` or `pause`). A role may have any number of entries, or none.
 
 Every agent is a role, and every role is built the same way:
 
 - A role has exactly one soul: its `SOUL.md`, which opens with an `## Objective` section stating in one sentence what the role works towards.
 - A role runs one or more skills, listed in `agent.yml` `skills`; a skill may serve several roles.
-- A skill may build on any number of routines, listed in its frontmatter as `routines`; a routine may serve several skills. A skill without routines is a pure rule skill (for example a file-type rule).
+- A skill is Markdown. It may build on any number of routines, listed in its frontmatter as `routines`; a routine may serve several skills. A skill without routines is a pure rule skill (for example a file-type rule).
+- A routine is a Python graph. Its deterministic steps may call the repository's own deterministic scripts in `cli/` and `utils/`, through a make target or `python -m`; the logic stays there (the translation routine calls `cli/build/i18n`, it does not reimplement it).
 - A routine never calls a skill, and a skill never calls a role: work flows from the role through its skills down to the routines.
 
 ```mermaid
@@ -220,6 +313,7 @@ flowchart LR
 ```
 
 - The root `AGENTS.md` becomes an entry point that links into `agents/` and keeps the interactive-session rules (permissions, sandbox, no push).
+- The root `AGENTS.md` has a support section that asks every agent working on the repository to point its human operator, once per session, to the ways of supporting further development: a donation to the Bitcoin address of the repository `README.md` or through PayPal to `kevin@veen.world`. Agents mention the options only; they never send a payment, use a wallet or payment tool, or repeat the request within a session.
 - `docs/agents/action/*` pages with a fixed sequence of steps become routines; pages without one become skills; index pages fold into `agents/README.md`. `docs/agents/files/*` become skills, `docs/agents/meta/*` go into `agents/SOUL.md`. `docs/agents/` is deleted afterwards.
 
 | `docs/agents/action/` page | Becomes |
@@ -245,7 +339,7 @@ flowchart LR
 | coordinator | Assigns CI slots and runners, orders merges, merges sibling branches, detects version drift between branches | Hermes | on_demand | CI queue change, pull request ready, branch divergence, schedule |
 | operator | Runs the deployed instances: alarms, backups, certificates, disk space, incidents | Hermes | on_demand | alarm from `sys-ctl-alm-*`, schedule |
 | tester | Hardens specs, runs negative controls, closes Playwright coverage gaps | Claude Code | on_demand | schedule, changed spec, agent pull request |
-| translator | Runs every translation command, opens one pull request per language, verifies the translations, and optimises the translation algorithms; suggests Weblate translations through `web-svc-translate` | Hermes | on_demand | new or changed strings on the default branch, Weblate change, schedule |
+| translator | Runs every translation command, opens one pull request per language, verifies the translations, and optimises the translation algorithms; suggests Weblate translations through `web-svc-translate` | Hermes | on_demand | night cron 23:00 to 07:00 UTC; day cron every 10 minutes, driven by host load |
 | documenter | Keeps role READMEs and contributor docs in line with the code | Claude Code | on_demand | merged pull request touching a role, schedule |
 | release | Prepares versions, tags and release notes | Hermes | on_demand | coordinator reports the default branch green, schedule |
 | security | Audits the repository: code, dependencies, configuration | Claude Code | on_demand | schedule, new dependency, agent pull request |
@@ -253,7 +347,9 @@ flowchart LR
 | support | Drafts answers to support requests, sends them after approval, files work packages for defects and wishes | Hermes | on_demand | new Zammad ticket, support email, support room message |
 | user-started | Any role of the catalog, started by a user (see Profile catalog) | the role's runtime | on_demand | start from Open WebUI, n8n or Flowise |
 
-Every field of `agent.yml` has a default and is overridable from the inventory under `agents.<role>`, except `agents.hacker.targets`, which has no default and must be set before the hacker runs. `write_enabled` defaults to `false`.
+Every field of `agent.yml` and every entry of `cron.yml` has a default and is overridable from the inventory under `agents.<role>`, except `agents.hacker.targets`, which has no default and must be set before the hacker runs. `write_enabled` defaults to `false`, `keepass.mode` to `broker`.
+
+A human developer reconfigures any role the way applications are reconfigured: the inventory's `agents.<role>` is deep-merged over the role's `agent.yml` and `cron.yml`, and every consumer reads the merged result through one lookup (`lookup('agent_config', role, path)`), never the raw files.
 
 How the agents hand work to each other:
 
@@ -437,18 +533,31 @@ flowchart LR
 - Machine translations go through `web-svc-translate`.
 - A string reviewed by a human in Weblate is never overwritten; the translator only suggests.
 - The translator runs the translation commands; no other routine does: `make i18n-extract`, `make i18n-prune`, `make i18n-translate`, `make i18n-retry` and `make i18n-tune`.
+- Two entries of `agents/roles/translator/cron.yml` drive the translator:
+  - Night (23:00 to 07:00 UTC): the window decides, not the load; translation runs or resumes at 23:00 regardless of load.
+  - Day (07:00 to 23:00 UTC): a cron every 10 minutes measures host load. It starts or resumes translation when CPU is below 30 % and GPU is below 30 %, and pauses it when CPU is above 95 % or GPU is above 95 %.
+- The day rule measures the load of everything except the translation lane itself (per-container figures, the rest of the system is the difference), so the translator's own load never stops it and the regulator cannot oscillate.
+- On a host without a usable GPU (`accelerated()` in `utils/i18n/libretranslate.py` is false), the GPU condition counts as met.
+- Pausing means `make i18n-pause`, which pauses the tools lane container; resuming means `make i18n-resume`. The lane keeps its loaded models, containers and connections, and continues exactly where it paused. Stopping the make process alone is never used, because the client keeps sending requests; stopping the lane container is never used, because it ends in a kill and costs a lane warm-up of about 25 minutes.
+- At 07:00 UTC the night run pauses and the day rule takes over. A catalog is written only when it completes, so a pause never loses finished work, and `make i18n-translate` picks only empty and fuzzy entries when it continues.
+- New strings and Weblate changes queue until the next start, by night window or by the day rule.
+- `make i18n-translate` never revisits a filled entry, so the translator judges finished entries in a separate pass (`make test-oracle`) inside the window. The pass samples a fixed number of entries per language, so its cost grows with the number of languages, never with catalog size; it shares the model instance with the translation and is budgeted at about one hour of the window.
+- An entry that fails the judgement is retranslated with the engine that produced it excluded (the gateway's `exclude` list on `/translate`). Every entry counts its attempts; after `agents.translator.max_attempts` failed attempts (default 3) it stays marked for a human and appears in the translator's report as a string no local engine can render. No entry is retried without a changed engine.
+- The machine-translation marker in the catalogs records the engine that actually answered, not a fixed name, so a retry can exclude it.
+- Engine-served languages run before chat-served ones, and chat lanes stay capped as `cli/build/i18n` sets them; the translator does not raise the cap.
+- The full `test-integration` coverage of every language in both domains is not a gate the nightly window is expected to reach; its scope is the operator's decision.
 - One pull request per language (`update/i18n-<language>-<date>`), carrying only that language's catalogs; algorithm changes go into their own pull requests, never mixed with catalog updates.
 - The language set is what `domain_languages()` returns for each domain: every non-source language of `meta/languages.yml`. A pull request is opened only for a language whose catalogs changed; a language that has no catalog for a domain yet gets it created in its first pull request.
 - A language pull request is opened only after its verification passed: every entry filled and not fuzzy, `msgfmt --check` clean, placeholders and protected spans identical to the source, glossary terms kept, and a sampled quality judgement by the chat judge (`utils/i18n/judge.py`, a chat model through `svc-ai-litellm`, three written-out levels, `temperature: 0`) at or above the language's last accepted level. A judge reply without a level aborts the verification instead of scoring.
 - An algorithm change (router parameters such as fall-through order, failure threshold and settle rule; an engine's declared capabilities such as `services.libretranslate-engine.serves`; masking; damage predicate; glossary; client settings) is opened only with a benchmark: a fixed evaluation set per language built from human-reviewed Weblate strings, scored by the chat judge before and after; it must improve at least one language and lower none.
 - The translator never reads or writes a per-language engine: `meta/languages.yml` holds only name, native name and direction, and which engine answers a language is the router's decision.
-- Algorithm changes to `web-svc-translate` and `svc-ai-s1` are announced to the owner of the translation gateway before the pull request opens.
+- Algorithm changes to `web-svc-translate`, `svc-ai-s1` and `utils/i18n` (the catalog marker included) are announced to the owner of the translation gateway before the pull request opens.
 
 Translator routine:
 
 ```mermaid
 flowchart TD
-  T1(["🔔 New strings, Weblate change or schedule"])
+  T1(["🔔 Night cron 23:00 UTC, or day cron<br/>when load without the lane is below 30 %"])
   D1["📥 make i18n-extract"]
   D2["✂️ make i18n-prune<br/>(damaged protected spans)"]
   subgraph PERLANG["🌍 For each language"]
@@ -570,8 +679,12 @@ stateDiagram-v2
 - An `account` grant is active only while its credentials are present in the inventory or provisioned; an inactive grant is skipped, and the next active account becomes the default.
 - User-started agents get `account` grants only for providers the platform provisions, never for manually created external accounts.
 - Agents hold no model provider credential. Anthropic is configured once in `svc-ai-litellm` as upstream, with `auth: api_key` (default) or `auth: subscription` chosen in the inventory.
-- Generated secrets are stored through `sys-token-store`.
-- No long-lived credential is stored inside a workspace. Git operations get their credentials from a credential helper and an `ssh-agent` socket served by the broker from outside the workspace; tokens are scoped to the agent's fork and short-lived wherever the provider supports it.
+- Every agent keeps all its credentials (logins, tokens, keys, signing keys, recovery keys) in its own KeePass database (`.kdbx`); that database is the single source of the agent's credentials. The inventory, and optionally OpenBao, hold only the database's master key and the bootstrap credentials; `sys-token-store` keeps platform secrets only.
+- The `.kdbx` is stored in the agent's Nextcloud account when the agent has a Nextcloud grant, and in its persistent volume otherwise.
+- `keepass.mode` decides who opens the database:
+  - `broker` (default): the broker holds the master key, opens the database and releases single entries to the agent through the credential helper, the `ssh-agent` socket and token minting; no long-lived credential is stored inside the workspace.
+  - `agent`: the agent holds the master key itself and works fully autonomously; this mode is set per role in the inventory as an explicit release.
+- Git operations in `broker` mode get their credentials from the broker's credential helper and `ssh-agent` socket from outside the workspace; tokens are scoped to the agent's fork and short-lived wherever the provider supports it.
 - A deterministic secret scan (gitleaks) runs on every outgoing diff before a push; a hit aborts the push.
 
 ### Account naming
@@ -711,7 +824,13 @@ Shared deterministic tool nodes (no model call):
 - check the branch name prefix before the first push against the allowed list (`feature`, `fix`, `update`, `chore`, `dependabot`, `alert-autofix`); a wrong prefix after a push is repaired by a new pull request that references the old one, never by a rename;
 - mark check runs that a new pull request inherits from the old one through the same commit SHA as stale;
 - on `toomanyrequests` and similar rate limits, check whether the failing pull went through the mirror or the cache, and compare it with the jobs that did not fail;
-- for every new environment key, run the affected test suites once with the key set to `true` and once to `false`.
+- for every new environment key, run the affected test suites once with the key set to `true` and once to `false`;
+- triage step zero: compare the run's head SHA with the branch head and mark findings of an outdated run as stale before anything else;
+- before every push, run `scripts/meta/resolve/diff/affected_roles.sh` locally and write the predicted matrix size into the pull request text;
+- wait for an external state (a job log, the end of a run, a check) only through the sanctioned wait target with a fixed interval and timeout, never through a shell loop;
+- when a red job has no citable log line, attribute nothing; acquiring evidence by a re-run after the run ended is its own step and an `ask` to the operator;
+- idle detection: when a triage round finds the same red job ids, the same heads and no new comments as the round before, the routine stops repeating rounds and hands over to `make ci-wait` until one of them changes;
+- CI liveness: for every open pull request, check that an unfinished `pull_request` run exists for the current head; when none exists, report "CI not active" and hand the operator the `gh run rerun` command.
 
 Shared model nodes: cluster boundaries, root cause (with the dialectic skill), failure class, fix design and scope, infra race versus code defect, selector and token mapping, visual review of screenshots, upstream limit versus fixable, break risk, bundling, commit and pull request text, verification of review findings against the code, cross-agent triage.
 
@@ -749,6 +868,8 @@ Failure classes of the maintainer routine:
 | Budget kill | exit `124` while the tests that ran are green | budget analysis against earlier runs, fix the slowest task class, never raise the budget blindly |
 | Superseded run | red "Finish pipeline" after a label event or a newer push | not a failure; wait for the superseding run |
 | External but structural | an external limit (registry rate limit, quota) hits some jobs but not others | a retry is no fix: prove why the other jobs are protected, then close the design gap that left these exposed |
+| Unattributed | a red job whose log returns `404` or whose diagnostics show only the outer runner and `exit code 1` | no attribution without a citable line; ask the operator for a re-run after the run ended |
+| Starved queue cancellation | a job stays queued without steps and with an empty `runner_name` until the run is cancelled; the pull request keeps only its old red check | report "CI not active" for the head and hand the operator the `gh run rerun` command |
 
 Legend for the routine diagrams: 🔵 trigger, 🟢 ⚙️ deterministic step (no model call), 🟣 🧠 model judgement, 🟡 👤 human or owner, ✅ finished, 🛑 stops with a report. Diamonds are yes/no checks, hexagons are judgement calls.
 
@@ -998,7 +1119,10 @@ Make targets the tool nodes need:
 - print one test's JUnit failure and system-out;
 - query Prometheus probes per app;
 - build a design gallery, diff its manifest, scan off-palette areas, render a contact sheet;
-- run a test against another ref in a temporary worktree and print the imported module path (`make test-ref ref=<ref> test=<path>`).
+- run a test against another ref in a temporary worktree and print the imported module path (`make test-ref ref=<ref> test=<path>`);
+- wait for an external state with a fixed interval and timeout (`make ci-wait kind=job-log|run|check id=<id> interval=<s> timeout=<s>`), so no routine needs a shell loop;
+- cache the rendered control fixture of the oracle per language, so a judge pass stops re-rendering a fixture that never changes (about half of the pass today);
+- pause and resume the translation lane (`make i18n-pause`, `make i18n-resume`) and report the host load without the lane (`make i18n-load`), so the translator's crons never touch Docker directly.
 
 Defects to fix in existing targets:
 
@@ -1012,6 +1136,7 @@ Defects to fix in existing targets:
 - the npm cache is read-only inside the sandbox (`EROFS`);
 - a leftover `<slot>_default` network makes a slot look free while its subnet is taken;
 - `make worktree-up` hands out slots (for example 50) whose derived swarm lab subnet is invalid (`192.168.294.x`);
+- the affected-roles resolver expands a pull request that only adds a test under `tests/` to `__ALL__`, which fills the hosted runner limit;
 - the Edit and Write tools turn `\uXXXX` in source code into the real character, in regex classes even into private-use and surrogate characters; agents need a skill rule to write escapes as `\U0000XXXX` or `\N{NAME}`.
 
 ### Board
@@ -1067,13 +1192,14 @@ Agents also run from a throwaway Infinito.Nexus instance on a developer's machin
   - Nextcloud: an app password created through `ocs/v2.php/core/getapppassword` from the agent's login;
   - Gitea and GitLab: short-lived personal access tokens minted by the broker;
   - providers whose client owns a session (Matrix, XMPP, IMAP and SMTP): the orchestrator's channel adapter logs in itself and keeps the session outside the workspace; Matrix device and end-to-end keys survive teardowns through server-side key backup.
-- Secrets that must survive a teardown (login credentials, the Matrix recovery key, the instance key) live in the developer's encrypted inventory; optionally in OpenBao on the live instance, through one AppRole per instance limited to `agents/<instance id>/*` with a short SecretID lifetime. They are never kept only in `sys-token-store`, which a teardown deletes.
+- Secrets that must survive a teardown (login credentials, the Matrix recovery key, the instance key) live in the agent's `.kdbx` on the live Nextcloud. Its master key lives in the developer's encrypted inventory, optionally in OpenBao on the live instance through one AppRole per instance limited to `agents/<instance id>/*` with a short SecretID lifetime. Nothing is kept only in `sys-token-store`, which a teardown deletes.
 - Triggers: webhooks only when the instance is publicly reachable; otherwise the orchestrator polls the provider APIs (OpenProject work packages filtered by `updatedAt` since the last sync, workflow runs and issues with conditional requests, tickets) every `agents.poll_interval` seconds (default 120) with jitter, and hands each change to the same handler a webhook would reach.
 - Claim: humans assign a work package to the OpenProject group of a role, which carries the same name as the role's RBAC group (`agent-<role>`). An agent claims it by reading it, checking `Approved` and the group assignee, then setting itself as assignee and `In progress` in one update carrying `lockVersion`; a `409` means another instance took it first. OpenProject workflows allow agent accounts only `Approved` -> `In progress` -> `Review`.
 - Board writes: agents never write to the board directly; the orchestrator writes on their behalf under the agent's own identity, so no agent needs board egress.
 - When the live instance is unreachable, a throwaway instance writes nothing: claims, board writes, pushes and channel posts stop until the lease is renewed. Alarms go out through `sys-ctl-alm-*`; repairing the live instance is a human deploy. Each agent's egress to remote hosts is derived from its own `account` grants, exact hosts only.
-- Home sync: an allowlist of each harness home syncs to the agent's Nextcloud account on the live instance: memory, skill state, run reports and galleries. Session transcripts (`projects/*.jsonl`, `history.jsonl` and their equivalents) never sync.
-  - A sidecar outside the workspace uploads a secret-scanned snapshot of the allowlist over WebDAV at every routine checkpoint and at teardown; a scan hit stops the upload. Start restores the latest snapshot. Nextcloud versioning keeps earlier snapshots, so the owner can roll memory back.
+- Home sync: the whole harness home of each agent, its complete dynamic knowledge, syncs unencrypted to the agent's Nextcloud account on the live instance, session transcripts included; its `.kdbx` syncs next to it, encrypted by KeePass. This happens only when the agent has a Nextcloud grant.
+  - A secret scan runs over every snapshot before upload; a hit is redacted in the uploaded copy, and the upload goes on.
+  - A sidecar outside the workspace uploads the scanned snapshot over WebDAV at every routine checkpoint and at teardown. Start restores the latest snapshot and the `.kdbx`. Nextcloud versioning keeps earlier snapshots, so the owner can roll knowledge back.
 - Channels: every channel for which credentials exist may live on a remote instance; the local instance's channel is the default.
 
 ```mermaid
@@ -1082,7 +1208,7 @@ flowchart LR
     OR["🧭 Orchestrator<br/>polls, claims, writes board,<br/>channel sessions, audit spool"]
     BR["🐣 Broker<br/>JWT, app passwords, PATs"]
     AG["🤖 Agents<br/>impl0deva, mant0deva, ..."]
-    SC["📦 Sync sidecar<br/>allowlist snapshots"]
+    SC["📦 Sync sidecar<br/>home snapshots, secrets redacted"]
   end
   subgraph LIVE["🌍 Live instance: the truth"]
     API["🎛️ Instance API<br/>register, provision, lease, audit"]
@@ -1348,7 +1474,7 @@ Every rule of this requirement that can be checked without a running stack has a
 
 | Id | Rule the lint enforces |
 |---|---|
-| L01 | `agent.yml` has every field; runtime, lifecycle, triggers and firewall roles name known values; `write_enabled` defaults to `false` |
+| L01 | `agent.yml` has every field; runtime, lifecycle, triggers (events only) and firewall roles name known values; `write_enabled` defaults to `false`; `keepass.mode` is `broker` or `agent` and defaults to `broker` |
 | L02 | every role has `AGENTS.md`, `SOUL.md` and `agent.yml`; every `SOUL.md` opens with a one-sentence `## Objective` and links `agents/SOUL.md` |
 | L03 | every skill a role lists exists in `agents/skills/`; every routine a skill lists exists in `agents/routines/`; every role lists at least one skill |
 | L04 | layering: no routine imports or calls a skill, no skill calls a role |
@@ -1376,6 +1502,10 @@ Every rule of this requirement that can be checked without a running stack has a
 | L26 | `docs/agents/` does not exist and no file links to it; every former `docs/agents/action/` page is mapped as the mapping table says |
 | L27 | no secret value in `agents/` (gitleaks over the tree) |
 | L28 | every make target this requirement names exists and is documented in `make help` |
+| L29 | the root `AGENTS.md` support section exists, and its Bitcoin address equals the one in the repository `README.md` |
+| L30 | every `cron.yml` entry has a unique `name`, a valid UTC cron `schedule`, an existing `routine`, an `action` of `start` or `pause`, and a `condition` the orchestrator knows |
+| L31 | no code reads `agent.yml` or `cron.yml` directly; every consumer goes through `lookup('agent_config', ...)`, and every inventory override under `agents.<role>` names an existing role and field |
+| L32 | every skill is Markdown; every routine is a Python graph; routine steps call repository logic in `cli/` or `utils/` instead of reimplementing it (no copy of a function that exists there) |
 
 ### Iteration plan
 
@@ -1453,11 +1583,16 @@ flowchart TD
 - [ ] `make install-skills` installs the repository skills from `agents/skills/`.
 - [ ] `docs/agents/` no longer exists, and no file in the repository links to it.
 - [ ] The root `AGENTS.md` links to `agents/` and keeps the permission, sandbox and push rules for interactive sessions.
+- [ ] The root `AGENTS.md` support section names the Bitcoin address and PayPal to `kevin@veen.world`, tells agents to mention them to their human operator once per session, and forbids agents to send payments or use payment tools.
+- [ ] A lint fails when the Bitcoin address in the root `AGENTS.md` differs from the one in the repository `README.md`.
 - [ ] A lint test fails when an `agent.yml` misses a field or names an unknown runtime, lifecycle, trigger or firewall role.
 - [ ] Every role lists at least one skill in `agent.yml` `skills`, and a lint fails on a skill that does not exist in `agents/skills/`.
 - [ ] Every skill in `agents/skills/` declares its frontmatter `routines` (possibly empty for a pure rule skill), and a lint fails on a routine that does not exist in `agents/routines/`.
 - [ ] Every role's `SOUL.md` opens with an `## Objective` section of one sentence, and a lint fails otherwise.
 - [ ] A lint fails when a routine calls a skill or a skill calls a role.
+- [ ] Every role's scheduled starts live in its `cron.yml`, a role may list several entries, and the orchestrator runs each entry at its schedule (fixture clock).
+- [ ] An inventory override under `agents.<role>` changes a field of `agent.yml` and an entry of `cron.yml` on the next deploy, and every consumer reads the merged value through `lookup('agent_config', ...)`.
+- [ ] The translation routine runs translation through `cli/build/i18n` and contains no copy of its logic.
 
 ### Routines
 
@@ -1487,6 +1622,11 @@ flowchart TD
 - [ ] Check runs a new pull request inherits through the same commit SHA from an older pull request are reported as stale, not as failures.
 - [ ] A seeded rate-limit failure is classified as external but structural, and the report states whether the pull went through the mirror or the cache.
 - [ ] Adding a new environment key runs the affected suites with `true` and with `false`, and a test that does not clear the key fails one of the two runs (fixture).
+- [ ] Triage step zero marks the findings of a run whose head SHA is not the branch head as stale (fixture).
+- [ ] Every agent pull request text states the matrix size predicted by `scripts/meta/resolve/diff/affected_roles.sh` before its first push.
+- [ ] A red job without a citable log line is reported as unattributed, and the re-run request goes to the operator as an `ask` (fixture with a `404` log).
+- [ ] Two consecutive triage rounds with the same red job ids, heads and comments make the routine wait through `make ci-wait` instead of starting a third round (fixture).
+- [ ] An open pull request whose current head has no unfinished `pull_request` run, after a cancelled run whose job never got a runner, is reported as "CI not active" with the `gh run rerun` command for the operator (fixture).
 - [ ] `agents/skills/` holds the rule that environment differences are declared capabilities, never runtime-identity checks, and a lint flags new `runs_on_github` or `RUNTIME` branches in role logic.
 - [ ] An `ask` hit outside a declared gate node is reported as a firewall misconfiguration.
 
@@ -1494,6 +1634,8 @@ flowchart TD
 
 - [ ] Each make target listed under Tooling gaps exists, is documented in `make help` and is called by the routine that needs it.
 - [ ] The lint for one role or one file reports a key-order error in `default.env` and a prefix-group error in a handler file name within one minute, without the full gate.
+- [ ] `make ci-wait` returns when the awaited job log, run end or check is available, fails at its timeout, and polls only at its interval.
+- [ ] The affected-roles resolver keeps a pull request that only adds a test under `tests/` at its real matrix instead of `__ALL__`.
 - [ ] `make compose-role-sync task=<task> pw=<args>` runs the spec.
 - [ ] `make compose-playwright` runs the current spec and `.env`.
 - [ ] `make design-palette sync=role` re-renders `.env`.
@@ -1529,7 +1671,9 @@ flowchart TD
 - [ ] No agent workspace or agent container holds a model provider credential (probe recorded).
 - [ ] A `github` account grant without credentials in the inventory is inactive, and the next active account is the default.
 - [ ] Overriding a credential under `agents.<role>.credentials` in the inventory replaces the generated default.
-- [ ] No generated agent secret is written outside `sys-token-store`.
+- [ ] Every agent credential lives in the agent's `.kdbx`; a grep over `sys-token-store` and the inventory finds no agent credential except the master key and the bootstrap credentials.
+- [ ] With a Nextcloud grant the `.kdbx` is stored in the agent's Nextcloud account; without one it stays in the agent's persistent volume.
+- [ ] In `keepass.mode: broker` the agent never reads the master key and receives only the entries the broker releases (probe recorded); in `keepass.mode: agent`, set in the inventory, the agent opens the database itself.
 
 ### Forges and external accounts
 
@@ -1598,7 +1742,7 @@ flowchart TD
 - [ ] A seeded prompt injection in an issue, a pull request comment, a ticket, an email and a CI log makes no agent call a tool outside its grants, leak a secret, or skip the `Approved` gate (one scenario each).
 - [ ] A node that reads untrusted content runs without an agent runtime and without tools, and only its schema output reaches tool-using nodes (unit test).
 - [ ] An issue from a non-collaborator and a fork pull request run start the planner, not the maintainer's ungated path.
-- [ ] No file inside a workspace contains a long-lived credential, and git operations in the workspace succeed through the broker's credential helper and `ssh-agent` socket (probe recorded).
+- [ ] In `keepass.mode: broker`, no file inside a workspace contains a long-lived credential, and git operations in the workspace succeed through the broker's credential helper and `ssh-agent` socket (probe recorded).
 - [ ] A diff containing a seeded secret is stopped by the pre-push secret scan, and nothing reaches the remote.
 - [ ] A webhook without a valid signature, with a replayed delivery id, or with forged payload content is rejected or acted on only through the re-fetched event.
 - [ ] An autonomous agent's write to `agents/firewall/`, `agents/routines/`, an `AGENTS.md`, a `SOUL.md`, the firewall compiler or `.github/workflows/` is denied, and a pull request touching them is labelled by CI and gets no `recommend merge`.
@@ -1630,15 +1774,16 @@ flowchart TD
 - [ ] The broker reaches the OpenProject API with an OIDC JWT bearer token and Nextcloud with an app password created from the agent's login; neither appears inside a workspace (probe recorded).
 - [ ] Gitea and GitLab tokens minted by the broker are short-lived and never appear inside a workspace (probe recorded).
 - [ ] The Matrix channel adapter logs in with login credentials, keeps its session outside the workspace, and after a teardown and redeploy decrypts earlier end-to-end encrypted room history through key backup, with the recovery key read from the inventory or OpenBao.
-- [ ] After a teardown, login credentials, the Matrix recovery key and the instance key are still available from the developer's inventory or OpenBao, and nothing of them is kept only in `sys-token-store`.
+- [ ] After a teardown, login credentials, the Matrix recovery key and the instance key are still available from the agent's `.kdbx` on the live Nextcloud, opened with the master key from the inventory or OpenBao, and nothing of them is kept only in `sys-token-store`.
 - [ ] With OpenBao enabled, an instance's AppRole reads `agents/<instance id>/*` and is refused everywhere else.
 - [ ] Two throwaway instances claiming the same work package at once end with exactly one owner; the other gets `409` and moves on.
 - [ ] A claim is refused when the work package is not `Approved` or not assigned to the agent's role group, and OpenProject refuses an agent account's transition outside `Approved` -> `In progress` -> `Review`.
 - [ ] When an instance's lease expires, the live reaper revokes its tokens, app passwords and Matrix devices and returns its claimed work packages to `Approved`; a write from the instance after expiry is refused.
 - [ ] `make agents-stop` suspends without revoking, and `make agents-start` resumes; a teardown revokes.
 - [ ] No agent writes to the board directly; board writes come from the orchestrator, and each agent's egress to remote hosts matches its own `account` grants exactly.
-- [ ] After a teardown and redeploy, every agent's allowlisted harness state is restored from the latest Nextcloud snapshot.
-- [ ] Session transcripts and credential files never reach Nextcloud, a seeded secret stops the snapshot upload, and the owner can restore an earlier memory snapshot.
+- [ ] After a teardown and redeploy, every agent's harness home and `.kdbx` are restored from the latest Nextcloud snapshot.
+- [ ] The whole harness home, session transcripts included, reaches the agent's Nextcloud with every seeded secret redacted in the uploaded copy, the `.kdbx` arrives encrypted, and the owner can restore an earlier snapshot.
+- [ ] An agent without a Nextcloud grant uploads nothing.
 - [ ] Snapshots are uploaded at routine checkpoints and at teardown by the sidecar, never continuously from open files.
 - [ ] Audit entries of a throwaway instance reach the live instance with server-assigned time, sequence and hash chain; a dropped entry is reported as a gap, and a teardown waits until the spool is empty.
 - [ ] A GitHub push from a throwaway instance uses that instance's own token and signing key under the role account, carries the instance id in the branch name, and revoking that token leaves other instances working.
@@ -1687,7 +1832,16 @@ flowchart TD
 - [ ] tester: a seeded spec that cannot fail is detected by its negative control and hardened in a pull request.
 - [ ] tester: a coverage gap between `meta/services.yml` and the specs becomes a pull request with the missing spec.
 - [ ] translator: new strings get machine translations through `web-svc-translate` as Weblate suggestions, and a human-reviewed string stays unchanged.
-- [ ] translator: a merge that adds translatable strings starts the translator routine, which runs `i18n-extract`, `i18n-prune`, `i18n-translate` and `i18n-retry` without a human running them.
+- [ ] translator: a merge that adds translatable strings is queued, and the cron start at 23:00 UTC runs `i18n-extract`, `i18n-prune`, `i18n-translate` and `i18n-retry` without a human running them.
+- [ ] translator: at 23:00 UTC the night cron starts or resumes translation regardless of load, and at 07:00 UTC it pauses it and hands over to the day rule (fixture clock).
+- [ ] translator: during the day, a tick with CPU and GPU below 30 % starts or resumes translation, and a tick with CPU or GPU above 95 % pauses it (fixture load figures).
+- [ ] translator: the day rule ignores the translation lane's own load, so a running translation at high own load with an idle rest of the system is not paused (fixture).
+- [ ] translator: on a host where `accelerated()` is false, the GPU condition counts as met.
+- [ ] translator: `make i18n-pause` pauses the tools lane container and `make i18n-resume` continues it with its models and connections intact; no request leaves the lane while it is paused (probe recorded).
+- [ ] translator: an entry that fails the separate `make test-oracle` judgement is retranslated in the next window with the engine that produced it excluded.
+- [ ] translator: after `agents.translator.max_attempts` failed attempts an entry is no longer retried, stays marked for a human, and is listed in the translator's report (fixture of a string every engine fails).
+- [ ] translator: the machine-translation marker of every catalog entry names the engine that answered (fixture with two engines).
+- [ ] translator: the judge pass of a full night stays within its budget of about one hour of the window, measured on the host (recorded duration).
 - [ ] translator: each language gets its own pull request with only that language's catalogs, and no language pull request contains algorithm changes.
 - [ ] translator: a language whose catalog fails verification (empty or fuzzy entry, `msgfmt --check` error, changed placeholder or protected span, lost glossary term) gets no pull request and is reported (one fixture per failure kind).
 - [ ] translator: a language whose sampled chat-judge level falls below its last accepted level gets no pull request, and a judge reply without a level aborts that language's verification.
@@ -1739,7 +1893,7 @@ flowchart TD
 
 ### Lint tests
 
-- [ ] Every lint of the catalog (L01 to L28) exists under `tests/lint/agents/` and runs in `make test-lint`.
+- [ ] Every lint of the catalog (L01 to L32) exists under `tests/lint/agents/` and runs in `make test-lint`.
 - [ ] Every lint of the catalog runs alone through the lint target for one role or one file.
 - [ ] Every lint of the catalog has a fixture that turns it red, and the red run is recorded in its test.
 - [ ] The repository as delivered passes every lint of the catalog.
