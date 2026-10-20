@@ -539,6 +539,7 @@ flowchart LR
 - The day rule measures the load of everything except the translation lane itself (per-container figures, the rest of the system is the difference), so the translator's own load never stops it and the regulator cannot oscillate.
 - On a host without a usable GPU (`accelerated()` in `utils/i18n/libretranslate.py` is false), the GPU condition counts as met.
 - Pausing means `make i18n-pause`, which pauses the tools lane container; resuming means `make i18n-resume`. The lane keeps its loaded models, containers and connections, and continues exactly where it paused. Stopping the make process alone is never used, because the client keeps sending requests; stopping the lane container is never used, because it ends in a kill and costs a lane warm-up of about 25 minutes.
+- A quality gate outranks both crons: while the machine's gate lock is held, the translator stays paused, at night as well, and resumes when the lock is released.
 - At 07:00 UTC the night run pauses and the day rule takes over. A catalog is written only when it completes, so a pause never loses finished work, and `make i18n-translate` picks only empty and fuzzy entries when it continues.
 - New strings and Weblate changes queue until the next start, by night window or by the day rule.
 - `make i18n-translate` never revisits a filled entry, so the translator judges finished entries in a separate pass (`make test-oracle`) inside the window. The pass samples a fixed number of entries per language, so its cost grows with the number of languages, never with catalog size; it shares the model instance with the translation and is budgeted at about one hour of the window.
@@ -848,6 +849,12 @@ Run rules:
 - Tool nodes resolve the scratch directory from `$TMPDIR` and report the real path of every file they write.
 - Tool nodes follow the sandbox rules of the root `AGENTS.md`: no `git -C`, no `git --git-dir`, no shell loops, no chained statements, container commands only through make targets, scripts into containers through stdin (`sh -s`).
 - Every stack command of an agent takes the stack lock; nothing runs on the machine parallel to the quality gate; no Docker daemon configuration changes while the lock is held.
+- A quality gate outranks every long-running job on the same machine (translation, deploys, builds, other gates): before the gate starts, the gate routine takes the machine's gate lock and pauses every running long job (the translation lane through `make i18n-pause`); after the gate ends, it releases the lock and resumes them. No agent writes to the tree under test while the gate runs. A gate that ran with a long job beside it is discarded, not judged.
+- The gate lock is machine state the orchestrator reads before every routine step and every cron start, never something an agent has to remember.
+- A cron entry is a standing order. A newer, specific owner instruction for the same role or routine (for example "pause the translation until I release it") sets a hold that outranks every later cron firing of that standing order until the owner lifts it; a cron re-delivery is never read as fresh consent.
+- A routine whose goal is blocked by something only the owner can decide (a model that cannot render a language, a missing credential, a scope question) records the blocker with its evidence, reports it once, and is not started again by any cron until the owner clears the blocker.
+- Holds and blockers are machine state next to the gate lock, kept by the orchestrator in Postgres, so they survive restarts of agents and orchestrator. Only the owner sets or lifts them, through the orchestrator's management API (Open WebUI or the owner's channel command); the orchestrator reads them before every cron start and routine step, never an agent's memory.
+- Every routine iteration names its evidence source (a job log, an artifact, a probe, an oracle result) and records what it read. An iteration without new evidence is idle, not finished, while the observed source can still produce evidence (a CI run not completed, a deploy running, a queue not empty); the routine then waits through `make ci-wait`. The loop ends only when the source has completed and the last iteration found nothing new.
 - The quality gate sees new untracked files.
 - A failure classified as deterministic is not retried; a flaky one is retried once.
 - A time budget `B` around a measured duration `d` satisfies `d < B < 2.15 * d`.
@@ -1612,6 +1619,12 @@ flowchart TD
 - [ ] A failed log write aborts the routine and leaves no orphaned child process.
 - [ ] An operator override of a routine policy is accepted, recorded in the run and shown in its result.
 - [ ] Two stack commands of one agent never run at the same time, and nothing starts on the machine while the quality gate runs.
+- [ ] Starting a quality gate pauses a running translation through `make i18n-pause` before the first gate step and resumes it after the gate; the translator's night and day crons start nothing while the gate lock is held (fixture clock and lock).
+- [ ] A gate during which a long job ran or the tree under test changed is reported as discarded, not as red or green (fixture).
+- [ ] An owner hold on a routine survives every later cron firing of that routine and a restart of the orchestrator until the owner lifts it through the management API (fixture: pause instruction, two cron firings, restart).
+- [ ] A routine with a recorded owner-only blocker is reported once and not restarted by its cron until the owner clears the blocker through the management API (fixture).
+- [ ] Every routine iteration records its evidence source; an iteration without new evidence while the source is still running waits through `make ci-wait`, and the loop ends only after the source completed with nothing new (fixture: a queued run that delivers new failures in later batches).
+- [ ] The orchestrator reads the gate lock before every routine step and cron start; a routine started while the lock is held waits (fixture lock).
 - [ ] The hang watchdog fires on 15 minutes of silence and does not fire on a long build that keeps writing output.
 - [ ] A failure classified as deterministic is not retried, and a flaky one is retried once.
 - [ ] A negative control run through `make test-ref` against an older ref imports the module from that ref's worktree, and the printed `__file__` proves it.
