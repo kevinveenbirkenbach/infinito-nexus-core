@@ -49,7 +49,7 @@ gitea:
   shared: true
   provides: gitea
   image: gitea/gitea
-  version: 28.1.0
+  version: 28.2.0
   replicas: 1 # nocheck: single-replica  single-writer app state on swarm-shared NFS; concurrent multi-node writers corrupt app.ini
   min_storage: 270MB
   backup:
@@ -72,6 +72,7 @@ gitea:
       ssh: 22
     local:
       sso: 16488
+      sso_onion: 16529
       http: 8002
     public:
       ssh: 2201
@@ -111,7 +112,7 @@ giteamcpupstream:
   enabled: "{{ lookup('config', 'web-app-gitea', 'mcp.enabled') | bool }}"
   shared: false
   image: docker.gitea.com/gitea-mcp-server
-  version: "1.9.0"
+  version: "1.11.0"
   update:
     type: registry_tags
     image: docker.gitea.com/gitea-mcp-server
@@ -205,3 +206,8 @@ flowise:
   enabled: false
   shared: false
   mcp_consumer: false
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

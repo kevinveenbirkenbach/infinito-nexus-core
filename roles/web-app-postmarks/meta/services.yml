@@ -58,6 +58,7 @@ postmarks:
     local:
       http: 8075
       sso: 16494
+      sso_onion: 16543
     internal:
       http: 3000
   lifecycle: beta
@@ -73,3 +74,8 @@ tor:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

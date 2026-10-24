@@ -2,7 +2,7 @@
 
 Usage:
   python -m cli.meta.ci.matrix --index N [--sweep S] [--modes auto]
-      [--whitelist "..."] [--priority "..."] [--lifecycles "..."] [--tor auto]
+      [--whitelist "..."] [--priority "..."] [--lifecycles "..."] [--network auto]
       [--distros "..."] [--filesystem "..."] [--architectures "..."]
 
 This is the pipeline the deploy jobs discover through, and the single place
@@ -15,7 +15,7 @@ the run's shape is decided:
    Concatenated, they are the sweep's ordered candidate list. Both lists are
    selection tokens (:mod:`utils.github.variant.selection`): what a token pins
    narrows the row, what it leaves open the line decides as it always did.
-2. Every row is assigned its deploy mode, tor state, distro, filesystem and
+2. Every row is assigned its deploy mode, network mode, distro, filesystem and
    CPU architecture by its position in that list (:mod:`utils.github.variant.axes`).
 3. The list is cut into serial chunks with a hard boundary at the
    priority/regular seam (:mod:`cli.meta.ci.chunks`), sized by the run's job
@@ -40,7 +40,7 @@ from cli.administration.deploy.development.inventory.planner import (
 from cli.meta.ci import chunks, query, slots
 from utils.cache.applications import get_variants
 from utils.cache.files import PROJECT_ROOT
-from utils.github.variant import axes, instructions, pools, selection, tor
+from utils.github.variant import axes, instructions, network, pools, selection, vpn
 from utils.roles.display import display_names
 
 DROPPED = ("priority", "id", "covered", "clone")
@@ -111,7 +111,8 @@ def entries_of(
     priority: str,
     lifecycles: str,
     sweep: int,
-    tor_mode: str,
+    network_input: str,
+    vpn_mode: str,
     distros: tuple[str, ...],
     filesystems: tuple[str, ...],
     architectures: tuple[str, ...] = pools.ARCHITECTURES,
@@ -128,7 +129,8 @@ def entries_of(
             )
         ],
         sweep=sweep,
-        tor_mode=tor_mode,
+        network_input=network_input,
+        vpn_mode=vpn_mode,
         distros=distros,
         filesystems=filesystems,
         architectures=architectures,
@@ -211,7 +213,8 @@ def build_sweep(
     priority: str,
     lifecycles: str,
     sweep: int,
-    tor_mode: str,
+    network_input: str,
+    vpn_mode: str,
     distros: tuple[str, ...],
     filesystems: tuple[str, ...],
     architectures: tuple[str, ...] = pools.ARCHITECTURES,
@@ -225,7 +228,8 @@ def build_sweep(
             priority=priority,
             lifecycles=lifecycles,
             sweep=sweep,
-            tor_mode=tor_mode,
+            network_input=network_input,
+            vpn_mode=vpn_mode,
             distros=distros,
             filesystems=filesystems,
             architectures=architectures,
@@ -244,7 +248,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--whitelist", default="")
     parser.add_argument("--priority", default="")
     parser.add_argument("--lifecycles", default="")
-    parser.add_argument("--tor", default=None)
+    parser.add_argument("--network", default=None)
+    parser.add_argument("--vpn", default=None)
     parser.add_argument("--distros", default="")
     parser.add_argument("--filesystem", default="")
     parser.add_argument("--architectures", default="")
@@ -262,7 +267,8 @@ def main(argv: list[str] | None = None) -> int:
         priority=codec.decode_list(args.priority),
         lifecycles=args.lifecycles,
         sweep=sweep,
-        tor_mode=tor.resolve_tor_mode(args.tor),
+        network_input=network.resolve_network_input(args.network),
+        vpn_mode=vpn.resolve_vpn_mode(args.vpn),
         distros=pools.resolve_distros(args.distros),
         filesystems=pools.resolve_filesystems(args.filesystem),
         architectures=pools.resolve_architectures(args.architectures),

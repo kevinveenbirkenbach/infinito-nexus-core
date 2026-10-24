@@ -73,6 +73,7 @@ from ansible.plugins.loader import lookup_loader
 from ansible.plugins.lookup import LookupBase
 
 from utils.networks.lookup_context import resolve_var
+from utils.networks.reachability import TOR, is_network
 
 HOST_GATEWAY = "host-gateway"
 DOCKER_INTERNAL_HOST = "host.docker.internal"
@@ -88,7 +89,7 @@ class LookupModule(LookupBase):
     ) -> list[str]:
         """Render the pins this application needs to reach onion-hosted services.
 
-        Kwargs:
+        Keyword Args:
           application_id: role whose pins to resolve; defaults to the play var.
           extra_hosts:    additional `name:address` entries from the caller.
           host_alias:     also pin `host.docker.internal` to the gateway.
@@ -149,7 +150,7 @@ class LookupModule(LookupBase):
             return []
 
         provider_host = str(self._lookup("tls", SSO_PROVIDER, "domain") or "").strip()
-        if not provider_host.endswith(".onion"):
+        if not is_network(provider_host, TOR):
             return []
 
         return [
@@ -178,7 +179,7 @@ class LookupModule(LookupBase):
         mail_host = str(
             (self._lookup("email", application_id) or {}).get("host") or ""
         ).strip()
-        if not mail_host.endswith(".onion"):
+        if not is_network(mail_host, TOR):
             return []
 
         return [

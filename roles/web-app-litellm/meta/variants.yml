@@ -3,6 +3,9 @@
 # docs/contributing/artefact/files/role/variants.md for the file format.
 
 - services:
+    docs:
+      enabled: false
+      shared: false
     dashboard:
       enabled: true
       shared: true
@@ -19,6 +22,9 @@
       enabled: true
 
 - services:
+    docs:
+      enabled: true
+      shared: true
     dashboard:
       enabled: false
       shared: false # nocheck: variants-static-override backup shared stays literally true

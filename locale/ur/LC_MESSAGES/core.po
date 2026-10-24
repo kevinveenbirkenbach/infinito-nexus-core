@@ -260,11 +260,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Client-side NFS sep for a دور سرور برآمد کرنے کے لیے ہر ڈرافٹ پر ایک بعید وقتی رسائی کے ساتھ،"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Client-side Wirestrict for Sited settlement for systemd Service and ta تحریر جس میں interface MTU داخل ہوتا ہے۔"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "کلپ بورڈ مینیجر جس میں قابل تجدید تاریخ، دستوری عمل اور اسکرپٹنگ معاونت ہوتی ہے۔"
@@ -369,13 +364,11 @@ msgctxt "role:web-svc-simpleicons:description"
 msgid "Containerized icon server for hosting the Simple Icons brand SVG and PNG collection for web and documentation use"
 msgstr "میزبانی کے لئے منظم تصاویر سرور Simple Icons ویب اور دستاویزات کے استعمال کے لیے برانڈ ایس وی جی اور پی این اے کے مجموعے"
 
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Containerized relational database with automated
 # database, user, and privilege provisioning
+# translated-by: ollama
 msgctxt "role:svc-db-postgres:description"
 msgid "Containerized relational database with automated database, user, and privilege provisioning"
-msgstr ""
+msgstr "Kontainernised relational database مع مصنوعیہ اوریفیشن اور کارکنیٹ اور پریفیکشن د اسکیف کے متعلق"
 
 # translated-by: libretranslate
 msgctxt "menu:Content Management:title"
@@ -641,13 +634,11 @@ msgid "End-of-play convergence of every deployed MCP client against the complete
 msgstr "مکمل فراہم کُنندہ کے مقابلے میں ہر یو آر ایل ایم سی کلائنٹ کا فائنل"
 
 # لیے سطح مرتفع (Engner-agnostic fecture) جس میں فی کسشن فراہم کیا جاتا ہے۔
-# translation-refused: libretranslate untranslated
-# nocheck: url
-# translation-rejected: Engin-agnostic wiring layer for shared cache, queue,
 # search, and vector engines with per-consumer provisioning
+# translated-by: ollama
 msgctxt "role:sys-svc-engine:description"
 msgid "Engine-agnostic wiring layer for shared cache, queue, search, and vector engines with per-consumer provisioning"
-msgstr ""
+msgstr "エンゲージメント अजोड़ी लाइन जैसे कि साझे चालू चाल, कॉर्स, खोज और वेक्टर इंगेजिंग के लिए"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-confluence:description"
@@ -807,11 +798,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "ہائی رائز سے چلنے والا، خود ساختہ ذخیرہ جات کا حل جس میں انتظامیہ، نقل و حمل اور رسائی کے لیے ناقابل رسائی اعداد و شمار شامل ہیں جن میں امیزون ایس کے ساتھ مواد محفوظ ہے۔3 اپ ہے."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "میزبانی کی سطح وی پی این سروس کے ساتھ Wg-خطرناک نیٹ ورک، پیکج تنصیب کے ساتھ، اور پی پی-پی-پی-پی-وینگ سیکٹل کے لیے"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "میزبانی کی سطح کی دیکھ بھال سسٹمڈ-جوورنلڈ انفنٹری ڈیمon کے ساتھ غیر واضح حدود اور زندہ لاگ سیریز کے لئے"
@@ -878,13 +864,11 @@ msgid "Injection"
 msgstr "غیر متصل"
 
 # ڈرائیور - ایکسیل ویڈیو ڈی کوڈ اور لینکس کی تقسیموں میں
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Intel VA-API media driver for hardware-accelerated
 # video decode and encode across Linux distributions --
+# translated-by: ollama
 msgctxt "role:drv-intel:description"
 msgid "Intel VA-API media driver for hardware-accelerated video decode and encode across Linux distributions"
-msgstr ""
+msgstr "英特尔VA-API मामले लेबरलिन्क देखील वीडियो डिझाइन एकॉनोमी क्रम पासकडून"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-meta:description"
@@ -901,6 +885,11 @@ msgstr "شمارے اور پروجیکٹ سافٹ وئیر ٹیموں کے لی�
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript runtime for building and running server-side applications و تطوير أدوات المطور"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "کرنل WireGuard سرنگیں، کیپ-اور اس کے نیچے میزائلوں کے نیچے ایک ریسنگ مینیجر کے تحت اور جیپ فوجیوں کے درمیان مکمل میزائل"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1073,6 +1062,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX-Pred Greek page کو قانونی طور پر استعمال کرتے ہیں۔ (یمن) جنجا سے2 گر تے هو ئے"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLB-200 ترجمہ ماڈل نے ایچ ٹی پی پر خدمات انجام دیں، پائپ لائنوں کے لیے جو اسے براہ راست کہتے ہیں۔"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "نیٹ ورک"
@@ -1080,7 +1074,7 @@ msgstr "نیٹ ورک"
 # translated-by: libretranslate
 msgctxt "category:svc.net:description"
 msgid "Network setup (DNS, Let's Encrypt HTTP, WireGuard, etc.)"
-msgstr "نیٹ ورک اتصال (DNS، چلو HTP، Wiresct،.)"
+msgstr "نیٹ ورک اتصال (DNS، چلو HTP، WireGuard۔۔)"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-pihole:description"
@@ -1088,23 +1082,16 @@ msgid "Network-wide DNS sinkhole for blocking ads and trackers across all device
 msgstr "نیٹ ورک بھر میں ابلاغ اور راستوں کو بند کرنے کے لئے."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "NAT یا آتش فشاں کے پیچھے چلنے والی گاڑیوں کے ذریعے NAT یا فائرنگ کے پیچھے چلنے والی ایک NAT کی جانب سے چلنے والی کمپنی اور NAT Masquerding کے لئے مددگار"
-
-# translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
 msgid "Nginx sub_filter JavaScript injection redirecting all logout actions to a centralized OIDC single sign-out endpoint"
 msgstr "گنس sub_filter JavaScrip production تمام افعال کو مرکزی طور پر OIDC واحد علامت کے اختتامی پوائنٹ پر منتقل کرتا ہے۔"
 
 # ورک کو اندرونی ویب اطلاقیے تک شیئر کرنے کے لیے استعمال کیا جاتا ہے۔
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: --- Nginx-based content delivery network for serving
 # shared static assets to internal web applications ---
+# translated-by: ollama
 msgctxt "role:web-svc-cdn:description"
 msgid "Nginx-based content delivery network for serving shared static assets to internal web applications"
-msgstr ""
+msgstr "نینجک بنیان بردارنده اطلاعات برای ارسال اطلاعات متقاوت متنی به اپلیکیشن‌های ساینس‌سایت کنترل‌شده"
 
 # translated-by: libretranslate
 msgctxt "role:web-svc-mirror:description"
@@ -1136,17 +1123,12 @@ msgctxt "role:sys-svc-objstore:description"
 msgid "Object-storage layer for SeaweedFS/MinIO backend resolution and per-consumer bucket and credential provisioning"
 msgstr "object-storage see for SeaweedFS/MinIO backnd حل اور per Consumer colection and Construmental province –"
 
-# translated-by: libretranslate
 # space a construct space a space a space a space space a space a spapfile
 # taff -
-# translation-refused: libretranslate untranslated
-# nocheck: url
-# translation-rejected: On-target Automation for struction a space a space a
-# space a construct space a space a space a space space a space a spapfile
-# taff -
+# translated-by: ollama
 msgctxt "role:svc-opt-swapfile:description"
 msgid "On-target automation for creating and activating swap space via a cloned swapfile script"
-msgstr ""
+msgstr ".on-the-target-automation-للautomation-معتمدة-بهدALSEن-سایپ-سپارک-برای-دوباره-سازی-و-فعالیت-به-یک-سیپ-فایل-پی-کود-"
 
 # translated-by: libretranslate
 msgctxt "role:web-svc-translate:description"
@@ -1190,6 +1172,11 @@ msgstr "اوپن لائن سرمایہ کاری نظام برائے ہارڈ و�
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "اوپن ٹی ایس ایم اور مدد کے پلیٹ فارم (عالمی اُفق) ٹکٹ، سی ایم ڈی بی، علم بصری اور اطلاع کے لیے"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Open-source SEEM اور XDR پلیٹ فارم فار نگرانی، لاگ تجزیہ، introussion/vulnerability settlection اور مطابقت پذیری کے لیے"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1345,13 +1332,11 @@ msgstr "Policy-manage web Browns for Arch لینکس ڈیسک ٹاپز کے سا
 
 # for settleplople Led-world-constitution province for abored community for
 # community community for community of community, AC, and Dected states
-# translation-refused: libretranslate untranslated
-# nocheck: url
-# translation-rejected: Systemd logind configuration power-aware, laptop
 # lid-close behavior, battery, AC, docked states
+# translated-by: ollama
 msgctxt "role:drv-lid-switch:description"
 msgid "Power-aware systemd logind configuration for predictable laptop lid-close behavior across battery, AC, and docked states"
-msgstr ""
+msgstr "Power-aware systemd logind ਵਰਤੋਈ ਲੋਗੀਂਡ ਵਰਤੋਈ ਲੋਗਿੰਡ ਕੌਸਲਾਵਾਂ ਦੇ ਪ੍ਰੇਕਤੂਤ ਲੋਪਟਾਲ ਲੀਡ ਕਪਲ ਬਾਦਸ਼ਾਹੀ ਵਿੱਚ ਵਰਤੋਈ ਲੋਜਿੰਡ"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-socialhome:description"
@@ -1615,13 +1600,11 @@ msgid "Self-hosted System One classifier that answers typed questions so the gat
 msgstr "خود کار محفوظ System One ایسی کلاس‌ئر جو ایسے سوالات کا جواب دیتی ہے تاکہ وہ کسی بھی طریقے سے گاڑی چلا سکے ۔"
 
 # کرنے اور بنانے کے لیے مختصر تعلقات بنانے کے لیے
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Self-hosted URL shortener for creating, tracking, and
 # managing short links with built-in click analytics
+# translated-by: ollama
 msgctxt "role:web-app-yourls:description"
 msgid "Self-hosted URL shortener for creating, tracking, and managing short links with built-in click analytics"
-msgstr ""
+msgstr "Self-hosted URL shortener لعملیات ساخت، توجه دادن و مدیریت لینک‌های کوتاه با تجزیه و تحلیل کلیک‌ها داخلی"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-jitsi:description"
@@ -1800,6 +1783,10 @@ msgstr "خدمات"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "خدمات"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

@@ -37,6 +37,9 @@ def run_ansible_playbook(
     start_time = dt.datetime.now(tz=dt.UTC)
     print(f"\n▶️ Script started at: {start_time.isoformat()}\n", flush=True)
 
+    sys.dont_write_bytecode = True
+    os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+
     if not skip_build:
         print("\n🛠️  Running project build (make setup)...\n", flush=True)
         run_make(repo_root, "setup")

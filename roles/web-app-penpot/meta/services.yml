@@ -67,6 +67,7 @@ penpot:
     local:
       http: 8041
       sso: 16506
+      sso_onion: 16538
     internal:
       http: 8080
   proxy:
@@ -79,7 +80,7 @@ penpot:
   lifecycle: beta
 frontend:
   image: penpotapp/frontend
-  version: "2.18.3"
+  version: "2.18.4"
   name: penpot-frontend
   cpus: "0.5"
   mem_reservation: 256m
@@ -87,7 +88,7 @@ frontend:
   pids_limit: 256
 backend:
   image: penpotapp/backend
-  version: "2.18.3"
+  version: "2.18.4"
   name: penpot-backend
   cpus: "1.0"
   mem_reservation: 1g
@@ -100,7 +101,7 @@ backend:
       http: 6060
 exporter:
   image: penpotapp/exporter
-  version: "2.18.3"
+  version: "2.18.4"
   name: penpot-exporter
   cpus: "0.5"
   mem_reservation: 512m
@@ -143,3 +144,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

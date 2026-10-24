@@ -10,6 +10,9 @@
 # offenders, which that guard cannot exempt.
 
 - services:
+    docs:
+      enabled: true
+      shared: true
     tor:
       enabled: true
     openwebui:
@@ -25,6 +28,9 @@
       enabled: false
       shared: false
 - services:
+    docs:
+      enabled: false
+      shared: false
     tor:
       enabled: true
     openwebui:

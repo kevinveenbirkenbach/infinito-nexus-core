@@ -14,13 +14,11 @@
     application_overview     One paragraph about what the ROLE deploys/integrates.
     application_features     List of {name, description} capability bullets.
     application_author       Author name; MUST equal meta/main.yml galaxy_info.author.
-    cosmos_mermaid           Mermaid flowchart SOURCE (no ``` fences); groups
-                             Capabilities / Dependencies / Cosmos. Node ids MUST NOT
-                             be reserved words (call, end, class, graph, style).
 
   Optional context:
-    application_invokable          When true, emit the Quick Setup section
-                                   (invokable roles only; forbidden otherwise).
+    application_invokable          When true, emit the Architecture and Quick
+                                   Setup sections (invokable roles only;
+                                   forbidden otherwise).
     application_author_url         The author's social profile, derived from the
                                    address .mailmap folds their commits into.
     architecture_intro             Sentence above the Architecture links.
@@ -38,6 +36,7 @@
 
 {{ application_overview }}
 
+{% if application_invokable -%}
 ## Architecture
 
 {{ architecture_intro | default('[ARCHITECTURE.md](ARCHITECTURE.md) draws ' ~ application_name ~ ' from its own metadata: the containers it runs under compose, what changes under swarm, how each volume is backed, and every role it depends on or is depended upon by.') }}
@@ -49,6 +48,7 @@
 | [Volumes](ARCHITECTURE.md#volumes) | `meta/volumes.yml` against the NFS decision chain |
 | [Dependencies](ARCHITECTURE.md#dependencies) | `meta/services.yml` and `meta/main.yml` of every role |
 
+{% endif -%}
 ## Features
 
 {% for feature in application_features -%}
@@ -91,6 +91,9 @@ DOMAIN="<your-domain>"
 {% if application_needs_clearnet_resolver -%}
 DNS="<your-clearnet-resolver>"
 {% endif -%}
+{% if application_needs_service_provider_country -%}
+COUNTRY=<your-country>
+{% endif -%}
 TLS_MODE=self_signed
 SSH_PUBLIC_KEY="<your-ssh-public-key>"
 INVENTORY=inventories/production
@@ -98,7 +101,7 @@ infinito administration inventory provision "$INVENTORY" \
   --inventory-file "$INVENTORY/devices.yml" \
   --host localhost \
   --include "$APP" \
-  --vars "{\"TLS_MODE\": \"$TLS_MODE\", \"DOMAIN_PRIMARY\": \"$DOMAIN\", {% if application_needs_clearnet_resolver %}\"networks\": {\"internet\": {\"dns\": \"$DNS\"}}, {% endif %}\"users\": {\"administrator\": {\"authorized_keys\": [\"$SSH_PUBLIC_KEY\"]}}}"
+  --vars "{\"TLS_MODE\": \"$TLS_MODE\", \"DOMAIN_PRIMARY\": \"$DOMAIN\", {% if application_needs_clearnet_resolver %}\"networks\": {\"internet\": {\"dns\": \"$DNS\"}}, {% endif %}{% if application_needs_service_provider_country %}\"service_provider\": {\"company\": {\"address\": {\"country\": \"$COUNTRY\"}}}, {% endif %}\"users\": {\"administrator\": {\"authorized_keys\": [\"$SSH_PUBLIC_KEY\"]}}}"
 infinito administration deploy dedicated "$INVENTORY/devices.yml" \
   --password-file "$INVENTORY/.password" \
   --diff -vv
@@ -113,6 +116,9 @@ DOMAIN="<your-domain>"
 {% if application_needs_clearnet_resolver -%}
 DNS="<your-clearnet-resolver>"
 {% endif -%}
+{% if application_needs_service_provider_country -%}
+COUNTRY=<your-country>
+{% endif -%}
 TLS_MODE=self_signed
 SSH_PUBLIC_KEY="<your-ssh-public-key>"
 SSH_PRIVATE_KEY="<your-ssh-private-key-file>"
@@ -122,14 +128,14 @@ mkdir -p "$WORKDIR/inventories"
 docker run --rm \
   -v "$WORKDIR/inventories:/etc/infinito.nexus/inventories" \
   -v "$SSH_PRIVATE_KEY:/run/secrets/deploy_key:ro" \
-  -e APP="$APP" -e HOST="$HOST" -e DOMAIN="$DOMAIN" {% if application_needs_clearnet_resolver %}-e DNS="$DNS" {% endif %}-e TLS_MODE="$TLS_MODE" -e SSH_PUBLIC_KEY="$SSH_PUBLIC_KEY" \
+  -e APP="$APP" -e HOST="$HOST" -e DOMAIN="$DOMAIN" {% if application_needs_clearnet_resolver %}-e DNS="$DNS" {% endif %}{% if application_needs_service_provider_country %}-e COUNTRY="$COUNTRY" {% endif %}-e TLS_MODE="$TLS_MODE" -e SSH_PUBLIC_KEY="$SSH_PUBLIC_KEY" \
   {{ application_deploy_image }} bash -c '
     INVENTORY=/etc/infinito.nexus/inventories/production
     infinito administration inventory provision "$INVENTORY" \
       --inventory-file "$INVENTORY/devices.yml" \
       --host "$HOST" \
       --include "$APP" \
-      --vars "{\"TLS_MODE\": \"$TLS_MODE\", \"DOMAIN_PRIMARY\": \"$DOMAIN\", \"SYS_SVC_SSHD_PERMIT_ROOT_LOGIN\": \"prohibit-password\", {% if application_needs_clearnet_resolver %}\"networks\": {\"internet\": {\"dns\": \"$DNS\"}}, {% endif %}\"users\": {\"root\": {\"authorized_keys\": [\"$SSH_PUBLIC_KEY\"]}, \"administrator\": {\"authorized_keys\": [\"$SSH_PUBLIC_KEY\"]}}}" &&
+      --vars "{\"TLS_MODE\": \"$TLS_MODE\", \"DOMAIN_PRIMARY\": \"$DOMAIN\", \"SYS_SVC_SSHD_PERMIT_ROOT_LOGIN\": \"prohibit-password\", {% if application_needs_clearnet_resolver %}\"networks\": {\"internet\": {\"dns\": \"$DNS\"}}, {% endif %}{% if application_needs_service_provider_country %}\"service_provider\": {\"company\": {\"address\": {\"country\": \"$COUNTRY\"}}}, {% endif %}\"users\": {\"root\": {\"authorized_keys\": [\"$SSH_PUBLIC_KEY\"]}, \"administrator\": {\"authorized_keys\": [\"$SSH_PUBLIC_KEY\"]}}}" &&
     infinito administration deploy dedicated "$INVENTORY/devices.yml" \
       --password-file "$INVENTORY/.password" \
       -u root --private-key /run/secrets/deploy_key \
@@ -155,6 +161,14 @@ The inventory under `$WORKDIR` is written by the container as `root`, including 
 {%- endif %}
 ## Credits
 
-{% if application_author_url %}Implemented by **[{{ application_author }}]({{ application_author_url }})**.{% else %}Implemented by **{{ application_author }}**.{% endif %}
+{% if application_author_url %}**[{{ application_author }}]({{ application_author_url }})**{% else %}**{{ application_author }}**{% endif %}
+
 Part of the [Infinito.Nexus Project](https://s.infinito.nexus/code) and maintained by [Kevin Veen-Birkenbach](https://www.veen.world).
 Licensed under the [Infinito.Nexus Community License (Non-Commercial)](https://s.infinito.nexus/license).
+{% if application_license %}
+{% if application_license.is_own -%}
+This role deploys no third-party application, so the licence above is the only one that applies.
+{%- else -%}
+That licence covers this role. The software it deploys is a separate grant: [{{ application_license.spdx }}]({{ application_license.source }}), under which commercial use is {{ application_license.commercial }}. You owe its authors this much: {{ application_license.duties }}. Permission for one of the two is not permission for the other.
+{%- endif %}
+{%- endif %}

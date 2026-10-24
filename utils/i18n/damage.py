@@ -3,6 +3,14 @@
 :func:`reason` is the single predicate both ends of the pipeline ask, and
 :func:`harms` is its boolean face; the rest of this module are the criteria it
 folds together.
+
+``WORDS`` takes one character as one word in Han, Kana, Thai, Lao, Khmer and
+Myanmar, which write without separators. Its single-character branch has to
+come first, or the run branch swallows a whole sentence together with the
+Latin product names inside it and returns one token whose Latin share decides
+the verdict alone. ``UNSPACED_RANGES`` holds codepoints rather than escapes
+because a formatter rewrites an escape into the character it names, and the
+literal blob that leaves behind cannot be read or reviewed.
 """
 
 from __future__ import annotations
@@ -11,7 +19,9 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 
+from utils.cache.files import PROJECT_ROOT
 from utils.i18n import names
+from utils.i18n.languages import latin_share, non_latin_languages
 from utils.i18n.repairs import resegment, tighten
 from utils.i18n.spans import PRINTF, mask, matches, prose
 
@@ -26,54 +36,20 @@ COLLAPSE_RATIO = 0.15
 MAX_SHARING_SOURCES = 2
 ECHO_FLOOR = 30
 STUTTER = re.compile(r"\b(\w+)(?:\s+\1\b){2,}", re.IGNORECASE | re.UNICODE)
-WORDS = re.compile(r"[^\W\d_]{2,}", re.UNICODE)
-LATIN_FLOOR = 6
-LATIN_SHARE = 0.9
-NON_LATIN_SCRIPTS = frozenset(
-    {
-        "am",
-        "ar",
-        "be",
-        "bg",
-        "bn",
-        "dv",
-        "dz",
-        "el",
-        "fa",
-        "gu",
-        "he",
-        "hi",
-        "hy",
-        "ja",
-        "ka",
-        "km",
-        "kn",
-        "ko",
-        "ky",
-        "lo",
-        "mk",
-        "ml",
-        "mn",
-        "mr",
-        "my",
-        "ne",
-        "or",
-        "pa",
-        "ps",
-        "ru",
-        "si",
-        "sr",
-        "ta",
-        "te",
-        "th",
-        "ti",
-        "ug",
-        "uk",
-        "ur",
-        "yi",
-        "zh",
-    }
+UNSPACED_RANGES = (
+    (0x3040, 0x30FF),
+    (0x3400, 0x4DBF),
+    (0x4E00, 0x9FFF),
+    (0xF900, 0xFAFF),
+    (0x0E00, 0x0E7F),
+    (0x0E80, 0x0EFF),
+    (0x1780, 0x17FF),
+    (0x1000, 0x109F),
 )
+UNSPACED = "".join(f"{chr(low)}-{chr(high)}" for low, high in UNSPACED_RANGES)
+WORDS = re.compile(rf"[{UNSPACED}]|[^\W\d_]{{2,}}", re.UNICODE)
+LATIN_SHARE = 0.9
+NON_LATIN_SCRIPTS = non_latin_languages(PROJECT_ROOT)
 
 
 def protected_spans(text: str) -> Counter:
@@ -131,6 +107,18 @@ def untranslated(translation: str, language: str) -> bool:
     English. Comparing scripts catches it wherever the target does not use the
     Latin one; for a Latin-script target it would need a language detector.
 
+    There is no length floor. :func:`verdict` reaches this only once an exact
+    echo is ruled out, so Latin text that differs from the source cannot be a
+    term the language keeps in English. The catalogs are mostly one- to
+    four-word labels, which is where the wrong language hid for as long as a
+    six-word floor stood here.
+
+    The ratio is only as good as the word count, which is why ``WORDS`` splits
+    a separator-less script per character: a Japanese sentence carrying two
+    Latin product names is one token to a run-based pattern, and one token
+    whose Latin share passes a half makes the ratio 1.0 on a sound
+    translation.
+
     Args:
         translation: what came back for the entry.
         language: ISO 639-1 code of the catalog being filled.
@@ -138,10 +126,32 @@ def untranslated(translation: str, language: str) -> bool:
     if language not in NON_LATIN_SCRIPTS:
         return False
     words = WORDS.findall(prose(translation))
-    if len(words) < LATIN_FLOOR:
+    if not words:
         return False
-    latin = sum(1 for word in words if word.isascii())
+    latin = sum(1 for word in words if (latin_share(word) or 0) > 0.5)
     return latin / len(words) >= LATIN_SHARE
+
+
+def foreign_script(translation: str, language: str) -> bool:
+    """Return whether a Latin-script language came back in another script.
+
+    The mirror of :func:`untranslated`, and the half that catches a model
+    answering a language it cannot write with one it can: Chamorro came back
+    in Han because the code ``ch`` reads as Chinese, Turkish in Bengali,
+    Avestan in Arabic. A target that writes its own name in Latin letters has
+    no business returning a line that carries almost none.
+
+    Args:
+        translation: what came back for the entry.
+        language: ISO 639-1 code of the catalog being filled.
+    """
+    if language in NON_LATIN_SCRIPTS:
+        return False
+    words = WORDS.findall(prose(translation))
+    if not words:
+        return False
+    latin = sum(1 for word in words if (latin_share(word) or 0) > 0.5)
+    return latin / len(words) <= 1 - LATIN_SHARE
 
 
 def stutters(source: str, translation: str) -> bool:
@@ -283,6 +293,8 @@ def reason(source: str, translation: str, language: str = "") -> str:
         return "stutter"
     if untranslated(translation, language):
         return "untranslated"
+    if foreign_script(translation, language):
+        return "foreign-script"
     if truncated(source, translation, language):
         return "truncated"
     if collapsed(source, translation):

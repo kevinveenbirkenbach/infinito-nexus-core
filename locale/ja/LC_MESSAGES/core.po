@@ -259,11 +259,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "クライアント側 NFS は、デプロイ時のリーダビリティプローブで、すべてのスワアーノードにリモートサーバのエクスポートを実装するためのセットアップです。"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "クライアント・サイドのWireGuard VPN は、システム化されたサービスやスクリプトと安定した接続を実現するため、MTU インターフェイスをチューニングします。"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "編集可能な履歴、カスタムアクション、スクリプトサポートを備えたクリップボードマネージャ"
@@ -348,13 +343,11 @@ msgctxt "role:sys-svc-container:description"
 msgid "Container engine runtime with Compose for building and running application containers on Linux hosts"
 msgstr "Linux ホスト上のアプリケーションコンテナの構築と実行のための Compose によるコンテナエンジンのランタイム"
 
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Container orchestration cluster for scheduling
 # services across pooled manager and worker nodes
+# translated-by: ltengine
 msgctxt "role:svc-swarm-node:description"
 msgid "Container orchestration cluster for scheduling services across pooled manager and worker nodes"
-msgstr ""
+msgstr "コンテナオーケストレーションクラスタは、プールマネージャーとワークノードの組み合わせでサービスをスケジュールする"
 
 # translated-by: libretranslate
 msgctxt "category:svc.registry:description"
@@ -795,15 +788,6 @@ msgctxt "menu:Storage:description"
 msgid "High-performance, self-hosted storage solutions for managing, scaling, and accessing unstructured data — including object storage compatible with Amazon S3 APIs."
 msgstr "Amazon Sと互換性のあるオブジェクトストレージを含む、管理、スケーリング、および非構造化されたデータへのアクセスのための高性能、セルフホストストレージソリューション3 API の"
 
-# config、パッケージインストール、および安全なトンネル用のIP-forwarding sysctl)
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Host-level WireGuard VPN service with wg-quick config,
-# package install, and IP-forwarding sysctl for secure tunnels
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr ""
-
 # translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
@@ -888,6 +872,11 @@ msgstr "ソフトウェアチーム、アジャイルボード、ワークフロ
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "サーバサイドのアプリケーションと開発者ツールの構築と実行のためのJavaScriptランタイム"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "カーネル WireGuard トンネル、ハブおよびスポークのメッシュは、スワアーマネジャーの下にあり、コンポーズのホスト間のフルメッシュ"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1060,6 +1049,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX-served静的ページは、法的インプリントをレンダリング (トピックス) ジンジャから2 テンプレート"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 HTTP 上で提供される翻訳モデル、直接呼び出しるパイプライン"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "ネットワーク"
@@ -1073,11 +1067,6 @@ msgstr "ネットワーク設定 (DNS、HTTP、WireGuardなどの暗号化をし
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "ネットワーク全体でDNSのシンクホールは、DHCPとWeb管理者ダッシュボードを使用して、すべてのデバイス間で広告やトラッカーをブロックします"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "iptablesの転送とNATの監視のためのネットワーキングヘルパー NATまたはファイアウォールの背後にあるWireGuardクライアント"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1166,6 +1155,11 @@ msgstr "ハードウェアとソフトウェアの在庫を追跡するための
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "オープンソースITSMとヘルプデスクプラットフォーム (OTRSフォーク) チケット、CMDB、ナレッジベース、レポート"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "監視、ログ分析、侵入/脆弱性検出、およびコンプライアンスのためのオープンソースのSIEMおよびXDRプラットフォーム"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1696,15 +1690,13 @@ msgid "Self-hosted open-source machine translation API for translating and detec
 msgstr "テキストを言語間で翻訳し、検出するためのセルフホスト型のオープンソース機械翻訳API"
 
 # セルフホスト型パーソナルAIエージェントゲートウェイ(ブラウザコントロールUI)、片マイクロVMまたはgVisorランタイムでサンドボックス
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Self-hosted personal AI agent gateway with a browser
 # control UI, sandboxed in a Kata microVM or gVisor runtime  ### Self-hosted
 # personal AI agent gateway with a browser control UI, sandboxed in a Kata
 # microVM or gVisor runtime
+# translated-by: ltengine
 msgctxt "role:web-app-openclaw:description"
 msgid "Self-hosted personal AI agent gateway with a browser control UI, sandboxed in a Kata microVM or gVisor runtime"
-msgstr ""
+msgstr "自己ホストのパーソナルAIエージェントゲートウェイ、ブラウザコントロールUIを備えた、サンドボックス化されたKataマイクロVMまたはgVisorランタイム"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-opencloud:description"
@@ -1763,14 +1755,12 @@ msgid "Service Optimation"
 msgstr "サービス最適化"
 
 # サービスレベルのバックアップとリカバリコンポーネント(自動データスナップショット、リモートバックアップ、同期サービス、データベース、ファイル、コンテナ間でのバックアップオーケストレーション)。.
-# translation-refused: libretranslate untranslated
-# nocheck: url
-# translation-rejected: Service-level backup and recovery components— handling
 # automated data snapshots, remote backups, synchronization services, and
 # backup orchestration across databases, files, and containers.
+# translated-by: ltengine
 msgctxt "category:svc.bkp:description"
 msgid "Service-level backup and recovery components—handling automated data snapshots, remote backups, synchronization services, and backup orchestration across databases, files, and containers."
-msgstr ""
+msgstr "サービスレベルのバックアップと復旧コンポーネント—自動データスナップショットの処理、リモートバックアップ、同期サービス、およびデータベース、ファイル、コンテナ間のバックアップオーケストレーション."
 
 # translated-by: libretranslate
 msgctxt "category:svc:title"
@@ -1781,6 +1771,10 @@ msgstr "サービス"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "サービス"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

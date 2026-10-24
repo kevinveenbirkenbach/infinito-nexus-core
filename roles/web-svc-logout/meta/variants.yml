@@ -6,6 +6,9 @@
 # matrix exercises the in-group_names branch of web-svc-logout.
 
 - services:
+    docs:
+      enabled: false
+      shared: false
     matomo:
       enabled: true
       shared: true
@@ -18,6 +21,9 @@
     tor:
       enabled: true
 - services:
+    docs:
+      enabled: true
+      shared: true
     matomo:
       enabled: false
       shared: false

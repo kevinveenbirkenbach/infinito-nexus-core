@@ -260,11 +260,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "NFS në dalje të klientit për të rritur një server eksportimi në distancë në çdo nyje të popullatës, me një hetim të arritshmërisë së posme-kohës"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Roli i Wire Guard VPN-së në anën e klientit për lidhje të qëndrueshme me një shërbim të sistemit dhe script-in që akordon interfaqen MTU"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Menaxhues shënimesh me histori të ndryshueshme, veprime të personalizuara dhe mbështetje për script-in"
@@ -795,11 +790,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Përformanca e lartë, zgjidhje të vetë-qeverisshme për menaxhimin, shkallëzimin dhe hyrjen në të dhëna të pastruktura, duke përfshirë ruajtjen e objekteve në përputhje me Amazonën S3 APIs."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Shërbimi i Gardës VPN në nivel Host me konfigurim wg-quick, instalim të paketave, dhe sisktl IP-forward për tunele të sigurta"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Konfigurimi i nivelit të host për daemon e hyrjes së sistemit me limite ruajtjeje dhe fluks direkt i logit"
@@ -883,6 +873,11 @@ msgstr "Çështje dhe platforma për ndjekje të projektit për ekipet e softuer
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript për të ndërtuar dhe ekzekutuar aplikativë në krah të server-it dhe për të krijuar instrumentë"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Kernel WireGuard Tunelet, qendra-dhe-spoke meshes nën një menaxher mizëri dhe meshe të plota midis mikpritësve të kompozuar"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1055,6 +1050,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "faqe a (Impressum) prej xhindëve,2 Shabllon"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NILB-200 Modeli i përkthimit shërbeu mbi HTTP, për tubacionet që e quajnë atë direkt"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Rrjeti"
@@ -1062,17 +1062,12 @@ msgstr "Rrjeti"
 # translated-by: libretranslate
 msgctxt "category:svc.net:description"
 msgid "Network setup (DNS, Let's Encrypt HTTP, WireGuard, etc.)"
-msgstr "Rrjeti (DNS, Le të Kripton HTTP, Wire Guard, etj.)"
+msgstr "Rrjeti (DNS, Le të Kripton HTTP, WireGuard, etj.)"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Vrima e rrjetit të gjerë DNS për bllokimin e reklamave dhe gjurmuesve nëpër të gjitha pajisjet, me DHCP dhe një anije interneti"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Asistent në rrjet për iptables proaving and NAT conquerading of a Wire guard klient që shkon pas NAT ose një firewall"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1163,6 +1158,11 @@ msgstr "Sistemi i menazhimit të pasurive IT me burim të hapur për gjurmimin e
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Program ITSM me burim të hapur dhe ndihme (fork OTRS) për bileta, CMDB, bazë njohurie, dhe raportim"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Open-source SIM dhe XDR platformë për monitorimin, analizën e logarit, zbulimin e ndërhyrjeve/efektshmërisë, dhe përputhjen"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1771,6 +1771,10 @@ msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Shërbime"
 
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
+
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"
 msgid "Shared Storage"
@@ -1942,25 +1946,19 @@ msgctxt "role:sys-ctl-hlth-container:description"
 msgid "Systemd-timed monitor for detecting unhealthy or non-zero-exited Docker containers and raising failure alerts"
 msgstr "Monitorim me kohë të sistemit për zbulimin e kontejnerëve të pashëndetshëm apo jo-zero-eksitueshëm Docker dhe ngritjen e alarmeve të dështimit"
 
-# translated-by: libretranslate
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Systemd-triggered msmtp notifier for emailing
 # operators when a monitored service unit fails -Systemd-triggered
 # -mpsmtp-notifier -for -emailing -operators -when -a -monitored -service
 # -unit -fails
+# translated-by: ollama
 msgctxt "role:sys-ctl-alm-email:description"
 msgid "Systemd-triggered msmtp notifier for emailing operators when a monitored service unit fails"
-msgstr ""
+msgstr "Systemd-triggered msmtp notifier për pojavleni e sablonve të shqip të operatoreve kohës nëse sabloni i mbledhur e shëndetësuesit është zonësit"
 
-# translated-by: libretranslate
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Systemd-triggered notifier for delivering
 # service-failure alerts to a Telegram chat SystemdNotifier for Telegram chat.
+# translated-by: ltengine
 msgctxt "role:sys-ctl-alm-telegram:description"
 msgid "Systemd-triggered notifier for delivering service-failure alerts to a Telegram chat"
-msgstr ""
+msgstr "Systemd-triggered notifier për prezencë të alerta të shkëlqyer në Telegram chanë"
 
 # translated-by: libretranslate
 msgctxt "role:dsk-gnt-claude:description"

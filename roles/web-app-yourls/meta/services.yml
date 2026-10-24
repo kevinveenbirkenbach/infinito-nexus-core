@@ -31,6 +31,7 @@ yourls:
   ports:
     local:
       sso: 16484
+      sso_onion: 16547
       http: 8006
     internal:
       http: 8080
@@ -86,3 +87,8 @@ tor:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

@@ -56,7 +56,7 @@ fediwall:
     swarm:
       enabled: true
   image: nginx
-  version: 1.31.7-alpine
+  version: 1.31.8-alpine
   custom: true
   upstream:
     version: "1.4.0"
@@ -108,3 +108,8 @@ tor:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

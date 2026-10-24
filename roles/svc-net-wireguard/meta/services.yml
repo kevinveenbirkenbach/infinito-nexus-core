@@ -1,0 +1,25 @@
+---
+wireguard:
+  modes:
+    host:
+      enabled: true
+    compose:
+      enabled: false
+    swarm:
+      enabled: false
+  name: wireguard
+  lifecycle: beta
+  enabled: true
+  shared: true
+  bond: 1
+  min_storage: "1MB"
+  cpus: "0.01"
+  mem_reservation: "8m"
+  mem_limit: "16m"
+  pids_limit: 8
+
+# nocheck: variants-coverage the role has a single variant, and the guide edge is not a dimension of it: a second round would differ only by the README replay
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

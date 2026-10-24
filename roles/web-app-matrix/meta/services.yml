@@ -41,15 +41,50 @@ n8n:
   bond: 0.5
   enabled: "{{ 'web-app-n8n' in group_names }}"
   shared: "{{ 'web-app-n8n' in group_names }}"
-jitsi:
-  bond: 0.5
-  enabled: "{{ 'web-app-jitsi' in group_names }}"
-  shared: "{{ 'web-app-jitsi' in group_names }}"
 # nocheck: playwright-service-flag — TURN/STUN server, no Playwright surface (provider: web-svc-coturn)
 coturn:
   bond: 1
   enabled: "{{ 'web-svc-coturn' in group_names }}"
   shared: "{{ 'web-svc-coturn' in group_names }}"
+# nocheck: variants-coverage — the onion gate is a hard invariant; no variant may force Jitsi on a tor node.
+# nocheck: bond-baseline — same reason: variant 0 must not pin Jitsi on.
+jitsi:
+  bond: 1
+  enabled: "{{ lookup('config', 'web-app-matrix', 'services.matrix.flavor') == 'ansible' and 'svc-net-tor' not in group_names }}" # nocheck: dynamic-flag — Matrix offers Jitsi from the ansible flavor and off tor nodes only
+  shared: "{{ 'web-app-jitsi' in group_names }}"
+  domains:
+    - jitsi
+  ports:
+    internal:
+      http: 8000
+    local:
+      http: 8104
+    public:
+      media: 10001
+livekit:
+  enabled: "{{ lookup('config', 'web-app-matrix', 'services.matrix.conferencing.element_call') | bool }}" # nocheck: dynamic-flag — the role renders the LiveKit services only inside its element_call branch
+  ports:
+    internal:
+      websocket: 7880
+    local:
+      websocket: 4005
+    public:
+      media: 10002
+  cpus: "1.0"
+  mem_reservation: 256m
+  mem_limit: 1g
+  pids_limit: 512
+livekit_jwt:
+  enabled: "{{ lookup('config', 'web-app-matrix', 'services.matrix.conferencing.element_call') | bool }}" # nocheck: dynamic-flag — the role renders the LiveKit services only inside its element_call branch
+  ports:
+    internal:
+      http: 8030
+    local:
+      http: 8105
+  cpus: "0.2"
+  mem_reservation: 32m
+  mem_limit: 128m
+  pids_limit: 64
 # nocheck: playwright-service-flag — DB engine, covered by role-local integration tests
 postgres:
   bond: 1
@@ -58,7 +93,7 @@ postgres:
 synapse:
   healthcheck:
     flavor: curl
-  version: v1.163.0
+  version: v1.163.2
   image: matrixdotorg/synapse
   name: matrix-synapse
   backup:
@@ -143,6 +178,7 @@ matrix:
   bond: 1
   enabled: true # nocheck: dynamic-flag — matrix always needs a database
   shared: true
+  ca_client: true
   name: matrix
   # nocheck: default-placement-manager  load-bearing only in the compose flavor, where synapse's /data holds the federation signing key and media store, 01_docker.yml provisions that volume with an undelegated chown and reaches the container through `container exec` under IS_STACK_HOST; the ansible flavor sets compose_mode_force to compose, so no deploy block is rendered at all
   placement: manager
@@ -190,9 +226,13 @@ tor:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
-  exclusive: true
 # nocheck: playwright-service-flag, dynamic-flag infrastructure backup consumer
 container_backup: # nocheck: bond-baseline backup host joins outside the variant topology
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

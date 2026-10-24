@@ -263,11 +263,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Kliento pusės NFS nustatymas nuotolinio serverio eksporto montavimui į kiekvieną sūpynės mazgas, su dislokavimo laiko pasiekiamumo zondas"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Kliento pusėje WireGuard VPN vaidmuo stabilaus ryšio su sistemine paslauga ir scenarijų, kad suderinti sąsaja MTU"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Iškarpinės tvarkyklė su redaguojama istorija, pasirinktiniais veiksmais ir scenarijų palaikymu"
@@ -819,11 +814,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Aukštos kokybės, savarankiški saugojimo sprendimai, skirti valdyti, plėsti ir gauti nestruktūrizuotus duomenis - įskaitant objektų saugojimą, suderinamą su Amazon S3 API."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Host- Level WireGuard VPN paslauga su wg- greitai konfigūruoti, paketas įdiegti, ir IP- ekspedijavimo sysctl saugiems tuneliams"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Vietų lygio konfigūracija, skirta sistemiškai žurnalistų registravimui su išlaikymo ribomis ir tiesioginio žurnalo srautiniam srautui"
@@ -907,6 +897,11 @@ msgstr "Išdavimo ir projekto sekimo platforma programinės įrangos komandoms, 
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript bėgimo laikas kuriant ir eksploatuojant serverių prietaikas ir programuotojų įrankius"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Branduolis WireGuard tuneliai, kabančios ir šnekamosios akys po plaukimo valdytoju ir visos akys tarp kompozicijos šeimininkų"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1079,6 +1074,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX- įteiktas statinis puslapis, suteikiantis teisinį įspaudą (Impressum) iš a Jinja2 šablonas"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 vertimo modelis įteiktas per HTTP, vamzdynų, kurie jį vadina tiesiogiai"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Tinklas"
@@ -1092,11 +1092,6 @@ msgstr "Tinklo sąranka (DNS, Užšifruokime HTTP, WireGuard ir t. t.)"
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Tinklo pločio DNS sinkhole blokuoti skelbimus ir sekliai visuose įrenginiuose, su DHCP ir web admin prietaisų skydelio"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Tinklo pagalbininkas iptables ekspedijavimo ir NAT maskavimosi WireGuard kliento veikia už NAT arba ugniasienės"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1187,6 +1182,11 @@ msgstr "Open- source IT turto valdymo sistema techninės ir programinės įrango
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Open- source ITSM ir pagalbos tarnybos platforma (OTRS šakutė) bilietų pardavimo, CMDB, žinių bazės ir ataskaitų teikimo"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Open- source SIEM ir XDR stebėsenos, žurnalo analizės, įsibrovimo / pažeidžiamumo nustatymo ir atitikties platforma"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1695,13 +1695,10 @@ msgctxt "role:web-app-jellyfin:description"
 msgid "Self-hosted media server for streaming and organizing movies, TV, music, and photos, with OIDC and LDAP login"
 msgstr "Savarankiškai aptarnaujamas media serveris, skirtas srautiniam filmavimui ir filmų, TV, muzikos ir nuotraukų organizavimui, su OIDC ir LDAP prisijungimu"
 
-# translated-by: libretranslate
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Name API
+# translated-by: ollama
 msgctxt "role:svc-ai-ollama:description"
 msgid "Self-hosted model server for running open LLMs locally behind a simple HTTP API"
-msgstr ""
+msgstr "Automatinė serverius skirtas vyresniams LLMs grindyti lokaliosieje įrenginyje paskutinioje HTTPS API"
 
 # platforma su į skaičiuoklę panašia sąsaja duomenų kūrimui ir
 # bendradarbiavimui
@@ -1725,15 +1722,13 @@ msgctxt "role:web-svc-libretranslate:description"
 msgid "Self-hosted open-source machine translation API for translating and detecting text across languages"
 msgstr "Savarankiškai patalpinta atvirojo kodo mašininio vertimo API teksto vertimui ir aptikimui kalbomis"
 
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Self-hosted personal AI agent gateway with a browser
 # control UI, sandboxed in a Kata microVM or gVisor runtime  ### Self-hosted
 # personal AI agent gateway with a browser control UI, sandboxed in a Kata
 # microVM or gVisor runtime
+# translated-by: ltengine
 msgctxt "role:web-app-openclaw:description"
 msgid "Self-hosted personal AI agent gateway with a browser control UI, sandboxed in a Kata microVM or gVisor runtime"
-msgstr ""
+msgstr "Šūčių tinklė, kurioje yra personalus AI agentą, kontroluojamas per browser, sandakotos Kata microVM ar gVisor platformoje"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-opencloud:description"
@@ -1804,6 +1799,10 @@ msgstr "Paslaugos"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Paslaugos"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"
@@ -2003,12 +2002,10 @@ msgctxt "role:dsk-gnome-terminal:description"
 msgid "Terminal emulator for the GNOME desktop, giving command-line access on Arch Linux workstations"
 msgstr "GNOME darbastalio terminalų emuliatorius, suteikiantis prieigą prie Arch Linux darbo vietų"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Name
+# translated-by: ltengine
 msgctxt "role:dsk-micro:description"
 msgid "Terminal-based text editor with modern keybindings and syntax highlighting for Pacman-based workstations"
-msgstr ""
+msgstr "Terminal-based text editor s modernais sandelių skaičių ir syntaxu apšaltymu, dirżący Pacman būsto būsto"
 
 # translated-by: libretranslate
 msgctxt "role:test-e2e-cli:description"

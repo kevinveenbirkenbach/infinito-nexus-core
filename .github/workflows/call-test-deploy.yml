@@ -13,7 +13,7 @@ on:
         required: true
         type: string
       sweep:
-        description: "Sweep number driving the mode and tor rotation and the regular-line offset."
+        description: "Sweep number driving the mode and network rotation and the regular-line offset."
         required: true
         type: string
       offset:
@@ -61,10 +61,19 @@ on:
         required: false
         type: string
         default: ""
-      tor:
+      network:
         required: false
         type: string
         default: auto
+      vpn:
+        required: false
+        type: string
+        default: auto
+      meshes:
+        description: "WireGuard layout a meshed swarm row deploys. Empty: INFINITO_SWARM_MESHES from default.env."
+        required: false
+        type: string
+        default: ""
       disable:
         description: "Comma-separated provider keys removed from the test inventory; used when the matrix row carries none of its own."
         required: false
@@ -83,7 +92,7 @@ on:
         type: string
         default: "0"
       sweep:
-        description: "🔁 Sweep number driving the mode/tor rotation and the regular-line offset."
+        description: "🔁 Sweep number driving the mode/network rotation and the regular-line offset."
         required: false
         type: string
         default: "0"
@@ -117,12 +126,23 @@ on:
         required: false
         type: string
         default: ""
-      tor:
-        description: "🧅 Tor axis; see .github/workflows/README.md for what each value does"
+      network:
+        description: "🌈 Network axis; see .github/workflows/README.md for what each value does"
         required: false
         type: choice
         default: auto
-        options: [auto, enforced, exclusive, disabled]
+        options: [auto, clearnet, tor, multi]
+      vpn:
+        description: "🚇 WireGuard axis; see .github/workflows/README.md for what each value does"
+        required: false
+        type: choice
+        default: auto
+        options: [auto, enforced, disabled]
+      meshes:
+        description: "🕸️ WireGuard layout meshed swarm rows deploy. Empty: the development lab's"
+        required: false
+        type: string
+        default: ""
       disable:
         description: "🚫 Provider keys removed from the test inventory (comma-separated)"
         required: false
@@ -154,7 +174,7 @@ env:
 jobs:
   discover:
     name: 🔍 Chunk ${{ inputs.index }}${{ inputs.marker }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     outputs:
       apps: ${{ steps.discover.outputs.apps }}
@@ -203,7 +223,8 @@ jobs:
           INFINITO_WHITELIST: ${{ steps.resolve_wl.outputs.whitelist }}
           INFINITO_PRIORITY: ${{ inputs.priority }}
           INFINITO_MODES: ${{ inputs.modes }}
-          INFINITO_TOR: ${{ inputs.tor }}
+          INFINITO_NETWORK: ${{ inputs.network }}
+          INFINITO_VPN: ${{ inputs.vpn }}
           INFINITO_CI_SWEEP: ${{ inputs.sweep }}
           INFINITO_CI_CHUNK: ${{ inputs.index }}
           INFINITO_CI_OFFSET: ${{ inputs.offset }}
@@ -222,7 +243,8 @@ jobs:
           PLAN_PRIORITY: ${{ inputs.priority }}
           PLAN_MODES: ${{ inputs.modes }}
           PLAN_LIFECYCLES: ${{ inputs.lifecycles }}
-          PLAN_TOR: ${{ inputs.tor }}
+          PLAN_NETWORK: ${{ inputs.network }}
+          PLAN_VPN: ${{ inputs.vpn }}
           PLAN_OFFSET: ${{ inputs.offset }}
         run: |
           source scripts/meta/env/load.sh
@@ -234,7 +256,8 @@ jobs:
             --priority "${PLAN_PRIORITY}" \
             --modes "${PLAN_MODES}" \
             --lifecycles "${PLAN_LIFECYCLES}" \
-            --tor "${PLAN_TOR}" \
+            --network "${PLAN_NETWORK}" \
+            --vpn "${PLAN_VPN}" \
             --offset "${PLAN_OFFSET}" \
             >> "$GITHUB_STEP_SUMMARY"
 
@@ -248,7 +271,7 @@ jobs:
     # TODO: verify in a CI deploy that a cancel drops queued jobs from this
     # group and that an identical row of a second run queues behind it.
     concurrency:
-      group: "infinito-deploy-${{ matrix.mode }}-${{ matrix.tor }}-${{ matrix.distro }}-${{ matrix.filesystem }}-${{ matrix.apps }}#${{ matrix.variant }}"
+      group: "infinito-deploy-${{ matrix.mode }}-${{ matrix.network }}-${{ matrix.distro }}-${{ matrix.filesystem }}-${{ matrix.apps }}#${{ matrix.variant }}"
       cancel-in-progress: false
       queue: max
 
@@ -303,15 +326,20 @@ jobs:
         shell: bash
         run: ./scripts/github/runner/relocate_docker_dataroot.sh
 
+      - name: 🛡️ Tear down host AppArmor profiles (dev-host parity)
+        if: ${{ !env.ACT }}
+        shell: bash
+        run: make security-apparmor-teardown
+
       - name: 🔍 Resolve repository owner
         shell: bash
         run: |
           set -euo pipefail
           echo "GITHUB_REPOSITORY_OWNER=$(scripts/meta/resolve/repository/owner.sh)" >> "$GITHUB_ENV"
 
-      - name: 📦 Install jq
+      - name: 📦 Install jq and iproute2
         shell: bash
-        run: ./scripts/install/apt.sh jq
+        run: ./scripts/install/apt.sh jq iproute2
 
       - name: "🔍 Resolve SWARM_NAME (mandatory; default to the matrix app)"
         if: ${{ matrix.mode == 'swarm' }}
@@ -342,10 +370,14 @@ jobs:
 
       - name: "🚀 Drill ${{ matrix.apps }} on ${{ matrix.distro }}/${{ matrix.filesystem }}"
         if: ${{ matrix.mode == 'swarm' }}
+        timeout-minutes: 350
         shell: bash
         env:
           variant: ${{ matrix.variant }}
           disable: ${{ matrix.disable || inputs.disable }}
+          network: ${{ matrix.network }}
+          INFINITO_SWARM_VPN: ${{ matrix.vpn }}
+          INFINITO_SWARM_MESHES: ${{ inputs.meshes }}
         run: ./scripts/tests/deploy/distros.sh "${{ env.SCRIPTS }}/00_one.sh" 2>&1 | tee "/tmp/ansible-${{ matrix.apps }}.log"
 
       - name: 🚀 Deploy app
@@ -353,10 +385,10 @@ jobs:
         timeout-minutes: 350
         shell: bash
         env:
-          apps: ${{ matrix.instructions != '' && format('{0},web-app-docs', matrix.apps) || matrix.apps }}
-          guide_host: ${{ matrix.instructions != '' && 'web-app-docs' || '' }}
+          apps: ${{ matrix.apps }}
           variant: ${{ matrix.variant }}
           disable: ${{ matrix.disable || inputs.disable }}
+          network: ${{ matrix.network }}
           ANSIBLE_LOG_PATH: /tmp/ansible-${{ matrix.apps }}.log
         run: ./scripts/tests/deploy/ci/all.sh 2>&1 | tee "/tmp/ansible-${{ matrix.apps }}.log"
 
@@ -394,7 +426,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: 🩺 Dump runner state (on failure)
-        if: ${{ failure() && matrix.mode != 'swarm' }}
+        if: ${{ failure() }}
         timeout-minutes: 5
         shell: bash
         run: ./scripts/github/runner/dump_state.sh "post-deploy failure (${{ matrix.apps }})"

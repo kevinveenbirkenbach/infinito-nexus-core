@@ -42,7 +42,7 @@ stalwart:
   # nocheck: default-placement-manager  mail edge at a known IP: MX A-record, PTR and SPF bind to the stack host IP (a floating task's egress IP breaks deliverability); the mail store is NFS-hostile and IS the app — same rationale as web-app-mailu
   placement: manager
   image: stalwartlabs/stalwart
-  version: "v0.16.26"
+  version: "v0.16.27"
   webui_version: "v1.0.11"
   update:
     - key: webui_version
@@ -54,6 +54,11 @@ stalwart:
     project_hard_restart: true
   migration:
     import_mailu: false
+    mailbox_map: []
+    workers: 0 # Parallel IMAP sessions of the import; 0 takes one fewer than the host's vCPUs, at most 8
+  aliases: []
+  forwards: []
+  alias_domains: []
   ban_period_seconds: 3600
   # nocheck: min-storage-headroom  Reason: the mail store (maildir blobs, FTS index, queue) lives in this service's volumes and dwarfs the image transfer size
   min_storage: 20GB
@@ -106,7 +111,7 @@ webmail:
   image: roundcube/roundcubemail
   healthcheck:
     flavor: curl
-  version: "1.7.4-apache"
+  version: "1.7.5-apache"
   cpus: "0.3"
   mem_reservation: 256m
   mem_limit: 1g
@@ -155,3 +160,8 @@ tor-smtp:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

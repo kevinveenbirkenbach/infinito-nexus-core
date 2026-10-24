@@ -1,4 +1,5 @@
 ---
+meshes: []
 local:
   subnet: 192.168.59.0/24
 overlay:
@@ -6,3 +7,5 @@ overlay:
   topology: shared_net
   consumer:
     kind: mcp_client
+reachability:
+  handover: true # nocheck: network-reachability  Laravel forces APP_URL, so Snipe-IT redirects every onion request to its one clearnet URL

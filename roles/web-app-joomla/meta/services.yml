@@ -43,7 +43,14 @@ joomla:
     swarm:
       enabled: true
   image: joomla
-  version: 6.1.4-php8.3-apache
+  version: 6.2.0-php8.3-apache
+  upgrade:
+    bridges:
+      - version: 5.4.9
+        sha256: 7840541ae606bd460d4bf3647c977699af279c229f708756c78a2dcc06cfc8cf
+        plugins:
+          behaviour/compat: false
+          behaviour/compat6: true
   custom: true
   name: joomla
   min_storage: 478MB
@@ -101,3 +108,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

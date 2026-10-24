@@ -75,7 +75,7 @@ n8n:
   backup:
     no_stop_required: false
   image: docker.n8n.io/n8nio/n8n
-  version: "2.44.3"
+  version: "2.45.3"
   update:
     type: registry_tags
     image: docker.n8n.io/n8nio/n8n
@@ -93,6 +93,7 @@ n8n:
     local:
       http: 8080
       sso: 16510
+      sso_onion: 16535
   run_after:
     - web-app-keycloak
     - web-app-matomo
@@ -131,3 +132,8 @@ flowise:
   enabled: false
   shared: false
   mcp_consumer: false
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

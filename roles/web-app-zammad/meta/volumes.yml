@@ -18,6 +18,15 @@ zammad_search:
   mounts:
     - service: elasticsearch
       target: /usr/share/elasticsearch/data
+search_allocation_precheck:
+  type: config
+  source: "{{ [lookup('container', 'web-app-zammad', 'directories.config'), 'search_allocation_precheck.sh'] | path_join }}"
+  mode: "0555"
+  mounts:
+    - service: precheck
+      target: &usr_local_bin_search_allocation_precheck_sh_target /usr/local/bin/search_allocation_precheck.sh
+    - service: init
+      target: *usr_local_bin_search_allocation_precheck_sh_target
 auto_wizard:
   type: config
   source: "{{ [lookup('container', 'web-app-zammad', 'directories.volumes'), 'auto_wizard.json'] | path_join }}"
@@ -40,6 +49,13 @@ zammad_omniauth_init:
       target: *opt_zammad_config_initializers_zz_omniauth_allow_get_rb_target
     - service: railsserver
       target: *opt_zammad_config_initializers_zz_omniauth_allow_get_rb_target
+zammad_network_origins:
+  type: bind
+  source: "{{ [lookup('container', 'web-app-zammad', 'directories.volumes'), 'zz_network_origins.rb'] | path_join }}"
+  read_only: true
+  mounts:
+    - service: railsserver
+      target: /opt/zammad/config/initializers/zz_network_origins.rb
 zammad_telegram_helper:
   type: bind
   source: "{{ [lookup('container', 'web-app-zammad', 'directories.volumes'), 'telegram_helper.rb'] | path_join }}"

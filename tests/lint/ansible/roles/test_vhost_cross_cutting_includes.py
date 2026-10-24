@@ -49,6 +49,23 @@ def flavour_includes() -> dict[str, set[str]]:
     }
 
 
+def carried_includes(content: str) -> set[str]:
+    """Return the concerns an override carries, its own and a flavour's.
+
+    An override that delegates to a shared flavour instead of replacing it
+    carries everything that flavour includes. Reading its own text alone would
+    report every concern the flavour holds as dropped, which is what the
+    per-network dashboard and logout wrappers are.
+    """
+    present = set(_INCLUDE_RE.findall(content))
+    flavours = flavour_includes()
+    base = str(FLAVOUR_DIR.relative_to(PROJECT_ROOT))
+    for include in tuple(present):
+        if include.startswith(f"{base}/"):
+            present |= flavours.get(include.rsplit("/", 1)[-1], set())
+    return present
+
+
 def required_includes() -> set[str]:
     """Return the includes every shared flavour carries.
 
@@ -108,9 +125,29 @@ def scraped(role: str) -> bool:
     )
 
 
+def consumes_objstore(role: str) -> bool:
+    """Return whether the role's own vhost has to route an object store.
+
+    Args:
+        role: the role directory name.
+    """
+    meta = PROJECT_ROOT / "roles" / role / ROLE_FILE_META_SERVICES
+    if not meta.is_file():
+        return False
+    block = load_yaml_any(str(meta), default_if_missing={})
+    if not isinstance(block, Mapping):
+        return False
+    for engine in ("seaweedfs", "minio"):
+        entry = block.get(engine)
+        if isinstance(entry, Mapping) and entry.get("enabled") is not False:
+            return True
+    return False
+
+
 APPLIES = {
     "roles/sys-svc-proxy/templates/mcp/vhost.conf.j2": serves_mcp,
     "roles/web-app-prometheus/templates/nginx/locations.conf.j2": scraped,
+    "roles/web-svc-seaweedfs/templates/nginx/locations.conf.j2": consumes_objstore,
 }
 
 SATISFIED_BY = {
@@ -140,7 +177,7 @@ def missing_includes() -> list[str]:
         content = read_text(str(path))
         if is_suppressed_in_head(content.splitlines(), _RULE):
             continue
-        present = set(_INCLUDE_RE.findall(content))
+        present = carried_includes(content)
         for missing in sorted(required_includes() - present):
             if not APPLIES.get(missing, lambda _role: True)(role):
                 continue

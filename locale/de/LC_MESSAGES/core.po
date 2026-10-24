@@ -259,11 +259,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Clientseitiges NFS-Setup zum Montieren eines Remote-Server-Exports auf jedem Schwarmknoten mit einer Bereitstellungszeit-Erreichbarkeitssonde"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Clientseitige WireGuard VPN-Rolle für stabile Konnektivität mit einem Systemd Service und einem Skript, das die Schnittstelle MTU abstimmt"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Clipboard-Manager mit editierbarem Verlauf, benutzerdefinierten Aktionen und Skript-Unterstützung"
@@ -792,11 +787,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Hochleistungs-, selbst gehostete Speicherlösungen für die Verwaltung, Skalierung und den Zugriff auf unstrukturierte Daten - einschließlich Objektspeicher, der mit Amazon S3-APIs kompatibel ist."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Host-Level WireGuard VPN-Service mit wg-quick config, Paketinstallation und IP-Weiterleitungs-Sysctl für sichere Tunnel"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Host-Level-Konfiguration für den Systemd-journald Logging Daemon mit Retention Limits und Live Log Streaming"
@@ -880,6 +870,11 @@ msgstr "Issue- und Projekt-Tracking-Plattform für Software-Teams mit agilen Boa
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript-Laufzeit zum Erstellen und Ausführen serverseitiger Anwendungen und Entwicklertools"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Kern WireGuard Tunnel, Hub-Speichen-Meshes unter einem Schwarmmanager und vollständige Maschen zwischen Compose-Hosts"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1052,6 +1047,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX-servierte statische Seite, die ein Rechtsimpressum (Impressum) aus einer Jinja2-Vorlage darstellt"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 Translation-Modell über HTTP dient Pipelines, die es direkt verwenden"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Netz"
@@ -1065,11 +1065,6 @@ msgstr "Netzwerkaufbau (DNS, Let's Encrypt HTTP, WireGuard, etc.)"
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Netzwerkweites DNS-Sinkhole zum Blockieren von Anzeigen und Trackern auf allen Geräten mit DHCP und einem Web-Admin-Dashboard"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Networking-Helfer für iptables Forwarding und NAT-Masquerading eines WireGuard-Clients, der hinter NAT oder einer Firewall läuft"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1158,6 +1153,11 @@ msgstr "Open Source IT Asset Management System zur Nachverfolgung von Hard- und 
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Open-Source ITSM- und Helpdesk-Plattform (OTRS-Fork) für Ticketing, CMDB, Wissensdatenbank und Reporting"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Open-Source SIEM- und XDR-Plattform für Überwachung, Protokollanalyse, Intrusion/Vulnerability Detection und Compliance"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1755,6 +1755,10 @@ msgstr "Dienstleistungen"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Dienstleistungen"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

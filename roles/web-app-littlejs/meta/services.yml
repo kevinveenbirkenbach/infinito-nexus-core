@@ -47,7 +47,7 @@ littlejs:
   repository: https://github.com/KilledByAPixel/LittleJS.git
   ref: main
   image: nginx
-  version: 1.31.7-alpine
+  version: 1.31.8-alpine
   custom: true
   ports:
     local:
@@ -56,7 +56,7 @@ littlejs:
       http: 80
   run_after:
     - web-app-matomo
-  lifecycle: alpha
+  lifecycle: pre-alpha
   min_storage: 227MB
   cpus: "0.5"
   mem_reservation: 256m
@@ -78,3 +78,8 @@ tor:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

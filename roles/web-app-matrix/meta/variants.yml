@@ -10,8 +10,13 @@
 # homeserver cannot pair with it. The hookshot bridges and Element's jitsi
 # conferencing are therefore driven from a clearnet homeserver origin; variant 0
 # pairs the onion with SSO.
+#
+# nocheck: clearnet-variant-tor — on an onion pick MATRIX_ONION_PRIMARY drops Jitsi and Element Call from Element, so no clearnet call surface is advertised
 
 - services:
+    docs:
+      enabled: false
+      shared: false
     container_backup:
       enabled: true
     matrix:
@@ -35,8 +40,7 @@
       enabled: false
       shared: false
     jitsi:
-      enabled: false
-      shared: false
+      shared: true
     ldap:
       enabled: true
       shared: true
@@ -181,6 +185,9 @@
       enabled: true
 
 - services:
+    docs:
+      enabled: true
+      shared: true
     container_backup:
       enabled: false
       shared: false # nocheck: variants-static-override base shared is a static literal and this round joins no backup host

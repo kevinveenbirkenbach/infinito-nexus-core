@@ -1,3 +1,6 @@
 ---
+meshes: []
 local:
   subnet: 192.168.3.0/24
+reachability:
+  handover: true # nocheck: network-reachability  BookWyrm admits only its one DOMAIN in ALLOWED_HOSTS and builds every ActivityPub actor and link from it, so the onion host is answered with 400

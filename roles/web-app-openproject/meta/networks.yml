@@ -1,3 +1,6 @@
 ---
+meshes: []
 local:
   subnet: 192.168.44.0/24
+reachability:
+  handover: true # nocheck: network-reachability  OpenProject accepts only its one OPENPROJECT_HOST__NAME and answers the onion host with 400

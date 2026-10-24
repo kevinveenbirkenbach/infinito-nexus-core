@@ -260,11 +260,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Εγκατάσταση NFS πλευρά πελάτη για την τοποθέτηση ενός απομακρυσμένου διακομιστή εξαγωγής σε κάθε κόμβο σμήνος, με έναν ανιχνευτή προσιτό χρόνο ανάπτυξης"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Πελάτης-side WireGuard VPN ρόλος για σταθερή συνδεσιμότητα με μια συστηματοποιημένη υπηρεσία και σενάριο που μελωδία διεπαφή MTU"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Διαχείριση προχείρου με επεξεργάσιμο ιστορικό, προσαρμοσμένες ενέργειες και υποστήριξη σεναρίων"
@@ -792,19 +787,12 @@ msgstr "Βοηθητικά Εργαλεία"
 # διαχείριση, κλιμάκωση και πρόσβαση σε μη δομημένα δεδομένα —
 # συμπεριλαμβανομένης της αποθήκευσης αντικειμένων συμβατών με την Amazon S3
 # APIs (στα Αγγλικά).
-# translation-refused: libretranslate untranslated
-# nocheck: url
-# translation-rejected: --- High-performancia, soluciones de almacenamiento de
 # alta rendimiento, autónomo para gestionar, escalar y acceder a datos no
 # estructurados — compatibles con APIs de Amazon S3.  ---.
+# translated-by: ollama
 msgctxt "menu:Storage:description"
 msgid "High-performance, self-hosted storage solutions for managing, scaling, and accessing unstructured data — including object storage compatible with Amazon S3 APIs."
-msgstr ""
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "WireGuard VPN σε επίπεδο υποδοχής με wg-γρήγορο config, εγκατάσταση πακέτων και IP-προωθώντας το σύστημα για ασφαλείς σήραγγες"
+msgstr "Χρήσιμες αποθεωρητικές συστήματα έλεγχου και ανάπτυξης για τη διαχείριση, την ανάληψη και την εισόδημα των αναπάσθετων δεδομένων — συμπερασκαπούμενες προγραμματισμένες συστήματα έλεγχου που συμφιλίζονται με τους Amazon S3 API."
 
 # translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
@@ -890,6 +878,11 @@ msgstr "Έκδοση και παρακολούθηση έργων για ομά�
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript runtime για την κατασκευή και εκτέλεση εφαρμογών και εργαλείων ανάπτυξης server"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Πυρήνας WireGuard σηράγγων, hub-and-spoked πλέγματα κάτω από έναν διαχειριστή σμήνους και πλήρη πλέγματα μεταξύ συνθετών"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1007,13 +1000,11 @@ msgid "Marketing"
 msgstr "Εμπορία"
 
 # results without handing a user's query to a tracking search provider
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Metasearch engine the platform queries for web results
 # without handing a user's query to a tracking search provider
+# translated-by: ltengine
 msgctxt "role:svc-ai-searxng:description"
 msgid "Metasearch engine the platform queries for web results without handing a user's query to a tracking search provider"
-msgstr ""
+msgstr "Ψηφιακός μηχανισμός αναζήτησης που αναζητά σε διαδίκτυα αποτελέσματα χωρίς να δίνει στον χρήστη την ερώτησή του σε έναν διαχειριστή αναζήτησης"
 
 # translated-by: libretranslate
 msgctxt "role:dsk-gnt-pi:description"
@@ -1066,6 +1057,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX-served στατική σελίδα καθιστώντας ένα νομικό αποτύπωμα (Εντυπωσιασμός) από ένα Jinja2 πρότυπο"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "- Ναι.200 Μεταφραστικό μοντέλο που εξυπηρετείται μέσω HTTP, για αγωγούς που το αποκαλούν άμεσα"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Δίκτυο"
@@ -1079,11 +1075,6 @@ msgstr "setup δικτύου (DNS, ας κρυπτογραφήσουμε HTTP, W
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Καταβόθρα δικτύου DNS για την παρεμπόδιση διαφημίσεων και ανιχνευτών σε όλες τις συσκευές, με DHCP και ένα ταμπλό διαχείρισης ιστού"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Βοηθός δικτύωσης για iptables προώθηση και NAT masquerading ενός πελάτη WireGuard που τρέχει πίσω από NAT ή ένα τείχος προστασίας"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1174,6 +1165,11 @@ msgstr "Ανοικτό σύστημα διαχείρισης περιουσια�
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Ανοιχτή πλατφόρμα ITSM και helpdesk (Πιρούνι OTRS) για την έκδοση εισιτηρίων, CMDB, βάση γνώσεων και υποβολή εκθέσεων"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Πρόσβαση σε SIEM και XDR πλατφόρμα ανοιχτού κώδικα για παρακολούθηση, ανάλυση logs, ανίχνευση εισβολών/απειλητικών ευπαθειών και συμμόρφωση"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1774,6 +1770,10 @@ msgstr "Υπηρεσίες"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Υπηρεσίες"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

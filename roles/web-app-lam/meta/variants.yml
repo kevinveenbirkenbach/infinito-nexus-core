@@ -7,6 +7,9 @@
 # it, so the variant blocks below don't override it.
 
 - services:
+    docs:
+      enabled: false
+      shared: false
     dashboard:
       enabled: true
       shared: true
@@ -31,6 +34,9 @@
     tor:
       enabled: true
 - services:
+    docs:
+      enabled: true
+      shared: true
     dashboard:
       enabled: false
       shared: false

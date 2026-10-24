@@ -19,6 +19,7 @@ from .infinito import (
     container,
     distros,
     domain,
+    ghcr_mirror,
     git_identity,
     gpu_count,
     image,
@@ -30,6 +31,9 @@ from .infinito import (
     pull_policy,
     registry_cache_max_size,
     tor_socks_port,
+)
+from .infinito import (
+    ip_range as ip_range,
 )
 from .infinito.ca import bundle_candidates as ca_bundle_candidates
 from .infinito.ca import cert_host as ca_cert_host
@@ -63,7 +67,9 @@ from .infinito.running_on import github as running_on_github
 from .infinito.swarm_nfs import export_base as swarm_nfs_export_base
 from .infinito.swarm_nfs import state_path as swarm_nfs_state_path
 from .infinito.tools import libretranslate as tools_libretranslate
+from .infinito.tools import litellm as tools_litellm
 from .infinito.tools import models as tools_models
+from .infinito.tools import s1 as tools_s1
 from .infinito.tools import translate as tools_translate
 from .infinito.worker import cpu as worker_cpu
 from .infinito.worker import fetch as worker_fetch
@@ -96,6 +102,7 @@ ORDERED_HANDLERS = [
     cache_registries,
     cache_stack,
     cache_paths,
+    ghcr_mirror,
     tor_socks_port,
     is_wsl2,
     ca_bundle_candidates,
@@ -118,7 +125,9 @@ ORDERED_HANDLERS = [
     git_identity,
     gpu_count,
     tools_libretranslate,
+    tools_litellm,
     tools_models,
+    tools_s1,
     tools_translate,
     i18n_tuning,
     package_cache_heap,

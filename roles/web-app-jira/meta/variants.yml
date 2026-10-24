@@ -11,6 +11,9 @@
     status_codes:
       default: 302
   services:
+    docs:
+      enabled: false
+      shared: false
     container_backup:
       enabled: true
     dashboard:
@@ -33,6 +36,9 @@
     tor:
       enabled: true
 - services:
+    docs:
+      enabled: true
+      shared: true
     container_backup:
       enabled: true
     dashboard:

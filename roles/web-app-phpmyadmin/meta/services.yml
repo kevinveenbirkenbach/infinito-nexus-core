@@ -32,6 +32,7 @@ phpmyadmin:
   ports:
     local:
       sso: 16481
+      sso_onion: 16541
       http: 8034
     internal:
       http: 80
@@ -79,3 +80,8 @@ tor:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

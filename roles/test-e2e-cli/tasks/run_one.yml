@@ -6,11 +6,19 @@
     _cli_test_script: "{{ TEST_E2E_CLI_STAGE_BASE_DIR }}/{{ application_id }}/test.sh"
     _cli_service_key: "{{ lookup('role_tests', application_id, 'cli.container_service_key', default='') | trim }}"
 
+- name: "📦 Include the roles the CLI test of {{ application_id }} requires"
+  ansible.builtin.include_role:
+    name: "{{ required_role }}"
+  loop: "{{ lookup('role_tests', application_id, 'cli.requires', default=[]) }}"
+  loop_control:
+    loop_var: required_role
+
 - name: "✅ Assert CLI test assets exist for {{ application_id }}"
   ansible.builtin.stat:
     path: "{{ item }}"
   register: _cli_asset_stats
   delegate_to: localhost
+  become: false
   run_once: true
   loop:
     - "{{ _cli_env_template }}"
@@ -69,6 +77,7 @@
     path: "{{ lookup('path_absolute', 'roles', application_id, 'defaults/main.yml') }}"
   register: _cli_app_defaults_stat
   delegate_to: localhost
+  become: false
   run_once: true
 
 - name: 📦 Load optional application defaults for {{ application_id }}
@@ -81,6 +90,7 @@
     path: "{{ lookup('path_absolute', 'roles', application_id, 'vars/main.yml') }}"
   register: _cli_app_vars_stat
   delegate_to: localhost
+  become: false
   run_once: true
 
 - name: 📦 Load optional application vars for {{ application_id }}

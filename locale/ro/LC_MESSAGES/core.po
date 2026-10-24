@@ -260,11 +260,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Client-side NFS setup pentru montarea unui export de server la distanță pe fiecare nod roi, cu o sondă de accesibilitate în timp"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Client-side WireGuard VPN rol pentru conectivitate stabilă cu un serviciu sistemat și script care ton interfata MTU"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Manager clipboard cu istorie editabilă, acțiuni personalizate și suport de scripting"
@@ -795,11 +790,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Soluții de stocare de înaltă performanță, auto-hosted pentru gestionarea, scalarea și accesarea datelor nestructurate 3 API."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Serviciul WireGuard WireGuard VPN cu configurare wg-quick, instalare pachet, și IP-forwarding Sysctl pentru tuneluri securizate"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Configurație la nivelul gazdei pentru demonul de logare sistemat-jurnald cu limite de reținere și streaming live log"
@@ -883,6 +873,11 @@ msgstr "Platforma de urmărire a proiectelor și emisiunilor pentru echipe de so
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "Timp de rulare JavaScript pentru construirea și rularea aplicațiilor de server și instrumentare dezvoltator"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Kernel WireGuard tuneluri, plase cu ochiuri în hub-and-poke sub un manager de roi și ochiuri complete între gazdele Compoziție"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1055,6 +1050,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "Pagină statică NGINX care face o imprimare legală (Impresie) de la un Jinja2 machetă"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB...200 model de traducere servit peste HTTP, pentru conducte care-l numesc direct"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Rețea"
@@ -1068,11 +1068,6 @@ msgstr "Configurare rețea (DNS, Să criptăm HTTP, WireGuard etc.)"
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Canal DNS la nivel de rețea pentru blocarea anunțurilor și a trackerelor pe toate dispozitivele, cu DHCP și un panou de bord web admin"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Asistent de rețea pentru iptables forwarding și Masquerading NAT de un client WireGuard rulează în spatele NAT sau un firewall"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1164,6 +1159,11 @@ msgstr "Sistem de gestionare a activelor IT cu sursă deschisă pentru urmărire
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Platforma Open-Source ITSM și Helpdesk (Furculiță OTRS) pentru bilete, CMDB, baza de cunoștințe și raportare"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Platforma SIEM și XDR cu sursă deschisă pentru monitorizare, analiză jurnal, detectare intruziune/vulnerabilitate și conformitate"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1430,15 +1430,12 @@ msgctxt "category:svc.prx:description"
 msgid "Reverse-proxy roles for routing and load-balancing traffic to backend services"
 msgstr "Roluri inverse pentru rutarea și echilibrarea traficului către serviciile suport"
 
-# translated-by: libretranslate
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Roles for cleaning up various system resources—old
 # backups, unused certificates, temporary files, Docker volumes, disk caches,
 # deprecated domains, and more.
+# translated-by: ltengine
 msgctxt "category:sys.ctl.cln:description"
 msgid "Roles for cleaning up various system resources—old backups, unused certificates, temporary files, Docker volumes, disk caches, deprecated domains, and more."
-msgstr ""
+msgstr "Funcții pentru curățarea resurselor sistemului—back-up-uri vechi, certificări neutilizate, fișiere temporare, volume Docker, cache-uri de disc, domenii învechite și multe altele."
 
 # translated-by: libretranslate
 # hardware.
@@ -1774,6 +1771,10 @@ msgstr "Servicii"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Servicii"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

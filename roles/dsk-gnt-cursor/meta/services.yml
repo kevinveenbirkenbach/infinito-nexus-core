@@ -5,6 +5,9 @@ desktop-base:
   enabled: true
   shared: true
 cursor:
+  # nocheck: architecture-pin  Reason: every AUR package the vendor's client is carried by, cursor-bin and cursor-appimage alike, declares arch=('x86_64'), and the vendor's own aarch64 artifacts are a separate acquisition path this role does not have yet
+  architectures:
+    - amd64
   modes:
     host:
       enabled: true
@@ -14,3 +17,9 @@ cursor:
   mem_reservation: "512m"
   mem_limit: "4g"
   pids_limit: 1024
+
+# nocheck: variants-coverage the role has a single variant, and the guide edge is not a dimension of it: a second round would differ only by the README replay
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

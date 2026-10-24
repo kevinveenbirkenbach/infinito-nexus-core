@@ -1,4 +1,6 @@
 ---
+# clearnet | tor | multi; empty derives multi when svc-net-tor is deployed, else clearnet.
+NETWORK_MODE: ""
 NETWORK_IPV6_ENABLED: false
 NETWORK_PUBLIC_DNS_RESOLVERS:
   - 1.1.1.1 # nocheck: hardcoded-dns-resolver
@@ -26,6 +28,7 @@ NETWORK_DOCKER_ADDRESS_POOLS:
   - base: "10.208.0.0/12"
     size: 24
 NETWORK_TOR_VIRTUAL_CIDR: "10.240.0.0/12" # Range tor answers for .onion instead of routing; must not overlap the pool above
+NETWORK_MESH_POOL: "10.100.0.0/16" # Range every WireGuard mesh subnet is carved from
 NETWORK_CONTAINER_BRIDGE_RESOLVER: false
 NETWORK_NESTED_DOCKER_BIP: "192.168.67.1/24"
 NETWORK_NESTED_DOCKER_ADDRESS_POOLS:
@@ -50,6 +53,12 @@ PORT_BANDS: # nocheck: unused-var  # consumed by the port-allocation plugin outs
     sso:
       start: 16480
       end: 16519
+    sso_onion:
+      start: 16520
+      end: 16559
+    http_onion:
+      start: 16560
+      end: 16599
     mariadb:
       start: 3306
       end: 3306

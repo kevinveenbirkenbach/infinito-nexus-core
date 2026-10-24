@@ -62,7 +62,7 @@ web:
 view:
   enabled: false
   repository: https://github.com/bluesky-social/social-app.git
-  ref: "1.135.0"
+  ref: "1.136.0"
   ports:
     local:
       http: 8051
@@ -145,6 +145,7 @@ bluesky:
   ports:
     local:
       sso: 16497
+      sso_onion: 16522
   run_after:
     - web-app-matomo
     - web-app-keycloak
@@ -169,3 +170,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

@@ -68,7 +68,7 @@ erpnext:
   enabled: true
   shared: true
   image: frappe/erpnext
-  version: "v16.51.1"
+  version: "v16.52.1"
   name: erpnext
   min_storage: 1017MB
   ports:
@@ -80,6 +80,8 @@ erpnext:
       websocket: 9000
   proxy:
     service_key: frontend
+  company:
+    abbr: "{{ service_provider.company.titel.split() | map('first') | join | upper }}"
   run_after:
     - web-app-keycloak
     - web-app-stalwart
@@ -151,3 +153,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

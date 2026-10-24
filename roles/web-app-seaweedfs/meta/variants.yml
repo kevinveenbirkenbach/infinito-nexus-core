@@ -1,29 +1,29 @@
 ---
 - services:
-    seaweedfs:
-      enabled: true
-      shared: true
+    docs:
+      enabled: false
+      shared: false
     sso:
-      enabled: "{{ 'svc-net-tor' not in group_names }}"
-      shared: "{{ 'svc-net-tor' not in group_names }}"
+      enabled: "{{ lookup('network_served', 'clearnet') }}"
+      shared: "{{ lookup('network_served', 'clearnet') }}"
     logout:
-      enabled: "{{ 'svc-net-tor' not in group_names }}"
-      shared: "{{ 'svc-net-tor' not in group_names }}"
+      enabled: "{{ lookup('network_served', 'clearnet') }}"
+      shared: "{{ lookup('network_served', 'clearnet') }}"
     dashboard:
-      enabled: "{{ 'svc-net-tor' not in group_names }}"
-      shared: "{{ 'svc-net-tor' not in group_names }}"
+      enabled: "{{ lookup('network_served', 'clearnet') }}"
+      shared: "{{ lookup('network_served', 'clearnet') }}"
     prometheus:
-      enabled: "{{ 'svc-net-tor' not in group_names }}"
-      shared: "{{ 'svc-net-tor' not in group_names }}"
+      enabled: "{{ lookup('network_served', 'clearnet') }}"
+      shared: "{{ lookup('network_served', 'clearnet') }}"
     design:
-      enabled: true
-      shared: true
+      enabled: "{{ lookup('network_served', 'clearnet') }}"
+      shared: "{{ lookup('network_served', 'clearnet') }}"
     tor:
       enabled: true
 - services:
-    seaweedfs:
-      enabled: false
-      shared: false
+    docs:
+      enabled: true
+      shared: true
     sso:
       enabled: false
       shared: false

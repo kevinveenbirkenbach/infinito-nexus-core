@@ -20,6 +20,7 @@ friendica:
   ports:
     local:
       sso: 16501
+      sso_onion: 16526
       http: 8028
     internal:
       http: 80
@@ -124,3 +125,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

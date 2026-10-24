@@ -78,7 +78,7 @@ checkmk:
   pids_limit: 2048
   min_storage: 1053MB
   image: checkmk/check-mk-raw
-  version: "2.4.0p37"
+  version: "2.4.0p38"
   backup:
     no_stop_required: true
   name: checkmk
@@ -89,6 +89,7 @@ checkmk:
     local:
       http: 8087
       sso: 16509
+      sso_onion: 16524
       agent: 8500
     onion:
       # nocheck: onion-flag  the monitoring server dials its agents, so nothing connects inward here, and the agent speaks no authentication of its own
@@ -149,3 +150,8 @@ flowise:
   enabled: false
   shared: false
   mcp_consumer: false
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

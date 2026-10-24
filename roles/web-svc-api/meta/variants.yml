@@ -1,11 +1,17 @@
 ---
 - services:
+    docs:
+      enabled: false
+      shared: false
     prometheus:
       enabled: true
       shared: true
     tor:
       enabled: true
 - services:
+    docs:
+      enabled: true
+      shared: true
     prometheus:
       enabled: false
       shared: false

@@ -267,11 +267,6 @@ msgstr ""
 "Klient-side NFS setup for mounting a remote server export on every swarm node, with a deploy-time reachability probe"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Client-side WireGuard VPN rolu sistemli xidmət və melodi interfeys MTU"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Videoboard meneceri rəsmi, xüsusi fəaliyyətlər, və dəstək dəstək"
@@ -581,12 +576,10 @@ msgctxt "role:web-svc-seaweedfs:description"
 msgid "Distributed S3-compatible object store for shared, per-consumer bucket provisioning across web-app roles"
 msgstr "Qalereya3- Paylaşılan, web-app rolları arasında per-consumer kova təqdimatı üçün uyğun obyekt mağazası"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Yadda saxla
+# translated-by: ltengine
 msgctxt "role:dev-git:description"
 msgid "Distributed version control system for tracking source code changes and coordinating development work"
-msgstr ""
+msgstr "Qənbəxşilik sisteminin kaynak kod dəyişlərini izləməsi və işləşməsi üçün tüqһürəlik sistemi"
 
 # translated-by: libretranslate
 msgctxt "role:dev-base-devel:description"
@@ -788,7 +781,6 @@ msgstr "Yardım"
 # translation-refused: libretranslate stutter
 # nocheck: url
 # translation-rejected: CA-trust enjeksiyon aktivlərinin qarşısını almaq
-# Docker Compose stack and and and and
 msgctxt "role:sys-svc-compose-ca:description"
 msgid "Helper role installing CA-trust injection assets for Docker Compose stacks and validating the project CA certificate"
 msgstr ""
@@ -808,17 +800,10 @@ msgctxt "menu:Storage:description"
 msgid "High-performance, self-hosted storage solutions for managing, scaling, and accessing unstructured data — including object storage compatible with Amazon S3 APIs."
 msgstr "Amazon S ilə uyğun olaraq, səhifə saxlamaq, səviyyətləşdirilməsi və konfiqurasiyasız məlumatların daxil olmaq üçün yüksək keyfiyyətli depozitləri3 API."
 
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Wg-quick konfiqurasiyası ilə Host-level WireGuard VPN xidməti, paketi yükləyir və IP-i təhlükəsiz squl üçün sctl"
-
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Yadda saxla
+# translated-by: ollama
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
-msgstr ""
+msgstr "Sistemi-level systemd-journald ąadığın şəkildə işlətımı və təkif limitlər və ətraflı log təqdim edici"
 
 # translated-by: libretranslate
 msgctxt "role:dev-shell:description"
@@ -835,12 +820,10 @@ msgctxt "role:user-root:description"
 msgid "Host-level role provisioning a root RSA 4096-bit SSH key pair for secure automated administrative access"
 msgstr "Bir kök RSA-nın evüstü rolu 4096- Secure avtomatik idarəetmə giriş üçün SSH key cüt"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: E-poçt ünvanı
+# translated-by: ltengine
 msgctxt "role:web-app-openbao:description"
 msgid "Identity-based secrets, PKI and encryption manager with OIDC login, group-mapped policies and static-seal auto-unseal"
-msgstr ""
+msgstr "ПІДМІННІ СЕКРІ, PKI і менеджер разліків, з входом через OIDC, політики, що розширюються за групами, і статичний закриття автоматичного розкриття"
 
 # translated-by: libretranslate
 msgctxt "role:svc-db-redis:description"
@@ -897,12 +880,15 @@ msgctxt "role:web-app-jira:description"
 msgid "Issue and project tracking platform for software teams, with agile boards, workflows, and optional OIDC SSO"
 msgstr "Proqram komandaları üçün fayl və layihə izleme platforması, çevik boardlar, işıqlar, və isteğe bağlı OIDC SSO"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Yadda saxla
+# translated-by: ollama
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
-msgstr ""
+msgstr "JavaScript irtualkerna məşq və qoşudan vurulma prosesində və yazarlar təliman tərtibatı"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Qalereya WireGuard tunnel , , , , , ,"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1075,6 +1061,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX-served statik səhifə hüquqları qorunur (Qeydiyyat) Jinja2 template"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 HTTP üzərində təhsil modeli, birbaşa çağıran borular üçün"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Axtar"
@@ -1082,17 +1073,12 @@ msgstr "Axtar"
 # translated-by: libretranslate
 msgctxt "category:svc.net:description"
 msgid "Network setup (DNS, Let's Encrypt HTTP, WireGuard, etc.)"
-msgstr "Axtarış (DNS, Yadda saxla)"
+msgstr "Axtarış (DNS, Yadda saxla WireGuard,)"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "DHCP və bir web admin paneli ilə bütün cihazlar arasında reklam və trackers blok üçün Network-wide DNS batareya"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "NAT və ya bir firewall üzərində çalışan bir WireGuard müştərinin iptables üçün yardımçısı"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1188,6 +1174,11 @@ msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, k
 msgstr "Open-source ITSM və yardım platforma (OTRS üçün) bilet, CMDB, məlumat bazası, və bildiriş"
 
 # translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "İnformasiya, giriş analizi, giriş/vulnerability aşkarlanması və uyğunluğu üçün Open-source SIEM və XDR platforması"
+
+# translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
 msgid "Open-source agile project management platform for Scrum, Kanban, and hybrid team workflows"
 msgstr "Scrum, Kanban və hibrid komanda işıqları üçün Open-source çevik layihəsi platforması"
@@ -1222,25 +1213,20 @@ msgctxt "role:web-app-shopware:description"
 msgid "Open-source ecommerce platform built on Symfony and Vue.js for building and scaling online storefronts"
 msgstr "Symfony və Vue.js onlayn mağazafronts bina və səhifə"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: E-poçt ünvanı
+# translated-by: ollama
 msgctxt "role:web-app-zammad:description"
 msgid "Open-source helpdesk and ticketing system for handling customer requests via email, chat, phone, and web"
-msgstr ""
+msgstr "Open-source tiketli valet sistemi mürriklərin e-poçtunda, sohbətda, telefonda və internetdə mürrik vələlərinə response etməyə və təqdim etməyə vəqi muddətlərini işləmək üçün"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-moodle:description"
 msgid "Open-source learning management system for creating, managing, and delivering online courses and e-learning"
 msgstr "Open-source öyrənmə sistemi yaratmaq, idarə etmək və online kurslar və e-ömək"
 
-# translated-by: libretranslate
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: PromQL
+# translated-by: ollama
 msgctxt "role:web-app-prometheus:description"
 msgid "Open-source monitoring and alerting toolkit for storing metrics as time-series data and querying them with PromQL"
-msgstr ""
+msgstr "Open-source məhsul monitoring və alyşbut qutusu məsafədə ölçülən metrikləri zaman seris nümunəsində saklamak və onları PromQL ilə sorgulamadan"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-decidim:description"
@@ -1680,12 +1666,12 @@ msgctxt "role:web-app-keycloak:description"
 msgid "Self-hosted identity and access management platform for single sign-on, multi-factor authentication, and user federation"
 msgstr "Bir imza-on, multi-faktor təhlükəsizlik və istifadə idarəetmə platforması"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: E-poçt ünvanı
+# translated-by: ollama
 msgctxt "role:web-app-n8n:description"
 msgid "Self-hosted low-code automation platform for connecting services and building workflow integrations visually"
 msgstr ""
+"Self-hosted low-code automation platform simliar azərbaycan dili ilə \n"
+"Self-hosted low-code automation platform viziual şəbəkə platforması olaraq iş layihələrinin və workflow integrasiyaların bağlıqlandırma üçün"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-mailu:description"
@@ -1707,19 +1693,15 @@ msgctxt "role:web-app-baserow:description"
 msgid "Self-hosted no-code database platform with a spreadsheet-like interface for building and collaborating on data"
 msgstr "Self-poçt ünvanı veriləndirilməsi və məlumatların yaradılması və məlumatlaşdırılması üçün yayılmış məlumat bazası platformasını qeyd etdi"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: E-poçt ünvanı
+# translated-by: ltengine
 msgctxt "role:web-svc-collabora:description"
 msgid "Self-hosted online office backend for real-time in-browser editing of documents, spreadsheets, and presentations"
-msgstr ""
+msgstr "Xəlləyən tərəfindən çevrilmiş çevrilməsi elektron təşkilatında, başqasının çevrilməsi üçün real vaxtda çevrilməsi üçün elektron dokumentlar, şturşular və prezentasyonlar üçün çevrilməsi"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: E-poçt ünvanı
+# translated-by: ltengine
 msgctxt "role:web-app-erpnext:description"
 msgid "Self-hosted open-source ERP suite for finance, CRM, inventory, manufacturing, HR, sales, and projects"
-msgstr ""
+msgstr "Предлагана ERP система за самоhosted, отворено-свободен характер, за финанси, CRM, склади, производство, HR, продаж и проекти"
 
 # translated-by: libretranslate
 msgctxt "role:web-svc-libretranslate:description"
@@ -1756,12 +1738,10 @@ msgctxt "role:web-app-dashboard:description"
 msgid "Self-hosted portal for unified access to all deployed applications via a customizable tile and menu interface"
 msgstr "Xüsusi dəstək və menyu interfeyssi ilə bütün istifadə edilmiş proqramlar üçün Self- hosting portalı"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: E-poçt ünvanı
+# translated-by: ollama
 msgctxt "role:web-app-pretix:description"
 msgid "Self-hosted ticketing platform for events with online sales, registration management, and secure payments"
-msgstr ""
+msgstr "Svapačalqyan bensyün platforma eventlərə veb-bayramı, təqdim olmaq və qayitlanma yönetməsi və cəlfərli qiymətlənmenə baxıq"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-bigbluebutton:description"
@@ -1802,6 +1782,10 @@ msgstr "Elanlar"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Elanlar"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"
@@ -1855,9 +1839,6 @@ msgstr "Sizə xidmətlərinə baxın..."
 # translation-refused: libretranslate stutter
 # nocheck: url
 # translation-rejected: Single-user ActivityPub bookmarking site ictimai kitab
-# ictimai ictimai ictimai ictimai ictimai ictimai ictimai ictimai ictimai
-# ictimai ictimai ictimai ictimai ictimai ictimai ictimai ictimai ictimai
-# məlumatları öyrənmək Mastodon Fediverse
 msgctxt "role:web-app-postmarks:description"
 msgid "Single-user ActivityPub bookmarking site federating public bookmarks to Mastodon and the Fediverse"
 msgstr ""
@@ -1947,13 +1928,10 @@ msgctxt "role:update:description"
 msgid "System-maintenance role for refreshing the package index and upgrading installed packages via the OS package manager"
 msgstr "OS paketi meneceri ilə hazırlanmış paketi indeksi və yeniləndirilməsi üçün sistem-anatenance rolu"
 
-# translated-by: libretranslate
-# translation-refused: libretranslate stutter
-# nocheck: url
-# translation-rejected: The the the the
+# translated-by: ltengine
 msgctxt "role:sys-cli:description"
 msgid "System-wide command-line interface for managing and operating the entire self-hosted platform environment from the shell"
-msgstr ""
+msgstr "Система командной строки для управления и эксплуатации всей самоhosted платформы в оболочке"
 
 # translated-by: libretranslate
 msgctxt "role:sys-pip-install:description"

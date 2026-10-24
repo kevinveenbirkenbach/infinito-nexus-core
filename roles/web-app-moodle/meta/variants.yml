@@ -15,6 +15,9 @@
 # variant pinning every dynamic services.yml flag to true so the
 # matrix exercises the in-group_names branch of web-app-moodle.
 - services:
+    docs:
+      enabled: false
+      shared: false
     container_backup:
       enabled: true
     design:
@@ -195,6 +198,9 @@
       shared: false
 
 - services:
+    docs:
+      enabled: true
+      shared: true
     container_backup:
       enabled: false
       shared: false # nocheck: variants-static-override backup shared stays literally true
@@ -229,6 +235,7 @@
       shared: false
     litellm:
       enabled: false
+    # nocheck: variant-tor-collateral docs rides the smallest round of each role because the README replay is the costliest partner in the matrix; the guide serves over the onion in both web-app-docs variants, which is where that is proven
     tor:
       enabled: false
     bigbluebutton:

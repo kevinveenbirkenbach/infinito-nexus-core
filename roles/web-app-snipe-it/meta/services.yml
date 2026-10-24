@@ -59,7 +59,7 @@ snipe-it:
       enabled: true
     swarm:
       enabled: true
-  version: v8.8.0-alpine
+  version: v8.8.3-alpine
   custom: true
   name: snipe-it
   image: snipe/snipe-it
@@ -71,6 +71,7 @@ snipe-it:
   ports:
     local:
       sso: 16489
+      sso_onion: 16545
       http: 8035
     internal:
       http: 80
@@ -164,3 +165,8 @@ flowise:
   enabled: false
   shared: false
   mcp_consumer: false
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

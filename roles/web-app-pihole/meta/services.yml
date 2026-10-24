@@ -66,7 +66,7 @@ pihole:
     swarm:
       enabled: false
   image: pihole/pihole
-  version: "2026.09.0"
+  version: "2026.10.0"
   upstream_dns: "{{ NETWORK_PUBLIC_DNS_RESOLVERS }}"
   cpus: "0.5"
   mem_reservation: "128m"
@@ -79,6 +79,7 @@ pihole:
     local:
       http: 8078
       sso: 16508
+      sso_onion: 16542
   run_after:
     - web-app-keycloak
   lifecycle: beta
@@ -88,3 +89,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

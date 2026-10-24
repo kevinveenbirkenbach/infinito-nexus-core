@@ -17,6 +17,9 @@ sys.path.insert(
 from compose_mods import compose_mods
 
 from utils.cache.yaml import load_yaml_str
+from utils.domains.default_primary import default_domain_primary
+
+DOMAIN = default_domain_primary()
 
 
 def sort_dict(obj):
@@ -146,21 +149,21 @@ services:
                 original,
                 self.compose_repository_path,
                 self.env_file,
-                extra_hosts=["auth.infinito.test:host-gateway"],
+                extra_hosts=[f"auth.{DOMAIN}:host-gateway"],
             )
         )
         services = data["services"]
         self.assertIn(
-            "auth.infinito.test:host-gateway", services["greenlight"]["extra_hosts"]
+            f"auth.{DOMAIN}:host-gateway", services["greenlight"]["extra_hosts"]
         )
         self.assertNotIn("extra_hosts", services["freeswitch"])
         self.assertEqual(
             services["nginx"]["extra_hosts"],
-            ["existing.example:1.2.3.4", "auth.infinito.test:host-gateway"],
+            ["existing.example:1.2.3.4", f"auth.{DOMAIN}:host-gateway"],
         )
         self.assertEqual(
             services["etherpad"]["extra_hosts"],
-            ["mapped.example:5.6.7.8", "auth.infinito.test:host-gateway"],
+            ["mapped.example:5.6.7.8", f"auth.{DOMAIN}:host-gateway"],
         )
 
     def test_extra_hosts_absent_without_kwarg(self):
@@ -196,6 +199,26 @@ services:
             services["html5-dev"]["build"]["context"],
             self.compose_repository_path + "/mod/html5-dev",
         )
+
+    def test_build_stripped_for_a_pinned_service_without_upstream_image(self):
+        original = """services:
+  bbb-shared-notes-server:
+    build:
+      context: mod/bbb-shared-notes-server
+  html5-dev:
+    build:
+      context: mod/html5-dev
+"""
+        services = load_yaml_str(
+            compose_mods(
+                original,
+                self.compose_repository_path,
+                self.env_file,
+                pinned=["bbb-shared-notes-server"],
+            )
+        )["services"]
+        self.assertNotIn("build", services["bbb-shared-notes-server"])
+        self.assertIn("build", services["html5-dev"])
 
 
 if __name__ == "__main__":

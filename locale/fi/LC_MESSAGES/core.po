@@ -260,11 +260,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "NFS:n asiakaspuoliset asetukset etäpalvelimen viemiseksi jokaiseen parvisolmuun, jossa on käyttöaikapääsevyysanturi"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Client-side WireGuard VPN rooli vakaat yhteydet järjestelmällinen palvelu ja skripti, joka virittää käyttöliittymän MTU"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Leikepöydän hallinta muokattavissa historia, mukautettuja toimia, ja käsikirjoitus tuki"
@@ -795,11 +790,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Amazon S:n kanssa yhteensopivat korkeatehoiset, itse isännöidyt tallennusratkaisut rakennettomien tietojen hallintaan, skaalaukseen ja käyttöön3 API:t."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Isäntätason WireGuard VPN palvelu wg-quick config, paketti asentaa, ja IP-kelauksen syctl turvallinen tunneleita"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Isäntätason konfiguraatio järjestelmälle, jossa on säilytysrajat ja live-lokivirtaus"
@@ -883,6 +873,11 @@ msgstr "Käyttö- ja projektiseurantaalusta ohjelmistoryhmille, joissa on ketter
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript-käyttöaika palvelimen puoleisille sovelluksille ja kehittäjän työkaluille"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Kernel WireGuard tunnelit, keskus- ja äänenvaimentimet parven päällikön alla ja täydet silmät komposiitit"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1055,6 +1050,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX-palveltu staattinen sivu tekee oikeudellisen painatuksen (Impressum) Jinjalta2 malli"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 käännös malli palveli HTTP, putkistojen, jotka kutsuvat sitä suoraan"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Verkko"
@@ -1068,11 +1068,6 @@ msgstr "Verkko (DNS, Salataan HTTP, WireGuard jne.)"
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Verkon laajuinen DNS vajoama estää mainoksia ja seurantalaitteita kaikissa laitteissa, DHCP ja web admin kojelauta"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Verkkoavustin iptables huolinta ja NAT naamiointi WireGuard asiakas ajaa takana NAT tai palomuuri"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1163,6 +1158,11 @@ msgstr "Avoimen lähdekoodin tietotekninen omaisuudenhallintajärjestelmä laitt
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Avoimen lähdekoodin ITSM ja helpdesk-alusta (OTRS-haarukka) lipunmyynti, CMDB, tietopohja ja raportointi"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Avoimen lähdekoodin SIEM- ja XDR-alusta seuranta-, lokianalyysi-, tunkeutumisen/haavoittuvuuden toteamis- ja vaatimustenmukaisuus"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1771,6 +1771,10 @@ msgstr "Palvelut"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Palvelut"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

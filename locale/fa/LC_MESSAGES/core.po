@@ -72,7 +72,7 @@ msgstr "یک سرور ایمیل Stalwart با SMTP، IMAP، JMAP، POP3, مدی
 # translated-by: libretranslate
 msgctxt "menu:Analytics:title"
 msgid "Analytics"
-msgstr "Analytics Analytics"
+msgstr "تحلیل"
 
 # translated-by: libretranslate
 msgctxt "role:sys-token-store:description"
@@ -259,11 +259,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "تنظیم Client-side NFS برای نصب یک سرور از راه دور صادرات بر روی هر گره گرد، با یک کاوشگر دسترسی به زمان استقرار"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "نقش VPN Client-side WireGuard برای اتصال پایدار با یک سرویس سیستم و اسکریپت که رابط MTU را تنظیم می کند"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "مدیر Clipboard با تاریخ قابل ویرایش، اقدامات سفارشی و پشتیبانی اسکریپتینگ"
@@ -271,9 +266,7 @@ msgstr "مدیر Clipboard با تاریخ قابل ویرایش، اقداما�
 # translated-by: libretranslate
 msgctxt "menu:Cloud:title"
 msgid "Cloud"
-msgstr ""
-"Cloud\n"
-"---"
+msgstr "برج"
 
 # translated-by: libretranslate
 msgctxt "role:sys-svc-dns:description"
@@ -380,15 +373,11 @@ msgctxt "menu:Content Management:title"
 msgid "Content Management"
 msgstr "مدیریت محتوا"
 
-# translated-by: libretranslate
 # انتشار وب
-# translation-refused: libretranslate stutter
-# nocheck: url
-# translation-rejected: سیستم های مدیریت محتوا (CMS CMS CMS CMS) پلتفرم های
-# انتشار وب
+# translated-by: ollama
 msgctxt "menu:Content Management:description"
 msgid "Content Management Systems (CMS) and web publishing platforms"
-msgstr ""
+msgstr "مدل‌های سیستم مدیریت محتوا (CMS) و ابزارهای انتشار وب"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-wordpress:description"
@@ -448,18 +437,15 @@ msgctxt "menu:Customer Relationship:title"
 msgid "Customer Relationship"
 msgstr "ارتباط مشتری"
 
-# translated-by: libretranslate
 # روابط مشتری، خطوط لوله فروش، بازاریابی و فعالیت های پشتیبانی.
-# translation-refused: libretranslate lost-token
-# nocheck: url
-# translation-rejected: Customer Relationship Management ( CRM) software for
 # managing customer relationships, sales pipelines, marketing, and support
 # activities.  --- Microsoft Dynamics 365 ( Business Intelligence ) software
 # for managing customer relationships, sales pipelines, marketing, and support
 # activities.
+# translated-by: ollama
 msgctxt "menu:Customer Relationship:description"
 msgid "Customer Relationship Management (CRM) software for managing customer relationships, sales pipelines, marketing, and support activities."
-msgstr ""
+msgstr "مدیریت شرایط متعامل (CRM) برای مدیریت شرایط متعامل، خط سلسله به سلسله فروش، م国际市场، و活動。."
 
 # translated-by: libretranslate
 msgctxt "category:sys.dns:title"
@@ -469,7 +455,7 @@ msgstr "اتوماسیون DNS Automation"
 # translated-by: libretranslate
 msgctxt "category:svc.dns:title"
 msgid "DNS Resolvers"
-msgstr "DNS Resolutionrs"
+msgstr "DNS حل‌کننده‌ها"
 
 # translated-by: libretranslate
 msgctxt "category:sys.dns:description"
@@ -574,9 +560,7 @@ msgstr "ویدئو کنفرانس دسکتاپ مشتری را برای جلسا
 # translated-by: libretranslate
 msgctxt "menu:Development:title"
 msgid "Development"
-msgstr ""
-"Development\n"
-"---"
+msgstr "توسعه"
 
 # translated-by: libretranslate
 msgctxt "menu:Development:description"
@@ -636,11 +620,7 @@ msgstr "رانندگان"
 # translated-by: libretranslate
 msgctxt "menu:Education:title"
 msgid "Education"
-msgstr ""
-"Education\n"
-"---\n"
-"Taekwondo\n"
-"---"
+msgstr "Education"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-robot:description"
@@ -673,13 +653,10 @@ msgid "Events"
 msgstr "حوادث"
 
 # code and Configuration
-# translation-refused: libretranslate untranslated
-# nocheck: url
-# translation-rejected: Extensible Vim-line text Editor for Terminal-based
-# code and Configuration
+# translated-by: ollama
 msgctxt "role:dsk-neovim:description"
 msgid "Extensible Vim-based command-line text editor for terminal-driven code and configuration editing"
-msgstr ""
+msgstr "Editor چاپگر متن کلیدی وابسته به رسته برای انتخاب کدها و تنظیماتی که بازگ氡ی می‌شوند"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-chess:description"
@@ -817,11 +794,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "عملکرد بالا، راه حل های ذخیره سازی خود میزبان برای مدیریت، مقیاس پذیری و دسترسی به داده های بدون ساختار - از جمله ذخیره سازی شی سازگار با آمازون S3 API ها"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "سرویس WireGuard VPN با wg-quick config، نصب بسته و IP-forward sysctl برای تونل های امن"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "پیکربندی سطح میزبان برای ورود به سیستمd-Journald daemon با محدودیت های حفظ و جریان ورود زنده"
@@ -905,6 +877,11 @@ msgstr "موضوع و پلت فرم ردیابی پروژه برای تیم ها
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "جاوا اسکریپت زمان برای ساخت و اجرای برنامه های سرور و ابزار توسعه دهنده"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "هسته اصلی WireGuard تونل ها، باند های هاب و اسپم تحت یک مدیر انبوه و مجموعه های کامل بین Compose میزبان"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1077,6 +1054,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "صفحه استاتیک NGINX که دارای یک اثر قانونی است (Impressum) از جینجا2 الگو"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB200 مدل ترجمه بیش از HTTP، برای خطوط لوله ای که آن را به طور مستقیم می نامند."
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "شبکه Network"
@@ -1090,11 +1072,6 @@ msgstr "راه اندازی شبکه (DNS، بیایید HTTP، WireGuard و غ�
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "شکاف DNS در سراسر شبکه برای مسدود کردن تبلیغات و ردیاب ها در تمام دستگاه ها، با DHCP و داشبورد مدیران وب"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "کمک کننده شبکه برای ارسال iptables و NAT masquerading از یک مشتری WireGuard در پشت NAT یا فایروال"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1184,6 +1161,11 @@ msgstr "سیستم مدیریت دارایی IT منبع باز برای ردی�
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Open-source ITSM و Helpdesk Platform (OTRS Fork) برای بلیط، CMDB، پایگاه دانش و گزارش"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Open Source SIEM و XDR پلت فرم برای نظارت، تجزیه و تحلیل log، نفوذ / تشخیص آسیب پذیری و انطباق"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1580,7 +1562,7 @@ msgstr "دیوار فدیف خود میزبان برای نشان دادن پس�
 # translated-by: libretranslate
 msgctxt "category:svc.runner:description"
 msgid "Self-hosted GitHub Actions runner deployment and configuration"
-msgstr "Self-hosted GitHub Actions"
+msgstr "تولید و تیکنیک پیامبر اسستیون های اس-گیت هاب محلی"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-littlejs:description"
@@ -1781,6 +1763,10 @@ msgstr "خدمات خدمات"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "خدمات خدمات"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

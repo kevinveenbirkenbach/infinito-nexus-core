@@ -259,11 +259,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "客户端 NFS 设置, 在每个 Swarm 节点安装远程服务器导出, 并配备部署时间可达性探测器"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "客户端的WireGuard VPN 角色,用于与调制MTU接口的系统化服务和脚本实现稳定的连接"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "可编辑历史、自定义动作和脚本支持的剪贴板管理器"
@@ -325,11 +320,9 @@ msgstr "社区"
 
 # 1)OpenResty 通过 sub_filter卢亚拥有CDN支持的资产.
 # gained=['(', ')', '1', 'sub_filter卢亚拥有CDN支持的资产']
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Composable HTML injection roles (CSS, JS, logout
 # interceptor, analytics, dashboard iframe) for Nginx/OpenResty via
 # sub_filter/Lua with CDN-backed assets.
+# translation-refused: libretranslate damaged-span
 msgctxt "category:sys.front.inj:description"
 msgid "Composable HTML injection roles (CSS, JS, logout interceptor, analytics, dashboard iframe) for Nginx/OpenResty via sub_filter/Lua with CDN-backed assets."
 msgstr ""
@@ -514,10 +507,8 @@ msgstr "推迟启动的管弦乐器,以便在游戏完成后启用和开始收�
 
 # translated-by: libretranslate
 # Mastodon,等编.)
-# translation-refused: libretranslate lost-token
-# nocheck: url
-# translation-rejected: --- 可 deployed web applications (GitLab, Nextcloud,
 # Mastodon, etc.) --- 部署可用 web 应用 (GitLab, Nextcloud, Mastodon, etc.)
+# translation-refused: libretranslate damaged-span
 msgctxt "category:web.app:description"
 msgid "Deployable web applications (GitLab, Nextcloud, Mastodon, etc.)"
 msgstr ""
@@ -542,16 +533,11 @@ msgctxt "role:dsk-gnome-extensions:description"
 msgid "Desktop config role for activating GNOME Shell extensions and installing a CLI tool to manage them"
 msgstr "启动 GNOME 的桌面配置角色 Shell 扩展并安装管理它们的 CLI 工具"
 
-# translation-refused: libretranslate lost-token
-# nocheck: url
-# translation-rejected: Desktop environment roles & apps (GNOME, browser,
 # LibreOffice, etc.) --  Application centers & settings (Applications,
 # LibreOffice, etc.) ---  Desktop environment roles & apps (GNOME,
-# LibreOffice, etc.) --  Application centers & settings (Applications,
 # LibreOffice, etc.) ---  Window management roles & features (Window manager,
-# LibreOffice, etc.) ---  Desktop environment roles & apps (GNOME,
-# LibreOffice, etc.) --  Application centers & settings (Applications,
 # LibreOffice, etc.)
+# translation-refused: libretranslate damaged-span
 msgctxt "category:dsk:description"
 msgid "Desktop environment roles & apps (GNOME, browser, LibreOffice, etc.)"
 msgstr ""
@@ -807,19 +793,12 @@ msgid "Helpful Tools"
 msgstr "辅助工具"
 
 # (英语).
-# translation-refused: libretranslate lost-token
-# nocheck: url
-# translation-rejected: 3高-performance, self-hosted storage solutions for
 # managing, scaling, and accessing unstructured data — including object
 # storage compatible with Amazon S3 APIs.
+# translation-refused: libretranslate damaged-span
 msgctxt "menu:Storage:description"
 msgid "High-performance, self-hosted storage solutions for managing, scaling, and accessing unstructured data — including object storage compatible with Amazon S3 APIs."
 msgstr ""
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "主机级无线守护 VPN 服务,配备 wg- quick 配置, 包安装, 以及安全隧道的 IP 前置系统"
 
 # translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
@@ -906,6 +885,11 @@ msgstr "软件团队的发行和项目跟踪平台,包括敏捷板、工作流�
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript 用于构建和运行服务器侧应用程序和开发工具的运行时间"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "内核 WireGuard 隧道,中枢和口语的 meshes 在一个summ 管理器和全 meshes 之间"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1078,6 +1062,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX 维护的静态页面, 刻出合法印记 (印象) 从金贾2 模板"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB - 说吧。200 翻译模型服务于HTTP上,用于直接调用它的管道"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "网络"
@@ -1091,11 +1080,6 @@ msgstr "网络设置 (DNS,让我们加密HTTP,WireGuard等.)"
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "全网络DNS槽孔,用于在所有设备上屏蔽广告和跟踪器,并配有DHCP和一个网络管理员仪表板"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "为 iptables 转发和 NAT 假冒在 NAT 或防火墙 后面运行的 WireGuard 客户端的网络助手"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1186,6 +1170,11 @@ msgstr "用于跟踪硬件和软件库存的开源信息技术资产管理系统
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "开源ITSM和服务台平台 (OTRS叉线) 罚单、中央银行、知识库和报告"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "用于监测、日志分析、入侵/脆弱性检测和合规的开放源代码SIEM和XDR平台"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1785,6 +1774,10 @@ msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "服务"
 
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
+
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"
 msgid "Shared Storage"
@@ -2070,22 +2063,7 @@ msgstr "通过Telegram和电子邮件渠道统一系统通知服务发送服务�
 # translated-by: libretranslate
 msgctxt "category:update:title"
 msgid "Updates & Package Management"
-msgstr ""
-"Updates & Package Management\n"
-"--\n"
-"\n"
-"### Updates\n"
-"- 1.0.0\n"
-"- 1.0.1\n"
-"- 1.0.2\n"
-"- 1.0.3\n"
-"- 1.0.4\n"
-"- 1.0.5\n"
-"- 1.0.6\n"
-"- 1.0.7\n"
-"- 1.0.8\n"
-"- 1.0.9\n"
-"- 1.0.10"
+msgstr "更新与包管理"
 
 msgctxt "logout:partial_hint"
 msgid "Use the links below to sign out of the rest yourself."
@@ -2108,13 +2086,7 @@ msgstr "用户账户和访问控制"
 # translated-by: libretranslate
 msgctxt "category:user:title"
 msgid "Users & Access"
-msgstr ""
-"Users & Access\n"
-"English: Users\n"
-"Chinese:用户\n"
-"German: Nutzer\n"
-"French: Utilisateurs\n"
-"Spanish: Usuários"
+msgstr "用户 & 访问"
 
 # translated-by: libretranslate
 msgctxt "role:dsk-git:description"

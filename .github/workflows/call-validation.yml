@@ -37,8 +37,13 @@ on:
         required: false
         type: string
         default: "auto"
-      tor:
-        description: "🧅 Tor axis of the run; decides whether a pinned onion state is reachable."
+      network:
+        description: "🌈 Network axis of the run; decides whether a pinned network mode is reachable."
+        required: false
+        type: string
+        default: "auto"
+      vpn:
+        description: "🕸️ WireGuard axis of the run; decides whether a pinned mesh state is reachable."
         required: false
         type: string
         default: "auto"
@@ -89,7 +94,7 @@ permissions:
 jobs:
   validation:
     name: ✅ Validation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: ⬇️ Checkout the calling ref for its tooling
         uses: actions/checkout@v7.0.0
@@ -142,7 +147,8 @@ jobs:
           INPUT_WHITELIST: ${{ inputs.whitelist }}
           INPUT_PRIORITY: ${{ inputs.priority }}
           INPUT_MODE: ${{ inputs.mode }}
-          INPUT_TOR: ${{ inputs.tor }}
+          INPUT_NETWORK: ${{ inputs.network }}
+          INPUT_VPN: ${{ inputs.vpn }}
           INPUT_DISTROS: ${{ inputs.distros }}
           INPUT_FILESYSTEM: ${{ inputs.filesystem }}
           INPUT_ARCHITECTURES: ${{ inputs.architectures }}
@@ -152,7 +158,7 @@ jobs:
   wait-fork-prereq-run:
     name: ⏳ Wait for fork run
     if: ${{ inputs.fork_prereqs }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       WAIT_REQUIRED: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && !inputs.trusted_pr }}
     steps:
@@ -198,7 +204,7 @@ jobs:
     name: 🚦 Gate Dependencies
     needs: wait-fork-prereq-run
     if: ${{ !cancelled() && inputs.fork_prereqs }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7.0.0
       - name: ✅ Assert privileged prerequisites are ready

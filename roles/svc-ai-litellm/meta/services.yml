@@ -1,5 +1,8 @@
 ---
 litellm:
+  healthcheck:
+    flavor: http_status
+    path: health/liveliness
   modes:
     compose:
       enabled: true
@@ -85,3 +88,8 @@ lmstudio:
   bond: 0.5
   enabled: "{{ 'svc-ai-lmstudio' in group_names }}"
   shared: "{{ 'svc-ai-lmstudio' in group_names }}"
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

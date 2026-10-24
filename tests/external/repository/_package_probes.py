@@ -23,7 +23,7 @@ import urllib.parse
 import urllib.request
 from typing import NamedTuple
 
-from utils.packages.schema import SOURCE_AUR
+from utils.packages.schema import SOURCE_AUR, SOURCE_DOWNLOAD, SOURCE_FLATPAK
 
 from ._host_gate import host_gate
 
@@ -34,16 +34,19 @@ _PER_HOST_REQUESTS = 2
 _RETRY_ATTEMPTS = 4
 _RETRY_BACKOFF = 1.0
 _RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
+_DOWNLOAD_ABSENT = frozenset({403, 404})
+"""Statuses that mean the vendor no longer serves the pinned artefact. The
+CDN behind downloads.cursor.com answers 403, not 404, for an object that is
+not there, so treating only 404 as absent would miss a rotated release."""
 
 DEBIAN_SUITE = "stable"
 UBUNTU_SUITE = "noble"
 FEDORA_RELEASE = "f44"
 CENTOS_STREAM = "10-stream"
+EPEL_BRANCH = f"epel{CENTOS_STREAM.split('-', maxsplit=1)[0]}"
+EPEL_BOOTSTRAP = "epel-release"
 
 BOOTSTRAP_BASEURL: dict[str, str] = {
-    "epel-release": (
-        "https://dl.fedoraproject.org/pub/epel/$releasever/Everything/$basearch/"
-    ),
     "centos-release-nfs-ganesha11": (
         "https://mirror.stream.centos.org/SIGs/$releasever-stream"
         "/storage/$basearch/nfsganesha-11/"
@@ -65,6 +68,7 @@ class Probe(NamedTuple):
     repo: dict | None
     source: str
     virtual: bool = False
+    url: str | None = None
 
 
 class Outcome(NamedTuple):
@@ -174,6 +178,15 @@ def _probe_aur(name: str) -> tuple[bool | None, str]:
     return bool(payload.get("results")), "AUR"
 
 
+def _probe_flathub(name: str) -> tuple[bool | None, str]:
+    status, _body = _get(f"https://flathub.org/api/v2/appstream/{name}")
+    if status == 200:
+        return True, "Flathub"
+    if status == 404:
+        return False, "Flathub"
+    return None, f"Flathub returned HTTP {status}"
+
+
 DEBIAN_MIRROR = "deb.debian.org"
 UBUNTU_MIRROR = "archive.ubuntu.com"
 
@@ -253,16 +266,28 @@ def _probe_apt(distro: str, name: str) -> tuple[bool | None, str]:
     return name in names, detail
 
 
-def _probe_fedora(name: str) -> tuple[bool | None, str]:
+def _probe_mdapi(branch: str, name: str) -> tuple[bool | None, str]:
+    """Ask Fedora's metadata API whether ``branch`` carries ``name``.
+
+    Args:
+        branch: an mdapi branch, such as ``f44`` or ``epel10``.
+        name: the binary package name as the declaration spells it.
+
+    Returns:
+        Availability, or None with the reason the index stayed unknown.
+    """
     status, _ = _get(
-        f"https://mdapi.fedoraproject.org/{FEDORA_RELEASE}/pkg/"
-        f"{urllib.parse.quote(name)}"
+        f"https://mdapi.fedoraproject.org/{branch}/pkg/{urllib.parse.quote(name)}"
     )
     if status == 200:
-        return True, f"mdapi {FEDORA_RELEASE}"
+        return True, f"mdapi {branch}"
     if status in (400, 404):
-        return False, f"mdapi {FEDORA_RELEASE}"
+        return False, f"mdapi {branch}"
     return None, f"mdapi returned HTTP {status}"
+
+
+def _probe_fedora(name: str) -> tuple[bool | None, str]:
+    return _probe_mdapi(FEDORA_RELEASE, name)
 
 
 def _centos_repo_baseurl(repo: dict | None) -> str | None:
@@ -294,6 +319,13 @@ def _centos_listings(name: str, repo: dict | None) -> list[str] | None:
 
 
 def _probe_centos(name: str, repo: dict | None) -> tuple[bool | None, str]:
+    if (
+        isinstance(repo, dict)
+        and not repo.get("baseurl")
+        and repo.get("bootstrap_package") == EPEL_BOOTSTRAP
+    ):
+        return _probe_mdapi(EPEL_BRANCH, name)
+
     listings = _centos_listings(name, repo)
     if listings is None:
         return None, "the inline repository definition declares no baseurl"
@@ -318,13 +350,44 @@ def _externally_managed(repo: dict | None) -> str | None:
     return None
 
 
+def _probe_download(url: str) -> tuple[bool | None, str]:
+    """Ask whether the vendor still serves the pinned artefact.
+
+    Args:
+        url: the https URL the declaration pins.
+
+    Returns:
+        Whether the artefact is served, and the host that answered.
+    """
+    request = urllib.request.Request(  # noqa: S310 - the schema admits https URLs only
+        url, method="HEAD", headers={"User-Agent": _USER_AGENT}
+    )
+    host = urllib.parse.urlsplit(url).netloc
+    with host_gate(url, _PER_HOST_REQUESTS):
+        for attempt in range(_RETRY_ATTEMPTS):
+            try:
+                with urllib.request.urlopen(request, timeout=_TIMEOUT) as response:  # noqa: S310 - the schema admits https URLs only
+                    return response.getcode() == 200, host
+            except urllib.error.HTTPError as exc:
+                if exc.code in _RETRY_STATUS and attempt < _RETRY_ATTEMPTS - 1:
+                    time.sleep(_RETRY_BACKOFF * 2**attempt)
+                    continue
+                absent = False if exc.code in _DOWNLOAD_ABSENT else None
+                return absent, f"{host} (HTTP {exc.code})"
+    raise AssertionError("unreachable")
+
+
 def _probe(probe: Probe) -> Outcome:
     external = _externally_managed(probe.repo)
     if external:
         return Outcome(probe, None, f"third-party repository: {external}", True)
     try:
-        if probe.source == SOURCE_AUR:
+        if probe.source == SOURCE_DOWNLOAD:
+            available, detail = _probe_download(probe.url)
+        elif probe.source == SOURCE_AUR:
             available, detail = _probe_aur(probe.name)
+        elif probe.source == SOURCE_FLATPAK:
+            available, detail = _probe_flathub(probe.name)
         elif probe.distro == "arch":
             available, detail = _probe_arch(probe.name)
         elif probe.distro in APT_INDEX:

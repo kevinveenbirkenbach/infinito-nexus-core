@@ -72,17 +72,7 @@ msgstr "SMTP, IMAP, JMAP, POP3, YönetmeSieve, CalDAV, CardDAV ve yerleşik spam
 # translated-by: libretranslate
 msgctxt "menu:Analytics:title"
 msgid "Analytics"
-msgstr ""
-"Analytics\n"
-"---\n"
-"আইনি অনুসন্ধান\n"
-"---\n"
-"ইন্টারন্যাশনাল অ্যানালাইসিস কর্মসূচি\n"
-"---\n"
-"ইন্টারন্যাশনাল অ্যানালাইসিস কর্মসূচি\n"
-"আন্তর্জাতিক আইনি সম্প্রদায়\n"
-"---\n"
-"আন্তর্জাতিক আইনি সম্প্রদায়"
+msgstr "Analizler"
 
 # translated-by: libretranslate
 msgctxt "role:sys-token-store:description"
@@ -267,11 +257,6 @@ msgstr "disk alanı geçici dosyalardan geri almak için rutin, paket önbellekl
 msgctxt "role:svc-storage-nfs-client:description"
 msgid "Client-side NFS setup for mounting a remote server export on every swarm node, with a deploy-time reachability probe"
 msgstr "Bir uzaktan sunucu ihracatını her swarm node'de güçlendirmek için müşteri-side NFS kurulumu, bir dağıtma süresine ulaşılabilen bir probe"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Client-side WireGuard VPN rolü, bir sistemli hizmet ve ayar arayüzü MTU"
 
 # translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
@@ -824,11 +809,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Yüksek performanslı, kendini barındırmış depolama çözümleri yönetmek, ölçeklendirmek ve yapılandırılmamış verilere erişmek - Amazon S ile uyumlu nesne depolamaları dahil3 APIs."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Host- level WireGuard VPN hizmeti wg-quick yapılandır, paket yükleme ve güvenli tüneller için IP- ilerici"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Sistemli-der-journald login daemon için evsel düzeyde yapılandırma, tutma sınırları ve canlı günlük akış akışı ile"
@@ -912,6 +892,11 @@ msgstr "Sorun ve proje yazılım takımları için platform takip ediyor, çevik
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript, server-side uygulamaları ve geliştirici aracılık için çalışır"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Anahtar WireGuard Tüneller, bir batarm yöneticisi altında ve pibünler arasındaki tam örgüler"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1015,10 +1000,7 @@ msgstr "Bir web yüzeyi olmadan makine çevirisi motoru, onu doğrudan çağıra
 # translated-by: libretranslate
 msgctxt "category:sys.ctl.mtn:title"
 msgid "Maintenance"
-msgstr ""
-"---\n"
-"مکافleta\n"
-"---"
+msgstr "Bakım"
 
 # translated-by: libretranslate
 msgctxt "category:sys.ctl.mtn:description"
@@ -1096,6 +1078,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "NGINX-served statik sayfa yasal bir baskı oluşturur (Impressum) Bir Jinja'dan2 şablon"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 Çeviri modeli HTTP üzerinden hizmet etti, çünkü onu doğrudan çağıran boru hatları"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Ağ Ağı Ağı"
@@ -1109,11 +1096,6 @@ msgstr "Network kurulumu (DNS, Let's Encrypt HTTP, WireGuard, vs.)"
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "DHCP ve bir web yönetim panosu ile tüm cihazlardaki reklamları ve takip edenleri engellemek için ağ çapında DNS battı"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "İLGİLİLER için yardımcı olmak ve NAT, NAT veya bir güvenlik duvarının arkasında çalışan bir WireGuard müşterisini korkutmak"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1203,6 +1185,11 @@ msgstr "Donanım ve yazılım envanterini takip etmek için Open-source IT varl�
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Open-source ITSM ve helpdesk platform (OTRS fork) Bilet için, CMDB, bilgi tabanı ve raporlama"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Open-source SIEM ve XDR platformunu izleme, log analizi, inpost/vulnerability algılama ve uyumluluk tespiti ve uyumluluk algılaması,"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1414,23 +1401,10 @@ msgstr "Public REST API, veri, tarih ve çevirilerine hizmet ediyor Infinito.Nex
 # kararı API Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
 # Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
 # Of Of Of Of Of Of Of Of Of svc-ai-s1
-# translation-refused: libretranslate stutter
-# nocheck: url
-# translation-rejected: Halk vhost, açığa çıkan System One karar kararı karar
-# kararı API Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of Of
-# Of Of Of Of Of Of Of Of Of svc-ai-s1
+# translated-by: ollama
 msgctxt "role:web-svc-s1:description"
 msgid "Public vhost that exposes the System One decision API of svc-ai-s1"
-msgstr ""
+msgstr "Yüklü vhost, svc-ai-s1ın System One seçiminin APIini gösteriyor"
 
 # translated-by: libretranslate
 msgctxt "category:svc.cache:description"
@@ -1515,9 +1489,7 @@ msgstr "SMTP ağ geçidi Tor's Seiko dinleyicileri aracılığıyla .onion alıc
 # translated-by: libretranslate
 msgctxt "menu:Sales:title"
 msgid "Sales"
-msgstr ""
-"إدارة\n"
-"---"
+msgstr "Satış"
 
 # translated-by: libretranslate
 msgctxt "category:svc.virt:title"
@@ -1644,15 +1616,11 @@ msgctxt "role:web-app-yourls:description"
 msgid "Self-hosted URL shortener for creating, tracking, and managing short links with built-in click analytics"
 msgstr "Kendi kendine evlenmiş URL, izlemek ve inşa edilen kısa bağlantıları yönetmek için kısa bağlantılar"
 
-# translated-by: libretranslate
 # uç uç uç-son şifreli video konferencing with beerated doğrulama
-# translation-refused: libretranslate stutter
-# nocheck: url
-# translation-rejected: Kendi kendine ev sahipliği WebRTC platformu son uç uç
-# uç uç uç-son şifreli video konferencing with beerated doğrulama
+# translated-by: ollama
 msgctxt "role:web-app-jitsi:description"
 msgid "Self-hosted WebRTC platform for end-to-end-encryptable video conferencing with federated authentication"
-msgstr ""
+msgstr "Yerel hosting WebRTC platformı ile erişilebilir otomasyonlu video conferans için federeasyon tabanlı yetkilendirme"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-mini-qr:description"
@@ -1699,17 +1667,12 @@ msgctxt "role:web-app-bookwyrm:description"
 msgid "Self-hosted federated reading platform for book reviews and reading tracking across the Fediverse"
 msgstr "Kendi kendine evlenmiş kitap incelemeleri ve Fediverse'in karşısındaki izleme platformu"
 
-# translated-by: libretranslate
 # zaman zaman zaman zaman çizelgesi ve topluluk moderasyonları için beslenmiş
 # sosyal ağ
-# translation-refused: libretranslate stutter
-# nocheck: url
-# translation-rejected: Kendi kendini mikroblogging, gerçek zamanlı zaman
-# zaman zaman zaman zaman çizelgesi ve topluluk moderasyonları için beslenmiş
-# sosyal ağ
+# translated-by: ollama
 msgctxt "role:web-app-mastodon:description"
 msgid "Self-hosted federated social network for microblogging, real-time timelines, and community moderation"
-msgstr ""
+msgstr "Yerel olarak kullanılan federeasyonlu sosyal ağ için microblog, gerçek zamanlı tarihlere ve kitle yönetiminine"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-keycloak:description"
@@ -1830,6 +1793,10 @@ msgstr "Hizmetler"
 msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Hizmetler"
+
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
 
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"

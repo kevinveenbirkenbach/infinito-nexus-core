@@ -78,6 +78,7 @@ baserow:
     local:
       http: 8017
       sso: 16495
+      sso_onion: 16521
     internal:
       http: 80
   proxy:
@@ -166,3 +167,8 @@ flowise:
   enabled: false
   shared: false
   mcp_consumer: false
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

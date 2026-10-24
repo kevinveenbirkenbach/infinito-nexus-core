@@ -259,11 +259,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Setup NFS sisi-klien untuk melekap ekspor server jauh pada setiap node kawanan, dengan prob jangkauan waktu penyebaran"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Peran VPN WireGuard sisi-Client untuk sambungan stabil dengan layanan sistem dan skrip yang tune antarmuka MTU"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Manajer papan klip dengan sejarah, aksi, dan dukungan skrip yang dapat disunting"
@@ -273,13 +268,11 @@ msgctxt "menu:Cloud:title"
 msgid "Cloud"
 msgstr "Awan"
 
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Cloudflare DNS bootstrap role for apex and wildcard
 # A/AAAA records (and optional CAA) across a web stack's base domains
+# translated-by: ltengine
 msgctxt "role:sys-svc-dns:description"
 msgid "Cloudflare DNS bootstrap role for apex and wildcard A/AAAA records (and optional CAA) across a web stack's base domains"
-msgstr ""
+msgstr "Cloudflare DNS bootstrap role untuk peran apex dan wildcard A/AAAA records ( dan optional CAA) di atas lapisan web"
 
 # translated-by: libretranslate
 msgctxt "role:svc-registry-docker:description"
@@ -444,17 +437,12 @@ msgctxt "menu:Customer Relationship:title"
 msgid "Customer Relationship"
 msgstr "Hubungan Pelanggan"
 
-# translated-by: libretranslate
 # untuk mengelola hubungan pelanggan, pipa penjualan, pemasaran, dan kegiatan
 # pendukung.
-# translation-refused: libretranslate added-span lost=[] gained=['♪']
-# nocheck: url
-# translation-rejected: Manajemen Hubungan Pelanggan (♪ CRM ♪) Perangkat lunak
-# untuk mengelola hubungan pelanggan, pipa penjualan, pemasaran, dan kegiatan
-# pendukung.
+# translated-by: ollama
 msgctxt "menu:Customer Relationship:description"
 msgid "Customer Relationship Management (CRM) software for managing customer relationships, sales pipelines, marketing, and support activities."
-msgstr ""
+msgstr "Manajemen Hubungan Pelanggan (CRM) untuk mengelola hubungan pelanggan, pipeline penjualan, pemasaran, dan aktiviti dukungan."
 
 # translated-by: libretranslate
 msgctxt "category:sys.dns:title"
@@ -809,11 +797,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Performansi tinggi, solusi penyimpanan yang dihost sendiri untuk mengelola, menskala, dan mengakses data yang tidak terstruktur — termasuk penyimpanan objek yang kompatibel dengan Amazon S3 APIs."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Layanan VPN WireGuard Aras-Host dengan konfigurasi wg-quick, pemasangan paket, dan sysctl canggih IP untuk terowongan aman"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Konfigurasi level-hostis untuk daemon loging berjurnal sistem dengan batasan retensi dan live log streaming"
@@ -897,6 +880,11 @@ msgstr "Perusahaan dan platform pelacakan proyek untuk tim perangkat lunak, deng
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "runtime JavaScript untuk membangun dan menjalankan aplikasi sisi-server dan alat pengembang"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Perancis WireGuard terowongan, hub-and-spoke meshes di bawah manajer kawanan dan meshes penuh antara Compose host"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1054,15 +1042,13 @@ msgid "NGINX subfilter injector adding Matomo analytics script and noscript imag
 msgstr "Penambahan injektor subfilter NGINX Matomo Naskah analitik dan pelacak gambar noskrip untuk melayani halaman HTML"
 
 # melalui HTTPS dengan sertifikat otomatis Mari Enkripsi
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: NGINX vhost for serving static HTML websites over
 # HTTPS with automatic Let's Encrypt certificates --- Neng Neng wah vhost
 # tukngan ti HTML website ti static saan iti ngameng ngawara HTTPS tuma anka
 # anto ngawara Let's Encrypt kareita
+# translated-by: ollama
 msgctxt "role:web-svc-html:description"
 msgid "NGINX vhost for serving static HTML websites over HTTPS with automatic Let's Encrypt certificates"
-msgstr ""
+msgstr "Vhost Nginx untuk melayani situs web statis HTML dengan HTTPS serta sertifikat otomatis Let's Encrypt"
 
 # translated-by: libretranslate
 msgctxt "role:svc-prx-openresty:description"
@@ -1073,6 +1059,11 @@ msgstr "Platform web berbasis NGINX dan proksi terbalik dengan konfigurasi terva
 msgctxt "role:web-svc-legal:description"
 msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jinja2 template"
 msgstr "NGINX-served static page render a legal imprint (Impressum) Dari Jinja2 Templat"
+
+# translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 Model terjemahan translation yang disajikan melalui HTTP, untuk saluran pipa yang menyebutnya secara langsung"
 
 # translated-by: libretranslate
 msgctxt "category:svc.net:title"
@@ -1088,11 +1079,6 @@ msgstr "Penyetelan jaringan (DNS, Let's Encrypt HTTP, WireGuard, dll.)"
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Sistem pembuangan DNS di seluruh jaringan untuk memblokir iklan dan pelacak di semua perangkat, dengan DHCP dan dashboard admin web"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Pembantu Jaringan untuk iptables forwarding dan NAT masquerading dari klien WireGuard berjalan di belakang NAT atau firewall"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1181,6 +1167,11 @@ msgstr "Open-source IT sistem manajemen aset untuk pelacakan perangkat keras dan
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Open-source ITSM dan helpdesk platform (Garpu OTRS) Untuk tiket, CMDB, basis pengetahuan, dan pelaporan"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Platform Open-source SIEM dan XDR untuk pemantauan, analisis log, deteksi intrusi/vulnerabilitas, dan kepatuhan"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1292,13 +1283,10 @@ msgid "Package manager for installing and managing Python packages on the target
 msgstr "Manajer paket untuk memasang dan mengelola paket Python pada host target"
 
 # menuntut di balik titik akhir OpenAI-kompatibel
-# translation-refused: libretranslate stutter
-# nocheck: url
-# translation-rejected: O-user Hermes dan OpenClaw Agen agen agen agen mulai
-# menuntut di balik titik akhir OpenAI-kompatibel
+# translated-by: ollama
 msgctxt "role:svc-ai-agent-broker:description"
 msgid "Per-user Hermes and OpenClaw agents started on demand behind an OpenAI-compatible endpoint"
-msgstr ""
+msgstr "Per-user Hermes dan OpenClaw agen mulai diundang pada permintaan di belakang titik pad terpasukan dengan OpenAI"
 
 # translated-by: libretranslate
 msgctxt "role:sys-ctl-hlth-msmtp:description"
@@ -1786,6 +1774,10 @@ msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Layanan Kelayan"
 
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
+
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"
 msgid "Shared Storage"
@@ -1874,7 +1866,6 @@ msgstr "Aras stack untuk mengatur server"
 # translation-refused: libretranslate stutter
 # nocheck: url
 # translation-rejected: Pelayan konten Stachetik (aset aset aset, HTML, legal,
-# file)
 msgctxt "category:web.svc:description"
 msgid "Static content servers (assets, HTML, legal, files)"
 msgstr ""

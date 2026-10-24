@@ -4,6 +4,7 @@
 - Implement rbac administration interface
 - Enable IP6 for docker.
 - backup docker to local für ca optimieren
+- Drop `memory_limit = -1` from [hardening.ini](roles/sys-svc-compose-php/files/hardening.ini) once every PHP image ships PHP 8.2.35, 8.3.36, 8.4.27, 8.5.12 or later. It is the interim mitigation for CVE-2026-109618 and overrides the per-role `service_memory_mb` share, so a single request can exhaust the container instead of hitting a PHP limit. `web-app-joomla` keeps its own `memory_limit` because its media API compares uploads against it, and `web-app-magento` keeps the 756M its `nginx.conf.sample` (`PHP_VALUE`) and `pub/.user.ini` set; both keep `post_max_size` below a quarter of that limit. While the override is in place, `web-app-nextcloud` (`upload_limit` 5G at 3g) accepts POST bodies above a quarter of its container memory, `web-app-friendica` caps account imports at 64 MiB instead of half the memory limit, EspoCRM's System Requirements page flags `memory_limit` as failed, and Pixelfed (`InstanceService`), phpMyAdmin (import and export) and Snipe-IT (imports and LDAP sync) set a finite limit again via `ini_set` after the request has started.
 - Fork [rpardini/docker-registry-proxy](https://github.com/rpardini/docker-registry-proxy) and teach the bundled nginx to handle GCP Artifact Registry redirect URLs (`/artifacts-downloads/namespaces/<ns>/repositories/<repo>/downloads/<token>`). Currently `gcr.io` blob pulls are bypassed via `NO_PROXY=…,gcr.io,storage.googleapis.com,googleusercontent.com` in [compose/registry-cache/proxy.conf](compose/registry-cache/proxy.conf), which is a workaround that disables caching for those registries. Long-term: rebase upstream's `proxy.conf` / `sub_filter` rules to recognise the new redirect shape, ship the fix in our fork, point `compose/registry-cache/Dockerfile` (or its image tag) at the fork, and drop the `NO_PROXY` bypass.
 
 ## Testing
@@ -40,23 +41,6 @@ against those runs say so inline.
   not code. Until then the per-consumer fixes stand: SOCKS proxy for libcurl
   clients. peertube is no longer among them - it is a clearnet-only role.
 
-- **dual-family providers** — the one real remaining design gap. On a CI onion
-  node, tor-enabled providers (e.g. mastodon) are onion-exclusive: their domain
-  list contains only the `.onion` canonical, no clearnet sibling. The
-  family-alignment resolver (`utils/tls_common.py:align_domain_to_consumer`,
-  wired into `plugins/lookup/tls.py`) correctly bails in that case, so a
-  clearnet-pinned consumer still receives an onion URL it can neither resolve
-  nor reach. First hard evidence: `web-app-fediwall` variant 2 (tor=false)
-  renders `microblog.<onion>` into `wall-config.json.servers`; the clearnet
-  browser (no SOCKS) times out waiting for mastodon wall items
-  (`test-walls-surface-posts.js:24`, deterministic across retries). The same
-  class is expected to keep `web-app-bigbluebutton`, `web-app-nextcloud`,
-  `web-app-opentalk` and `web-app-jitsi` red (clearnet-pinned apps whose peer
-  refs — OIDC/cdn/matomo/logout — resolve onion-primary). Fix direction:
-  providers must publish BOTH families (clearnet sibling alongside the onion
-  canonical) so the resolver has something to align to; includes re-applying
-  the deferred `KC_HOSTNAME` onion-gate for Keycloak that was dropped from the
-  earlier bundle because it is only needed once dual-family exists.
 - **joomla local-login fallback spec** — `test-oidc-fallback.js:52` (the
   `?fallback=local` emergency hatch: local Joomla admin form login must reach
   the control panel). Root cause UNCONFIRMED. It is independent of the fixed

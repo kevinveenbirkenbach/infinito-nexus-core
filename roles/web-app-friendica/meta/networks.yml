@@ -1,3 +1,6 @@
 ---
+meshes: []
 local:
   subnet: 192.168.14.0/24
+reachability:
+  handover: true # nocheck: network-reachability  Friendica federates and builds every link, form action and redirect from its one system.url, so an onion login is sent to clearnet and never completes

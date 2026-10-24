@@ -1,5 +1,8 @@
 ---
 - services:
+    docs:
+      enabled: false
+      shared: false
     container_backup:
       enabled: true
     design:
@@ -73,6 +76,9 @@
       enabled: true
       shared: true
 - services:
+    docs:
+      enabled: true
+      shared: true
     container_backup:
       enabled: false
       shared: false # nocheck: variants-static-override backup shared stays literally true

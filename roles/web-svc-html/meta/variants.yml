@@ -5,6 +5,9 @@
 # variant pinning every dynamic services.yml flag to true so the
 # matrix exercises the in-group_names branch of web-svc-html.
 - services:
+    docs:
+      enabled: false
+      shared: false
     matomo:
       enabled: true
       shared: true
@@ -17,6 +20,9 @@
     tor:
       enabled: true
 - services:
+    docs:
+      enabled: true
+      shared: true
     matomo:
       enabled: false
       shared: false

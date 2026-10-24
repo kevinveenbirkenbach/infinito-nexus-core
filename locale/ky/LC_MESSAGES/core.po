@@ -260,11 +260,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Клиент тараптагы NFS орнотуусу ар бир үйүр түйүнүнө алыскы сервер экспортун орнотуу үчүн, жайгаштыруу убактысында жеткиликтүү зонд менен"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Клиент тараптагы WireGuard VPN ролу системалык кызмат жана MTU интерфейсин жөнгө салуучу скрипт менен туруктуу туташуу үчүн"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Клипборддун менеджери түзөтүү тарыхы, атайын иш-аракеттер жана скрипттерди колдоо менен"
@@ -285,13 +280,11 @@ msgid "Cluster-local container image registry for serving custom-built images to
 msgstr "Docker Swarm жумушчу түйүндөрүнө атайын курулган сүрөттөрдү жеткирүү үчүн кластердик жергиликтүү контейнердик сүрөт реестри"
 
 # прокси кэш) - бул ар бир ролду жарыялайт.
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Cluster-local proxy cache for package upstreams,
 # serving apt, pip, npm and raw artefacts every role declares
+# translated-by: ollama
 msgctxt "role:svc-cache-package:description"
 msgid "Cluster-local proxy cache for package upstreams, serving apt, pip, npm and raw artefacts every role declares"
-msgstr ""
+msgstr "Кластерты-промошынык кэш үчүн pakage эстелик сүрөттерин, өзгөчө роллөндө апт, пип, нпм жана башка raw артефакторлоруна өзгөчө урукту"
 
 # translated-by: libretranslate
 msgctxt "role:svc-registry-cache:description"
@@ -331,15 +324,10 @@ msgstr "Коомчулук"
 # аналитика, панель) Nginx үчүнOpenResty аркылуу аркылуу sub_filterМЧН менен
 # камсыздалган активдери бар Луа.
 # gained=['sub_filterМЧН']
-# translation-refused: libretranslate protected-span lost=['sub_filter']
-# gained=['sub_filterМЧН']
-# nocheck: url
-# translation-rejected: HTML инжекциялык ролдору (CSS, JS, Logout Interceptor,
-# аналитика, панель) Nginx үчүнOpenResty аркылуу аркылуу sub_filterМЧН менен
-# камсыздалган активдери бар Луа.
+# translated-by: ollama
 msgctxt "category:sys.front.inj:description"
 msgid "Composable HTML injection roles (CSS, JS, logout interceptor, analytics, dashboard iframe) for Nginx/OpenResty via sub_filter/Lua with CDN-backed assets."
-msgstr ""
+msgstr "Композиційні роли ін Injection хтмл (CSS, JS, інтерceptar logout, аналітики, інфлэймд) для Nginx/OpenResty через sub_filter/Lua з електронними валютами- backed ресурсами."
 
 # translated-by: libretranslate
 msgctxt "role:sys-stk-full:description"
@@ -807,11 +795,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Структураланбаган маалыматтарды башкаруу, масштабдоо жана аларга жетүү үчүн жогорку натыйжалуу, өз алдынча сактоочу чечимдер, анын ичинде Amazon S менен шайкеш келген объектилерди сактоо3 APIs."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "WireGuard VPN кызматы, wg-quick конфигурациясы, пакеттерди орнотуу жана коопсуз туннелдер үчүн IP жөнөтүү системасы"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Системаланган журналдагы жыгач дамон үчүн хост деңгээлиндеги конфигурация, кармоо чектөөлөрү жана тирүү жыгач агымы"
@@ -822,19 +805,16 @@ msgid "Host-level configuration linking Bash and Zsh login shells to a shared .p
 msgstr "Bash жана Zsh login кабыктарын айлана-чөйрөнү ырааттуу жүктөө үчүн жалпы.profile менен байланыштырган хост деңгээлиндеги конфигурация"
 
 # чаралар pyproject.toml Системалык версия (ETC)
-# translation-refused: libretranslate unknown-token
-# nocheck: url
-# translation-rejected: Host-level provisioning for exposing the project's <x
 # id="0"></x> version system-wide via /etc/environment --- Host-level
 # provisioning for exposing the project's <x id="1"></x> version system-wide
 # via /etc/environment --- Host-level provisioning for exposing the project's
 # <x id="2"></x> version system-wide via /etc/environment --- Host-level
 # provisioning for exposing the project's <x id="3"></x> version system-wide
-# via /etc/environment --- Host-level provisioning for exposing the project's
 # <x id="4"></x> version system-wide via /etc/environment
+# translated-by: ollama
 msgctxt "role:sys-version:description"
 msgid "Host-level provisioning for exposing the project's pyproject.toml version system-wide via /etc/environment"
-msgstr ""
+msgstr "Host-көркөм өнүктөрүнө катар /etc/environment-тад проектинин pyproject.toml версиясыны жабыктоо көркөмдүк жана сүрөт көркөмдө"
 
 # translated-by: libretranslate
 msgctxt "role:user-root:description"
@@ -905,6 +885,11 @@ msgstr "Программалык камсыздоо командалары үч�
 msgctxt "role:dev-nodejs:description"
 msgid "JavaScript runtime for building and running server-side applications and developer tooling"
 msgstr "JavaScript сервердик тиркемелерди жана иштеп чыгуучу куралдарды куруу жана иштетүү үчүн иштөө убактысы"
+
+# translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Кернель WireGuard Туннелдер, топтордун менеджеринин астындагы хаб жана спок торлор жана Компос хостторунун ортосундагы толук торлор"
 
 # translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
@@ -1071,15 +1056,16 @@ msgctxt "role:svc-prx-openresty:description"
 msgid "NGINX-based web platform and reverse proxy with validated config reloads and Let's Encrypt integration"
 msgstr "NGINX негизделген веб-платформа жана бекитилген конфигурациялык кайра жүктөр жана Келгиле шифрлөө интеграциясы менен тескери прокси"
 
-# translated-by: libretranslate
 # берет (Импрессия) Жинжадан2 үлгүсү үлгүсү үлгүсү
-# translation-refused: libretranslate stutter
-# nocheck: url
-# translation-rejected: NGINX кызмат кылган статикалык баракча юридикалык изин
-# берет (Импрессия) Жинжадан2 үлгүсү үлгүсү үлгүсү
+# translated-by: ollama
 msgctxt "role:web-svc-legal:description"
 msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jinja2 template"
-msgstr ""
+msgstr "NGINX-төрөлдөрдүн эс изилдөөгүнү HTML-ийн Jinja-танд ийлдөө (Impressum) көрүнүүдөн сактоо 2 штамплагынан алуу"
+
+# translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLLB-200 HTTP аркылуу котормо модели, аны түздөн-түз чакырган түтүктөр үчүн"
 
 # translated-by: libretranslate
 msgctxt "category:svc.net:title"
@@ -1095,11 +1081,6 @@ msgstr "Тармакты түзүү (DNS, Келгиле HTTP, WireGuard ж.б. 
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "DHCP жана веб-админ панели менен бардык түзмөктөрдө жарнамаларды жана трекерлерди бөгөт коюу үчүн тармактык DNS чуңкуру"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "IPtables жөнөтүү жана NAT маскаралоо үчүн тармактык жардамчы, NAT же Firewall артында иштеген WireGuard клиентинин"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1178,14 +1159,12 @@ msgid "Open-source ERP suite for CRM, sales, accounting, inventory, HR, and webs
 msgstr "Ачык булактуу ERP топтому CRM, сатуу, бухгалтердик эсеп, инвентаризация, кадрлар жана веб-сайтты башкаруу үчүн"
 
 # (SSO)
-# translation-refused: libretranslate echo
-# nocheck: url
-# translation-rejected: Open-source IT and application monitoring server
 # behind SSO with native LDAP user management  Open-source IT and application
 # monitoring server behind SSO with native LDAP user management
+# translated-by: ollama
 msgctxt "role:web-app-checkmk:description"
 msgid "Open-source IT and application monitoring server behind SSO with native LDAP user management"
-msgstr ""
+msgstr "Kyant serlek IT жана aplication жайлаасын натыйгыз, SSO-ын келип чыгышында ээлдем эмес башкармачылыгыnant LDAP эмес боюнча"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-snipe-it:description"
@@ -1196,6 +1175,11 @@ msgstr "Ачык булактуу IT активдерин башкаруу си�
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Ачык булактуу ITSM жана жардам берүү бөлүмү платформасы (OTRS вилкасы) Билеттерди сатуу, CMDB, билим базасы жана отчеттуулук"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Ачык булактуу SIEM жана XDR платформасы мониторинг, журнал анализи, кирүү жана алсыздыкты аныктоо жана шайкештик"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1799,6 +1783,10 @@ msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Кызматтар кызматтары"
 
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
+
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"
 msgid "Shared Storage"
@@ -1816,14 +1804,10 @@ msgstr "Керектөөчүлөргө виртуалдык хост жана к
 
 # жалпы туруктуу сактоочу арткы бөлүктөр <unk> NFSv4 Сервердик жана клиенттик
 # ролдор.
-# translation-refused: libretranslate added-span lost=[] gained=['<unk>']
-# nocheck: url
-# translation-rejected: Көп түйүндүү жайгаштыруулар тарабынан колдонулган
-# жалпы туруктуу сактоочу арткы бөлүктөр <unk> NFSv4 Сервердик жана клиенттик
-# ролдор.
+# translated-by: ollama
 msgctxt "category:svc.storage:description"
 msgid "Shared persistent-storage backends used by multi-node deployments — NFSv4 server and client roles."
-msgstr ""
+msgstr "Shared кыпчак түйөнүүдөр менен көркөмдөлөрдү — NFSv4 сервер менен клиента ролу."
 
 # translated-by: libretranslate
 msgctxt "role:dsk-base:description"

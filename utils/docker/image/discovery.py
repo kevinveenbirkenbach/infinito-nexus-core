@@ -46,7 +46,7 @@ RETIRED = "eol"
 class ImageRef:
     """Role-declared container image reference.
 
-    Fields:
+    Attributes:
         role: e.g. ``svc-db-postgres``
         service: e.g. ``postgres``
         name: canonical image name without registry, e.g. ``postgis/postgis``
@@ -58,6 +58,7 @@ class ImageRef:
         derived: the ref carries a ``version_variants`` suffix rather than the
             version the service declares, so it is a tag the mirror must carry
             but never the version a role deploys
+
     """
 
     role: str
@@ -68,6 +69,17 @@ class ImageRef:
     registry: str = "docker.io"
     source_file: str = ROLE_FILE_META_SERVICES
     derived: bool = False
+
+    @property
+    def addressable(self) -> str:
+        """``name`` with its registry back in front, as a probe must ask for it.
+
+        ``name`` is stripped of the registry so roles can be compared across
+        sources. A probe that passes it on reaches docker.io, where an image
+        published only on ghcr.io or quay.io does not exist, and reads the
+        404 as an indeterminate answer.
+        """
+        return f"{self.registry}/{self.name}"
 
 
 def load_yaml(path: Path) -> dict:

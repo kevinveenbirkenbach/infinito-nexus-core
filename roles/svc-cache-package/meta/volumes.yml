@@ -8,7 +8,16 @@ data:
   nfs: false
   mounts:
     - service: package
-      target: /nexus-data
+      target: &nexus_data /nexus-data
+    - service: bootstrap
+      target: *nexus_data
+bootstrap_script:
+  type: config
+  source: "{{ [lookup('container', 'svc-cache-package', 'directories.config'), 'bootstrap.sh'] | path_join }}"
+  mode: "0444"
+  mounts:
+    - service: bootstrap
+      target: /etc/infinito/bootstrap.sh
 frontend_ca:
   type: bind
   source: "{{ [lookup('container', 'svc-cache-package', 'directories.config'), 'ca'] | path_join }}"

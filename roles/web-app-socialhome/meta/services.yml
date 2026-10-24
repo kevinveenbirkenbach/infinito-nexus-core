@@ -14,7 +14,7 @@ socialhome:
   placement: manager
   name: socialhome
   image: ghcr.io/social-home-io/socialhome
-  version: "2026.10.17"
+  version: "2026.10.22"
   ports:
     local:
       http: 8089
@@ -76,3 +76,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

@@ -16,6 +16,9 @@
 # variant 0: canonical Single-Site deploy.
 
 - services:
+    docs:
+      enabled: false
+      shared: false
     container_backup:
       enabled: true
     design:
@@ -138,6 +141,9 @@
         - biber.blog.{{ DOMAIN_PRIMARY }}
 
 - services:
+    docs:
+      enabled: true
+      shared: true
     container_backup:
       enabled: false
       shared: false # nocheck: variants-static-override base shared is a static literal and this round joins no backup host
@@ -184,6 +190,7 @@
     translate:
       enabled: false
       shared: false
+    # nocheck: variant-tor-collateral docs rides the smallest round of each role because the README replay is the costliest partner in the matrix; the guide serves over the onion in both web-app-docs variants, which is where that is proven
     tor:
       enabled: false
     hermes:

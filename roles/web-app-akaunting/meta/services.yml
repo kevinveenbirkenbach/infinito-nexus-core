@@ -61,6 +61,7 @@ akaunting:
     local:
       http: 8025
       sso: 16499
+      sso_onion: 16520
     internal:
       http: 80
   run_after:
@@ -113,3 +114,8 @@ container_backup: # nocheck: bond-baseline backup host joins outside the variant
   bond: 1
   enabled: "{{ 'svc-bkp-volume-2-local' in group_names }}"
   shared: true
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

@@ -259,11 +259,6 @@ msgid "Client-side NFS setup for mounting a remote server export on every swarm 
 msgstr "Thiết lập bên khách NFS để lắp đặt một máy chủ từ xa xuất khẩu trên mỗi nút thu nhỏ, với một thăm dò khả năng sử dụng thời gian"
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-plain:description"
-msgid "Client-side WireGuard VPN role for stable connectivity with a systemd service and script that tune interface MTU"
-msgstr "Vai trò khách hàng bên Wire Guard VPN cho việc kết nối ổn định với một dịch vụ hệ thống và văn lệnh mà giai điệu giao diện MT"
-
-# translated-by: libretranslate
 msgctxt "role:dsk-copyq:description"
 msgid "Clipboard manager with editable history, custom actions, and scripting support"
 msgstr "Bộ quản lý bảng tạm với lịch sử soạn thảo, hành động tự chọn và hỗ trợ văn lệnh"
@@ -350,12 +345,10 @@ msgctxt "role:sys-svc-container:description"
 msgid "Container engine runtime with Compose for building and running application containers on Linux hosts"
 msgstr "Container engine runtime với Compose cho việc xây dựng và chạy ứng dụng trên máy chủ Linux"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Comment
+# translated-by: ollama
 msgctxt "role:svc-swarm-node:description"
 msgid "Container orchestration cluster for scheduling services across pooled manager and worker nodes"
-msgstr ""
+msgstr "Nhóm đột suất cho việc sắp xếp dịch vụ giữa các máy chủ quản lý và công việc"
 
 # translated-by: libretranslate
 msgctxt "category:svc.registry:description"
@@ -372,12 +365,10 @@ msgctxt "role:web-svc-simpleicons:description"
 msgid "Containerized icon server for hosting the Simple Icons brand SVG and PNG collection for web and documentation use"
 msgstr "Máy phục vụ biểu tượng bị khóa cho việc tổ chức Simple Icons Name"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Comment
+# translated-by: ollama
 msgctxt "role:svc-db-postgres:description"
 msgid "Containerized relational database with automated database, user, and privilege provisioning"
-msgstr ""
+msgstr "Bồn chứa database liên quan đã tích hợp với cung cấp tự động database, người dùng và sự cấp quyền"
 
 # translated-by: libretranslate
 msgctxt "menu:Content Management:title"
@@ -798,11 +789,6 @@ msgid "High-performance, self-hosted storage solutions for managing, scaling, an
 msgstr "Các giải pháp lưu trữ có hiệu quả cao, tự lưu trữ để quản lý, phóng to và truy cập dữ liệu chưa cấu trúc — bao gồm các đối tượng lưu trữ tương thích với Amazon S3 ADIs."
 
 # translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-core:description"
-msgid "Host-level WireGuard VPN service with wg-quick config, package install, and IP-forwarding sysctl for secure tunnels"
-msgstr "Dịch vụ Wire cao cấp máy bảo vệ VPN với wg-quick conrig, gói cài đặt, và IP-backing Sysctl cho đường hầm bảo mật"
-
-# translated-by: libretranslate
 msgctxt "role:sys-svc-journalctl:description"
 msgid "Host-level configuration for the systemd-journald logging daemon with retention limits and live log streaming"
 msgstr "Cấu hình cấp máy cho trình nền ghi nhật ký hệ thống với giới hạn ghi nhớ và truyền dữ liệu trực tiếp"
@@ -888,6 +874,11 @@ msgid "JavaScript runtime for building and running server-side applications and 
 msgstr "Chạy JavaScript thời gian để xây dựng và chạy ứng dụng cạnh máy chủ và phát triển tooling"
 
 # translated-by: libretranslate
+msgctxt "role:svc-net-wireguard:description"
+msgid "Kernel WireGuard tunnels, hub-and-spoke meshes under a swarm manager and full meshes between Compose hosts"
+msgstr "Nhân WireGuard Đường hầm, trung tâm và nói chuyện với y tá dưới sự quản lý của đàn và đầy đủ meshes giữa chủ thể dàn nhạc"
+
+# translated-by: libretranslate
 msgctxt "role:svc-ai-jupyter:description"
 msgid "Kernel backend that runs the code a chat writes, in a container instead of in the browser sandbox"
 msgstr "Hậu phương hạt nhân mà chạy mã một chat ghi, trong một container thay vì trong hộp cát duyệt"
@@ -952,12 +943,10 @@ msgctxt "role:sys-ca-selfsigned:description"
 msgid "Local self-signed Root CA for issuing trust so containers accept internal TLS endpoints"
 msgstr "CA gốc tự ký địa phương cho việc phát hành sự tin tưởng để các thùng chứa chấp nhận điểm kết thúc nội bộ của USD"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Name
+# translated-by: ollama
 msgctxt "role:dsk-keepassxc:description"
 msgid "Local-first cross-platform desktop password manager storing credentials in an encrypted KeePass-format database"
-msgstr ""
+msgstr "Local-first cross-platform desktop password manager simpan kredensial dalam database format enkripsi KeePass"
 
 # translated-by: libretranslate
 msgctxt "role:dsk-laya:description"
@@ -1060,6 +1049,11 @@ msgid "NGINX-served static page rendering a legal imprint (Impressum) from a Jin
 msgstr "Cấu hình trang tĩnh NGINX (Inpressum) từ Jinja2 mẫu"
 
 # translated-by: libretranslate
+msgctxt "role:svc-ai-nllb-engine:description"
+msgid "NLLB-200 translation model served over HTTP, for pipelines that call it directly"
+msgstr "NLB-200 Mô hình dịch được phục vụ trên HTTP, cho các đường ống gọi trực tiếp"
+
+# translated-by: libretranslate
 msgctxt "category:svc.net:title"
 msgid "Network"
 msgstr "Mạng"
@@ -1067,17 +1061,12 @@ msgstr "Mạng"
 # translated-by: libretranslate
 msgctxt "category:svc.net:description"
 msgid "Network setup (DNS, Let's Encrypt HTTP, WireGuard, etc.)"
-msgstr "Thiết lập mạng (DNS, hãy mã hóa HTTP, Wire Guard, etc.)"
+msgstr "Thiết lập mạng (DNS, hãy mã hóa HTTP, WireGuard, etc.)"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-pihole:description"
 msgid "Network-wide DNS sinkhole for blocking ads and trackers across all devices, with DHCP and a web admin dashboard"
 msgstr "Hang ổ DNS toàn mạng cho việc chặn quảng cáo và theo dõi trên mọi thiết bị, với DHCP và bảng điều khiển quảng cáo trên mạng"
-
-# translated-by: libretranslate
-msgctxt "role:svc-net-wireguard-firewalled:description"
-msgid "Networking helper for iptables forwarding and NAT masquerading of a WireGuard client running behind NAT or a firewall"
-msgstr "Trình trợ giúp mạng cho iptables chuyển tiếp và phát thanh NT của một khách hàng Wire Guard chạy phía sau NAT hoặc tường lửa"
 
 # translated-by: libretranslate
 msgctxt "role:sys-front-inj-logout:description"
@@ -1169,6 +1158,11 @@ msgstr "Hệ thống quản lý tài sản mã nguồn mở cho việc theo dõi
 msgctxt "role:web-app-kix:description"
 msgid "Open-source ITSM and helpdesk platform (OTRS fork) for ticketing, CMDB, knowledge base, and reporting"
 msgstr "Phần mềm TSM mã nguồn mở và hỗ trợdesk (Name) cho vé, CMDB, nền tảng kiến thức, và báo cáo"
+
+# translated-by: libretranslate
+msgctxt "role:web-app-wazuh:description"
+msgid "Open-source SIEM and XDR platform for monitoring, log analysis, intrusion/vulnerability detection, and compliance"
+msgstr "Nền tảng mã nguồn mở SIEM và XDR để giám sát, phân tích bản ghi, đột nhập/không thể chấp nhận, và tuân thủ"
 
 # translated-by: libretranslate
 msgctxt "role:web-app-taiga:description"
@@ -1767,6 +1761,10 @@ msgctxt "category:web.svc:title"
 msgid "Services"
 msgstr "Dịch vụ"
 
+msgctxt "role:sys-svc-compose-php:description"
+msgid "Shared PHP hardening ini and PHP-FPM pool drop-in that PHP services of compose and swarm stacks mount as configs"
+msgstr ""
+
 # translated-by: libretranslate
 msgctxt "category:svc.storage:title"
 msgid "Shared Storage"
@@ -1940,12 +1938,10 @@ msgctxt "role:sys-ctl-alm-email:description"
 msgid "Systemd-triggered msmtp notifier for emailing operators when a monitored service unit fails"
 msgstr "Bộ thông báo msmp hệ thống cho những người sử dụng thư điện tử khi một đơn vị dịch vụ giám sát thất bại"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Comment
+# translated-by: ollama
 msgctxt "role:sys-ctl-alm-telegram:description"
 msgid "Systemd-triggered notifier for delivering service-failure alerts to a Telegram chat"
-msgstr ""
+msgstr "Notifier systemd-là cho gửi cảnh báo lỗi dịch vụ đến nhóm Chat Telegram"
 
 # translated-by: libretranslate
 msgctxt "role:dsk-gnt-claude:description"
@@ -2087,12 +2083,10 @@ msgctxt "role:dsk-git:description"
 msgid "Version-control client for personal workstations, preconfigured with identity, signing, and merge defaults"
 msgstr "Trình khách điều khiển phiên bản cho trạm làm việc cá nhân, cấu hình sẵn với danh tính, ký và hợp nhất mặc định"
 
-# translation-refused: libretranslate collapsed
-# nocheck: url
-# translation-rejected: Name
+# translated-by: ollama
 msgctxt "role:sys-svc-cdn:description"
 msgid "Versioned asset-tree layout for CDN delivery with shared, vendor, and per-role release directories"
-msgstr ""
+msgstr "Đường dẫn cấu trúc cây tài sản đã phân loại cho việc giao hàng CDN với các thư mục chứa các bản phát hành chia sẻ, nhà cung cấp và theo vai trò"
 
 # translated-by: libretranslate
 msgctxt "role:dsk-code:description"

@@ -1,0 +1,75 @@
+---
+- name: "🔍 Read the peer state of every interface"
+  ansible.builtin.command: "wg show {{ mesh_name | quote }} peers"
+  loop: "{{ WIREGUARD_MESH_NAMES }}"
+  loop_control:
+    loop_var: mesh_name
+  register: wireguard_peer_state
+  changed_when: false
+
+- name: "🛑 Fail when an interface carries no peer"
+  ansible.builtin.fail:
+    msg: >-
+      WireGuard interface '{{ item.mesh_name }}' on {{ inventory_hostname }}
+      came up with no peer. The mesh in this host's inventory is incomplete.
+  loop: "{{ wireguard_peer_state.results }}"
+  loop_control:
+    label: "{{ item.mesh_name }}"
+  when: (item.stdout | trim) | length == 0
+
+- name: "⏳ Wait until every interface has handshaked with the peers it awaits"
+  ansible.builtin.command: "wg show {{ awaited.key | quote }} latest-handshakes"
+  loop: "{{ WIREGUARD_AWAITED_KEYS | dict2items }}"
+  loop_control:
+    loop_var: awaited
+    label: "{{ awaited.key }}"
+  register: wireguard_handshakes
+  changed_when: false
+  failed_when: false
+  retries: 24
+  delay: 5
+  until:
+    - wireguard_handshakes.rc == 0
+    - wireguard_handshakes.stdout | mesh_handshaken(awaited.value)
+
+- name: "🛑 Fail hard when an interface never reached a peer it awaits"
+  ansible.builtin.fail:
+    msg: >-
+      WireGuard interface '{{ item.awaited.key }}' on {{ inventory_hostname }}
+      never completed a handshake with every peer it awaits. No deploy can
+      proceed over a partitioned mesh.
+  loop: "{{ wireguard_handshakes.results }}"
+  loop_control:
+    label: "{{ item.awaited.key }}"
+  when: >-
+    item.rc != 0
+    or not (item.stdout | mesh_handshaken(item.awaited.value))
+
+- name: "🔍 Check whether ping is available for the MTU probe"
+  ansible.builtin.stat:
+    path: "{{ WIREGUARD_PING_BINARY }}"
+  register: wireguard_ping
+
+- name: "📏 Prove the path carries a full-size payload without fragmenting"
+  ansible.builtin.command: >-
+    {{ WIREGUARD_PING_BINARY }} -c 2 -W 2 -M do
+    -s {{ wireguard_overlay_mtu | int - 28 }} {{ item | quote }}
+  loop: "{{ WIREGUARD_EXPECTED_PEERS }}"
+  register: wireguard_mtu_probe
+  changed_when: false
+  failed_when: false
+  when: wireguard_ping.stat.exists
+
+- name: "🛑 Fail when the overlay MTU does not survive the tunnel"
+  ansible.builtin.fail:
+    msg: >-
+      A {{ wireguard_overlay_mtu | int }}-byte payload does not reach
+      {{ oversized | map(attribute='item') | join(', ') }} from
+      {{ inventory_hostname }}. Stacked VXLAN inside WireGuard needs the
+      overlay MTU at or below the tunnel's, or large payloads drop silently.
+  vars:
+    oversized: >-
+      {{ wireguard_mtu_probe.results | default([])
+         | rejectattr('skipped', 'defined')
+         | rejectattr('rc', 'equalto', 0) | list }}
+  when: oversized | length > 0

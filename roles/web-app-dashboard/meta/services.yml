@@ -49,8 +49,10 @@ dashboard:
   ports:
     local:
       http: 8029
+      http_onion: 16560
     internal:
       http: 5000
+      http_onion: 5000
   proxy:
     service_key: dashboard
   run_after:
@@ -83,3 +85,8 @@ tor:
   bond: 0.5
   enabled: "{{ 'svc-net-tor' in group_names }}"
   shared: true # nocheck: dynamic-flag
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

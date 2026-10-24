@@ -28,3 +28,8 @@ the cluster after the join phase.
   inventory are applied to the joining node.
 - **Mode-selection trigger:** Membership in `svc-swarm-node` resolves
   `DEPLOYMENT_MODE = swarm` for every web-app role on that host.
+- **Ingress guard:** An nftables table drops packets from outside the cluster
+  to every routing-mesh port no application declares under `ports.public`.
+  Loopback, the Docker bridges and the swarm nodes' own addresses stay
+  admitted. The table is loaded before a node joins and reloaded on every node
+  after the join and after each stack deploy.

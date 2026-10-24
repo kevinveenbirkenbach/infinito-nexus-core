@@ -62,7 +62,7 @@ prometheus:
   provides:
     - prometheus
   image: prom/prometheus # nocheck: volumes-path-single-spot: the repository path of an image name, not a mount target
-  version: v3.15.0
+  version: v3.15.1
   name: prometheus
   cpus: "0.5"
   mem_reservation: 512m
@@ -74,6 +74,7 @@ prometheus:
   ports:
     local:
       sso: 16492
+      sso_onion: 16544
       http: 8066
     internal:
       http: 9090
@@ -101,7 +102,7 @@ blackbox-exporter:
     flavor: wget
     path: -/healthy
   image: prom/blackbox-exporter
-  version: v0.29.0
+  version: v0.29.1
   name: prometheus-blackbox
   cpus: "0.1"
   mem_reservation: 16m
@@ -192,3 +193,8 @@ flowise:
   bond: 0.5
   enabled: "{{ 'web-app-flowise' in group_names }}"
   shared: "{{ 'web-app-flowise' in group_names }}"
+
+docs:
+  bond: 0.5
+  enabled: "{{ 'web-app-docs' in group_names }}"
+  shared: "{{ 'web-app-docs' in group_names }}"

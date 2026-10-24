@@ -10,6 +10,9 @@
 # flags. With nothing preloaded the chat model falls through to the mock here.
 
 - services:
+    docs:
+      enabled: true
+      shared: true
     ollama:
       enabled: true
       shared: true
@@ -29,6 +32,9 @@
           context: 131072
 
 - services:
+    docs:
+      enabled: false
+      shared: false
     postgres:
       shared: false
     ollama:
@@ -51,6 +57,9 @@
           context: 131072
 
 - services:
+    docs:
+      enabled: false
+      shared: false
     ollama:
       enabled: false
       shared: false

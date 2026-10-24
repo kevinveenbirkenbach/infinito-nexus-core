@@ -3,7 +3,7 @@
 Usage:
   python -m cli.build.i18n extract [--domain core|docs]
   python -m cli.build.i18n translate --domain core|docs [--languages de,fr]
-  python -m cli.build.i18n languages [--domain core|docs]
+  python -m cli.build.i18n languages
   python -m cli.build.i18n prune [--domain core|docs] [--languages de,fr]
   python -m cli.build.i18n retry [--domain core|docs] [--languages de,fr]
   python -m cli.build.i18n tune [--language de]
@@ -37,7 +37,6 @@ from utils.i18n.languages import (
     DOMAINS,
     domain_languages,
     load_languages,
-    translatable,
 )
 from utils.i18n.gateway import (
     READY_TIMEOUT_SECONDS,
@@ -45,6 +44,7 @@ from utils.i18n.gateway import (
     download_status,
     server,
 )
+from utils.i18n.libretranslate import served_languages
 from utils.i18n.placeholders import Rejected
 from utils.i18n.translate import (
     apply,
@@ -58,6 +58,7 @@ from utils.i18n.translate import (
 
 CHUNK_SIZE = 500
 SPHINX_JOBS_FLOOR = 2
+CHAT_LANES = 2
 
 
 def sphinx_jobs() -> int:
@@ -97,8 +98,17 @@ def extract(domains: list[str]) -> int:
 
 
 def languages(domains: list[str]) -> int:
+    """Print every language carrying a catalog, as a JSON array.
+
+    The caller is the CI matrix of ``entry-pr-translate.yml``, which opens one
+    branch and one pull request per code. Every language the repository names
+    is translated, so every one of them belongs in the matrix: the gateway
+    offers each backend that serves the pair and falls through to its chat
+    backend, which declares no catalogue and therefore answers for the pairs
+    the dedicated engines do not cover.
+    """
     loaded = load_languages(PROJECT_ROOT)
-    codes = sorted({code for d in domains for code in translatable(loaded, d)})
+    codes = sorted({code for d in domains for code in domain_languages(loaded, d)})
     print(json.dumps(codes))
     return 0
 
@@ -115,7 +125,7 @@ def prune(domains: list[str], requested: list[str]) -> int:
             catalog = read_catalog(path)
             shared = over_shared(catalog)
             discard(shared)
-            broken = damaged(catalog)
+            broken = damaged(catalog, code)
             discard(broken)
             if not shared and not broken:
                 continue
@@ -204,7 +214,9 @@ def one_catalog(client: LibreTranslate, domain: str, code: str) -> None:
             criteria.update(
                 value.reason for value in outcome.values if isinstance(value, Rejected)
             )
-            discarded += apply(chunk, outcome.values, taken, criteria)
+            discarded += apply(
+                chunk, outcome.values, taken, criteria, outcome.engines
+            )
             refused += outcome.refused
             damaged += outcome.damaged
             refusal = outcome.refusal or refusal
@@ -223,15 +235,16 @@ def translate(domains: list[str], requested: list[str], redeploy: bool = False) 
     loaded = load_languages(PROJECT_ROOT)
     work: list[tuple[str, str]] = []
     for domain in domains:
-        supported = translatable(loaded, domain)
+        supported = domain_languages(loaded, domain)
         unsupported = sorted(set(requested) - set(supported))
         if unsupported:
-            print(f"the translation gateway does not serve {unsupported}", file=sys.stderr)
+            print(f"{', '.join(unsupported)} is not a language this repository names", file=sys.stderr)
             return 2
         work += [
             (domain, code)
             for code in (sorted(requested) if requested else supported)
-            if pending(read_catalog(catalog_path(PROJECT_ROOT, code, domain)))
+            if catalog_path(PROJECT_ROOT, code, domain).is_file()
+            and pending(read_catalog(catalog_path(PROJECT_ROOT, code, domain)))
         ]
     if not work:
         print(f"{', '.join(domains)}: nothing to translate")
@@ -240,18 +253,26 @@ def translate(domains: list[str], requested: list[str], redeploy: bool = False) 
     cpus = usable_cpus()
     codes = sorted({code for _, code in work})
     tuned = int(os.environ.get("INFINITO_I18N_LANES") or 0)
-    lanes = min(len(work), tuned or cpus)
     batch = int(os.environ.get("INFINITO_I18N_BATCH_SIZE") or BATCH_SIZE)
+    engine = set(served_languages(PROJECT_ROOT))
+    passes = (
+        ([job for job in work if job[1] in engine], tuned or cpus),
+        ([job for job in work if job[1] not in engine], tuned or CHAT_LANES),
+    )
     with server(PROJECT_ROOT, redeploy=redeploy) as url:
-        client = LibreTranslate(url, max(cpus // lanes, 1), batch_size=batch)
-        client.wait(
+        LibreTranslate(url, 1, batch_size=batch).wait(
             codes,
             READY_TIMEOUT_SECONDS,
             status=lambda: download_status(PROJECT_ROOT),
         )
-        with ThreadPoolExecutor(lanes) as pool:
-            for _ in pool.map(lambda job: one_catalog(client, *job), work):
-                pass
+        for group, width in passes:
+            if not group:
+                continue
+            lanes = min(len(group), width)
+            client = LibreTranslate(url, max(cpus // lanes, 1), batch_size=batch)
+            with ThreadPoolExecutor(lanes) as pool:
+                for _ in pool.map(lambda job: one_catalog(client, *job), group):
+                    pass
     return 0
 
 
