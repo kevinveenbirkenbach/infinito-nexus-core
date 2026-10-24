@@ -2,6 +2,7 @@ const { expect } = require("@playwright/test");
 const { resolveTimeout } = require("./timeouts");
 
 const {
+  apiFetchOnion,
   decodeDotenvQuotedValue,
   gotoOnion,
   normalizeBaseUrl,
@@ -19,6 +20,13 @@ const adminNativePassword = decodeDotenvQuotedValue(process.env.ADMIN_NATIVE_PAS
 const biberUsername     = decodeDotenvQuotedValue(process.env.BIBER_USERNAME);
 const biberPassword     = decodeDotenvQuotedValue(process.env.BIBER_PASSWORD);
 const canonicalDomain   = decodeDotenvQuotedValue(process.env.CANONICAL_DOMAIN);
+const adminGroupPath    = decodeDotenvQuotedValue(process.env.JELLYFIN_ADMIN_GROUP_PATH);
+const keycloakBaseUrl   = normalizeBaseUrl(requireDotenvValue(process.env.KEYCLOAK_BASE_URL, "KEYCLOAK_BASE_URL"));
+const keycloakRealm     = decodeDotenvQuotedValue(process.env.KEYCLOAK_REALM_NAME);
+const keycloakAdminUsername = decodeDotenvQuotedValue(process.env.KEYCLOAK_ADMIN_USERNAME);
+const keycloakAdminPassword = decodeDotenvQuotedValue(process.env.KEYCLOAK_ADMIN_PASSWORD);
+const ldapAdminUsername = decodeDotenvQuotedValue(process.env.LDAP_ADMIN_USERNAME);
+const ldapAdminPassword = decodeDotenvQuotedValue(process.env.LDAP_ADMIN_PASSWORD);
 
 async function gotoLogin(page) {
   await gotoOnion(page, `${jellyfinBaseUrl}/web/`, { waitUntil: "domcontentloaded" });
@@ -85,6 +93,24 @@ async function signInViaOidc(page, username, password, label) {
   await assertAuthenticated(page, label);
 }
 
+async function sessionUser(page, label) {
+  const credentials = await page.evaluate(() => window.localStorage.getItem("jellyfin_credentials"));
+  expect(credentials, `${label}: the Jellyfin web client must store its credentials after sign-in`).toBeTruthy();
+  const token = JSON.parse(credentials).Servers.map((server) => server.AccessToken).find(Boolean);
+  expect(token, `${label}: the stored Jellyfin credentials must carry an access token`).toBeTruthy();
+  const response = await apiFetchOnion(page.request, `${jellyfinBaseUrl}/Users/Me`, {
+    method: "GET",
+    headers: { "X-Emby-Token": token },
+  });
+  expect(response.status(), `${label}: GET /Users/Me must answer for the signed-in user`).toBe(200);
+  return response.json();
+}
+
+async function sessionIsAdministrator(page, label) {
+  const user = await sessionUser(page, label);
+  return user.Policy.IsAdministrator === true;
+}
+
 async function logout(page, label = "session") {
   try {
     const menu = page
@@ -145,6 +171,13 @@ module.exports = {
     biberUsername,
     biberPassword,
     canonicalDomain,
+    adminGroupPath,
+    keycloakBaseUrl,
+    keycloakRealm,
+    keycloakAdminUsername,
+    keycloakAdminPassword,
+    ldapAdminUsername,
+    ldapAdminPassword,
   },
   gotoLogin,
   onLoginSurface,
@@ -152,6 +185,8 @@ module.exports = {
   signInViaLocal,
   signInViaLdap,
   signInViaOidc,
+  sessionUser,
+  sessionIsAdministrator,
   logout,
   beforeEach,
   skipUnlessServiceEnabled,

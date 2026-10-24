@@ -166,12 +166,17 @@ if [ "${JELLYFIN_LDAP_ENABLED}" = "true" ]; then
   <LdapBindUser>${JELLYFIN_LDAP_BIND_DN}</LdapBindUser>
   <LdapBindPassword>${JELLYFIN_LDAP_BIND_PASSWORD}</LdapBindPassword>
   <LdapBaseDn>${JELLYFIN_LDAP_BASE_DN}</LdapBaseDn>
-  <LdapSearchFilter>(objectClass=inetOrgPerson)</LdapSearchFilter>
-  <LdapSearchAttributes>uid, cn, mail, displayName</LdapSearchAttributes>
+  <LdapSearchFilter>${JELLYFIN_LDAP_SEARCH_FILTER}</LdapSearchFilter>
+  <LdapSearchAttributes>${JELLYFIN_LDAP_SEARCH_ATTRIBUTES}</LdapSearchAttributes>
+  <LdapAdminFilter>${JELLYFIN_LDAP_ADMIN_FILTER}</LdapAdminFilter>
+  <EnableLdapAdminFilterMemberUid>false</EnableLdapAdminFilterMemberUid>
   <CreateUsersFromLdap>true</CreateUsersFromLdap>
+  <AllowPassChange>false</AllowPassChange>
   <LdapUidAttribute>${JELLYFIN_LDAP_UID_ATTR}</LdapUidAttribute>
   <LdapUsernameAttribute>${JELLYFIN_LDAP_UID_ATTR}</LdapUsernameAttribute>
-  <LdapPasswordAttribute>userPassword</LdapPasswordAttribute>
+  <LdapPasswordAttribute>${JELLYFIN_LDAP_PASSWORD_ATTR}</LdapPasswordAttribute>
+  <EnableLdapProfileImageSync>true</EnableLdapProfileImageSync>
+  <LdapProfileImageAttribute>${JELLYFIN_LDAP_PHOTO_ATTR}</LdapProfileImageAttribute>
   <EnableAllFolders>true</EnableAllFolders>
 </PluginConfiguration>
 XML
@@ -192,20 +197,20 @@ if [ -n "${TOKEN:-}" ] && [ "${JELLYFIN_SSO_ENABLED}" = "true" ]; then
       "OidClientId": "${JELLYFIN_OIDC_CLIENT_ID}",
       "OidSecret": "${JELLYFIN_OIDC_CLIENT_SECRET}",
       "Enabled": true,
-      "EnableAuthorization": false,
+      "EnableAuthorization": true,
       "EnableAllFolders": true,
       "EnabledFolders": [],
       "Roles": [],
-      "AdminRoles": [],
+      "AdminRoles": ["${JELLYFIN_OIDC_ADMIN_ROLE}"],
       "EnableFolderRoles": false,
       "EnableLiveTv": false,
       "EnableLiveTvManagement": false,
       "LiveTvRoles": [],
       "LiveTvManagementRoles": [],
       "FolderRoleMapping": [],
-      "RoleClaim": "realm_access.roles",
+      "RoleClaim": "${JELLYFIN_OIDC_ROLE_CLAIM}",
       "OidScopes": ["openid", "profile", "email"],
-      "DefaultUsernameClaim": "preferred_username",
+      "DefaultUsernameClaim": "${JELLYFIN_OIDC_USERNAME_CLAIM}",
       "DisablePushedAuthorization": true,
       "DisableHttps": ${JELLYFIN_OIDC_DISABLE_HTTPS},
       "SchemeOverride": "${JELLYFIN_WEB_PROTOCOL}"

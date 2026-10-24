@@ -31,6 +31,7 @@ test("baseline: Penpot responds on the canonical domain with TLS", async ({ page
 require("./test-login-native").register(shared);
 require("./test-login-oidc-admin").register(shared);
 require("./test-login-oidc-biber").register(shared);
+require("./test-profile-oidc").register(shared);
 require("./test-login-ldap-admin").register(shared);
 require("./test-login-ldap-biber").register(shared);
 require("./test-seaweedfs");

@@ -1,0 +1,23 @@
+---
+- name: "👥 Start the RBAC plan of {{ application_id }}"
+  ansible.builtin.set_fact:
+    matomo_rbac_plan:
+      protected: "{{ MATOMO_RBAC_PROTECTED_LOGINS }}"
+
+- name: "👥 Collect the members of every {{ application_id }} role"
+  ansible.builtin.include_tasks: utils/collect_members.yml
+  loop: "{{ MATOMO_RBAC_ROLES }}"
+  loop_control:
+    loop_var: matomo_rbac_role
+
+- name: "👥 Converge the accounts of {{ application_id }} on its RBAC roles"
+  ansible.builtin.shell:
+    cmd: >- # nocheck: container-exec-resolver  MATOMO_LOCAL_CID resolved at delegate_to runtime; container_address would return a manager-only subshell
+      container exec -i --user www-data -e MATOMO_RBAC_PLAN
+      {{ MATOMO_LOCAL_CID | quote }} php
+    stdin: "{{ lookup('file', 'php/rbac_reconcile.php') }}"
+  environment:
+    MATOMO_RBAC_PLAN: "{{ matomo_rbac_plan | to_json }}"
+  register: matomo_rbac_reconcile
+  changed_when: "'CHANGED' in matomo_rbac_reconcile.stdout"
+  delegate_to: "{{ MATOMO_HOST_NODE }}"

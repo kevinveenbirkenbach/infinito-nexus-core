@@ -1,10 +1,10 @@
 ---
 # nocheck: seaweedfs-required — object storage not implemented for this role
-# nocheck: dynamic-flag
-# nocheck: sso
 sso:
-  enabled: false
-  shared: false
+  bond: 1
+  enabled: "{{ 'web-app-keycloak' in group_names }}"
+  shared: "{{ 'web-app-keycloak' in group_names }}"
+  flavor: oidc
 # nocheck: dynamic-flag
 logout:
   bond: 1

@@ -2,7 +2,7 @@ const { resolveTimeout } = require("./timeouts");
 // LDAP-bind login against OpenLDAP — non-admin RBAC user `biber`. Gated on the
 // `ldap` service.
 exports.register = (shared) => {
-  const { test, expect, skipUnlessServiceEnabled, env, penpotLdapLogin } = shared;
+  const { test, expect, skipUnlessServiceEnabled, env, penpotLdapLogin, penpotProfile } = shared;
 
   test("LDAP: biber non-admin RBAC user binds against OpenLDAP", async ({ page }) => {
     skipUnlessServiceEnabled("ldap");
@@ -10,5 +10,7 @@ exports.register = (shared) => {
     expect(env.biberEmail).toBeTruthy();
     expect(env.biberPassword).toBeTruthy();
     await penpotLdapLogin(page, env.biberEmail, env.biberPassword);
+    const profile = await penpotProfile(page);
+    expect(profile.email, "the user query must resolve biber's directory entry by its e-mail attribute").toBe(env.biberEmail.toLowerCase());
   });
 };

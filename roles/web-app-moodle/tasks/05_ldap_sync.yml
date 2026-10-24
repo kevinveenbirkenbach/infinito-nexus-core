@@ -19,9 +19,9 @@
     - { name: "user_type", value: "rfc2307" }
     - { name: "contexts", value: "{{ LDAP.DN.OU.USERS }}" }
     - { name: "search_sub", value: 1 }
-    - { name: "user_attribute", value: "uid" }
-    - { name: "objectclass", value: "(objectClass=inetOrgPerson)" }
-    - { name: "memberattribute", value: "memberOf" }
+    - { name: "user_attribute", value: "{{ LDAP.USER.ATTRIBUTES.ID }}" }
+    - { name: "objectclass", value: "{{ LDAP.FILTERS.USERS.ALL }}" }
+    - { name: "memberattribute", value: "{{ MOODLE_LDAP_GROUP_MEMBER_ATTRIBUTE }}" }
     - { name: "memberattribute_isdn", value: 1 }
     - { name: "bind_dn", value: "{{ LDAP.DN.ADMINISTRATOR.DATA }}" }
     - { name: "bind_pw", value: "{{ LDAP.BIND_CREDENTIAL }}" }
@@ -29,63 +29,63 @@
     - { name: "auth_user_create", value: "{{ MOODLE_OIDC_ENABLED | bool | ternary(0, 1) }}" }
     - { name: "removeuser", value: 1 } # 1 = suspend (preserve history); 2 = delete
     - { name: "sync_suspended", value: 1 }
-    - { name: "field_map_firstname", value: "givenName" }
+    - { name: "field_map_firstname", value: "{{ LDAP.USER.ATTRIBUTES.FIRSTNAME }}" }
     - { name: "field_lock_firstname", value: "locked" }
-    - { name: "field_updatelocal_firstname", value: "oncreate" }
-    - { name: "field_map_lastname", value: "sn" }
+    - { name: "field_updatelocal_firstname", value: "onlogin" }
+    - { name: "field_map_lastname", value: "{{ LDAP.USER.ATTRIBUTES.SURNAME }}" }
     - { name: "field_lock_lastname", value: "locked" }
-    - { name: "field_updatelocal_lastname", value: "oncreate" }
-    - { name: "field_map_middlename", value: "initials" }
+    - { name: "field_updatelocal_lastname", value: "onlogin" }
+    - { name: "field_map_middlename", value: "{{ LDAP.USER.ATTRIBUTES.INITIALS }}" }
     - { name: "field_lock_middlename", value: "locked" }
-    - { name: "field_updatelocal_middlename", value: "oncreate" }
-    - { name: "field_map_alternatename", value: "displayName" }
+    - { name: "field_updatelocal_middlename", value: "onlogin" }
+    - { name: "field_map_alternatename", value: "{{ LDAP.USER.ATTRIBUTES.DISPLAY_NAME }}" }
     - { name: "field_lock_alternatename", value: "locked" }
-    - { name: "field_updatelocal_alternatename", value: "oncreate" }
-    - { name: "field_map_email", value: "mail" }
+    - { name: "field_updatelocal_alternatename", value: "onlogin" }
+    - { name: "field_map_email", value: "{{ LDAP.USER.ATTRIBUTES.MAIL }}" }
     - { name: "field_lock_email", value: "locked" }
-    - { name: "field_updatelocal_email", value: "oncreate" }
-    - { name: "field_map_phone1", value: "telephoneNumber" }
+    - { name: "field_updatelocal_email", value: "onlogin" }
+    - { name: "field_map_phone1", value: "{{ LDAP.USER.ATTRIBUTES.PHONE }}" }
     - { name: "field_lock_phone1", value: "locked" }
-    - { name: "field_updatelocal_phone1", value: "oncreate" }
-    - { name: "field_map_phone2", value: "mobile" }
+    - { name: "field_updatelocal_phone1", value: "onlogin" }
+    - { name: "field_map_phone2", value: "{{ LDAP.USER.ATTRIBUTES.MOBILE }}" }
     - { name: "field_lock_phone2", value: "locked" }
-    - { name: "field_updatelocal_phone2", value: "oncreate" }
-    - { name: "field_map_address", value: "street" }
+    - { name: "field_updatelocal_phone2", value: "onlogin" }
+    - { name: "field_map_address", value: "{{ LDAP.USER.ATTRIBUTES.STREET }}" }
     - { name: "field_lock_address", value: "locked" }
-    - { name: "field_updatelocal_address", value: "oncreate" }
-    - { name: "field_map_city", value: "l" }
+    - { name: "field_updatelocal_address", value: "onlogin" }
+    - { name: "field_map_city", value: "{{ LDAP.USER.ATTRIBUTES.LOCALITY }}" }
     - { name: "field_lock_city", value: "locked" }
-    - { name: "field_updatelocal_city", value: "oncreate" }
-    - { name: "field_map_country", value: "c" }
+    - { name: "field_updatelocal_city", value: "onlogin" }
+    - { name: "field_map_country", value: "{{ LDAP.USER.ATTRIBUTES.COUNTRY }}" }
     - { name: "field_lock_country", value: "locked" }
-    - { name: "field_updatelocal_country", value: "oncreate" }
-    - { name: "field_map_institution", value: "o" }
+    - { name: "field_updatelocal_country", value: "onlogin" }
+    - { name: "field_map_institution", value: "{{ LDAP.USER.ATTRIBUTES.ORGANIZATION }}" }
     - { name: "field_lock_institution", value: "locked" }
-    - { name: "field_updatelocal_institution", value: "oncreate" }
-    - { name: "field_map_department", value: "ou" }
+    - { name: "field_updatelocal_institution", value: "onlogin" }
+    - { name: "field_map_department", value: "{{ LDAP.USER.ATTRIBUTES.DEPARTMENT }}" }
     - { name: "field_lock_department", value: "locked" }
-    - { name: "field_updatelocal_department", value: "oncreate" }
-    - { name: "field_map_description", value: "description" }
+    - { name: "field_updatelocal_department", value: "onlogin" }
+    - { name: "field_map_description", value: "{{ LDAP.USER.ATTRIBUTES.DESCRIPTION }}" }
     - { name: "field_lock_description", value: "locked" }
-    - { name: "field_updatelocal_description", value: "oncreate" }
-    - { name: "field_map_idnumber", value: "employeeNumber" }
+    - { name: "field_updatelocal_description", value: "onlogin" }
+    - { name: "field_map_idnumber", value: "{{ LDAP.USER.ATTRIBUTES.EMPLOYEE_NUMBER }}" }
     - { name: "field_lock_idnumber", value: "locked" }
-    - { name: "field_updatelocal_idnumber", value: "oncreate" }
-    - { name: "field_map_url", value: "labeledURI" }
+    - { name: "field_updatelocal_idnumber", value: "onlogin" }
+    - { name: "field_map_url", value: "{{ LDAP.USER.ATTRIBUTES.WEBSITE }}" }
     - { name: "field_lock_url", value: "locked" }
-    - { name: "field_updatelocal_url", value: "oncreate" }
-    - { name: "field_map_lang", value: "preferredLanguage" }
+    - { name: "field_updatelocal_url", value: "onlogin" }
+    - { name: "field_map_lang", value: "{{ LDAP.USER.ATTRIBUTES.LOCALE }}" }
     - { name: "field_lock_lang", value: "locked" }
-    - { name: "field_updatelocal_lang", value: "oncreate" }
-    - { name: "field_map_firstnamephonetic", value: "infinitoNamePhoneticGiven" }
+    - { name: "field_updatelocal_lang", value: "onlogin" }
+    - { name: "field_map_firstnamephonetic", value: "{{ LDAP.USER.ATTRIBUTES.PHONETIC_GIVEN }}" }
     - { name: "field_lock_firstnamephonetic", value: "locked" }
-    - { name: "field_updatelocal_firstnamephonetic", value: "oncreate" }
-    - { name: "field_map_lastnamephonetic", value: "infinitoNamePhoneticFamily" }
+    - { name: "field_updatelocal_firstnamephonetic", value: "onlogin" }
+    - { name: "field_map_lastnamephonetic", value: "{{ LDAP.USER.ATTRIBUTES.PHONETIC_FAMILY }}" }
     - { name: "field_lock_lastnamephonetic", value: "locked" }
-    - { name: "field_updatelocal_lastnamephonetic", value: "oncreate" }
-    - { name: "field_map_timezone", value: "infinitoTimezone" }
+    - { name: "field_updatelocal_lastnamephonetic", value: "onlogin" }
+    - { name: "field_map_timezone", value: "{{ LDAP.USER.ATTRIBUTES.TIMEZONE }}" }
     - { name: "field_lock_timezone", value: "locked" }
-    - { name: "field_updatelocal_timezone", value: "oncreate" }
+    - { name: "field_updatelocal_timezone", value: "onlogin" }
   loop_control:
     label: "{{ item.name }}"
   shell: >
@@ -93,6 +93,17 @@
     php {{ MOODLE_CLI_DIR }}/cfg.php --component=auth_ldap
     --name={{ item.name }} --set="{{ item.value }}"
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+  changed_when: false
+
+- name: "👥 Map the RBAC role groups onto Moodle's system roles"
+  loop: "{{ MOODLE_LDAP_ROLE_GROUP_DNS | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  shell: >
+    container exec --user {{ MOODLE_RUNTIME_USER }} {{ MOODLE_CONTAINER_ADDRESS }}
+    php {{ MOODLE_CLI_DIR }}/cfg.php --component=auth_ldap
+    --name={{ (item.key ~ 'context') | quote }}
+    --set={{ item.value | quote }}
   changed_when: false
 
 - name: "🟢 Enable auth_ldap plugin"

@@ -1,0 +1,48 @@
+---
+- name: "👥 Resolve the members of the {{ application_id }} administrator role"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 Keep the administrator members apart from the next lookup"
+  ansible.builtin.set_fact:
+    moodle_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 Resolve the members of the {{ application_id }} manager role"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: manager
+
+- name: "👥 Keep the manager members apart from the next lookup"
+  ansible.builtin.set_fact:
+    moodle_rbac_managers: "{{ rbac_members }}"
+
+- name: "👥 Resolve the members of the {{ application_id }} coursecreator role"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: coursecreator
+
+- name: "🛂 Converge the system roles and site administrators of {{ application_id }}"
+  ansible.builtin.shell: >
+    container exec -i --user {{ MOODLE_RUNTIME_USER }}
+    -e MOODLE_CONFIG={{ MOODLE_CONFIG | quote }}
+    -e MOODLE_RBAC_ACCOUNT_AUTH
+    -e MOODLE_RBAC_BOOTSTRAP
+    -e MOODLE_RBAC_PROTECTED
+    -e MOODLE_RBAC_SITEADMINS
+    -e MOODLE_RBAC_ROLE_MEMBERS
+    {{ MOODLE_CONTAINER_ADDRESS }} php
+  args:
+    stdin: "{{ lookup('file', 'php/provision/rbac.php') }}"
+  environment:
+    MOODLE_RBAC_ACCOUNT_AUTH: "{{ MOODLE_RBAC_ACCOUNT_AUTH }}"
+    MOODLE_RBAC_BOOTSTRAP: "{{ MOODLE_ADMIN_USERNAME }}"
+    MOODLE_RBAC_PROTECTED: "{{ MOODLE_RBAC_PROTECTED_USERNAMES | to_json }}"
+    MOODLE_RBAC_SITEADMINS: "{{ moodle_rbac_administrators | to_json }}"
+    MOODLE_RBAC_ROLE_MEMBERS: "{{ {'manager': moodle_rbac_managers, 'coursecreator': rbac_members} | to_json }}"
+  register: moodle_rbac_reconcile
+  changed_when: moodle_rbac_reconcile.stdout is search('\[CHANGED\]')
+  failed_when: moodle_rbac_reconcile.rc != 0 or moodle_rbac_reconcile.stderr is search('\[FAIL\]')

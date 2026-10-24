@@ -20,6 +20,9 @@ const adminUsername = decodeDotenvQuotedValue(process.env.ADMIN_USERNAME);
 const adminPassword = decodeDotenvQuotedValue(process.env.ADMIN_PASSWORD);
 const biberUsername = decodeDotenvQuotedValue(process.env.BIBER_USERNAME);
 const biberPassword = decodeDotenvQuotedValue(process.env.BIBER_PASSWORD);
+const rbacAdminUsername = decodeDotenvQuotedValue(process.env.RBAC_ADMIN_USERNAME);
+const rbacAdminPassword = decodeDotenvQuotedValue(process.env.RBAC_ADMIN_PASSWORD);
+const matomoOidcPlugin = decodeDotenvQuotedValue(process.env.MATOMO_OIDC_PLUGIN);
 const canonicalDomain = decodeDotenvQuotedValue(process.env.CANONICAL_DOMAIN);
 const domainPrimary = decodeDotenvQuotedValue(process.env.DOMAIN_PRIMARY);
 const matomoApiToken = decodeDotenvQuotedValue(process.env.MATOMO_API_TOKEN);
@@ -128,6 +131,35 @@ async function loginAsAdmin(page) {
     .not.toContain("module=Login");
 }
 
+const LOGIN_FIELD = "input#login_form_login, input[name='form_login']";
+
+async function expectLoginForm(page, message) {
+  await expect(page.locator(LOGIN_FIELD).first(), message).toBeVisible({ timeout: resolveTimeout(60_000) });
+}
+
+async function startOidcLogin(page) {
+  expect(matomoOidcPlugin, "MATOMO_OIDC_PLUGIN must be set in the Playwright env file").toBeTruthy();
+  await gotoOnion(page, `${appBaseUrl}/`);
+  const button = page.locator(`form[action*='module=${matomoOidcPlugin}'] button[type='submit']`).first();
+  await expect(button, `Expected the ${matomoOidcPlugin} sign-in button on the Matomo login page`).toBeVisible({
+    timeout: resolveTimeout(60_000),
+  });
+  await Promise.all([
+    page.waitForURL(/\/protocol\/openid-connect\/auth/, { timeout: resolveTimeout(60_000) }),
+    button.click(),
+  ]);
+}
+
+async function matomoApi(request, method, params) {
+  const response = await request.post(`${appBaseUrl}/index.php`, {
+    form: { module: "API", method, format: "JSON", token_auth: matomoApiToken, ...params },
+    ignoreHTTPSErrors: true,
+    timeout: resolveTimeout(30_000),
+  });
+  expect(response.status(), `Matomo ${method} MUST respond < 400 (got ${response.status()})`).toBeLessThan(400);
+  return response.json();
+}
+
 module.exports = {
   appBaseUrl,
   oidcIssuerUrl,
@@ -135,6 +167,9 @@ module.exports = {
   adminPassword,
   biberUsername,
   biberPassword,
+  rbacAdminUsername,
+  rbacAdminPassword,
+  matomoOidcPlugin,
   canonicalDomain,
   matomoApiToken,
   matomoTrackingScope,
@@ -145,4 +180,7 @@ module.exports = {
   siteNeedleFor,
   setupMatomoPage,
   loginAsAdmin,
+  expectLoginForm,
+  startOidcLogin,
+  matomoApi,
 };

@@ -105,3 +105,13 @@
 
 - name: "🎨 Apply the corporate design of {{ application_id }}"
   include_tasks: 09_design.yml
+
+- name: "🔐 Wire the Keycloak login of {{ application_id }}"
+  include_tasks:
+    file: addons/rebeloidc.yml
+    apply:
+      delegate_to: "{{ MATOMO_HOST_NODE }}"
+
+- name: "👥 Converge the accounts of {{ application_id }} on its RBAC roles"
+  include_tasks: 10_rbac.yml
+  when: MATOMO_OIDC_ENABLED | bool

@@ -48,6 +48,9 @@ LMSTUDIO_ONLY = {"alias": "mistral:latest", "name": "mistral-7b-instruct-v0.3"}
 OLLAMA_URL = "http://ollama:11434"
 LMSTUDIO_URL = "http://lmstudio:1234"
 
+UI_SSO_GROUP = "/roles/web-app-litellm/administrator"
+UI_SSO_CLAIM = "groups"
+
 
 def _ansible_bool(value):
     if isinstance(value, str):
@@ -75,6 +78,7 @@ def render(
     router_alias="",
     measured_speed=None,
     logo_url="",
+    ui_sso=False,
 ):
     """The rendered config as a parsed mapping.
 
@@ -88,6 +92,7 @@ def render(
         measured_speed: alias -> tokens per second from the last deploy's
             measurement; empty means nothing has been measured yet.
         logo_url: LITELLM_UI_LOGO_URL; empty while the admin UI shows no corporate logo.
+        ui_sso: LITELLM_UI_SSO; whether the admin UI signs in through Keycloak.
     """
     env = Environment(
         undefined=StrictUndefined,
@@ -111,6 +116,9 @@ def render(
         LITELLM_ROUTER_ALIAS=router_alias,
         LITELLM_MEASURED_SPEED=measured_speed or {},
         LITELLM_UI_LOGO_URL=logo_url,
+        LITELLM_UI_SSO=str(ui_sso),
+        LITELLM_UI_SSO_GROUP=UI_SSO_GROUP,
+        RBAC={"GROUP": {"CLAIM": UI_SSO_CLAIM}},
     )
     return yaml.safe_load(
         rendered
@@ -195,6 +203,21 @@ class TestUiTheme(unittest.TestCase):
 
     def test_without_a_logo_url_the_ui_theme_config_is_absent(self) -> None:
         self.assertNotIn("ui_theme_config", render()["litellm_settings"])
+
+
+class TestUiAccessMode(unittest.TestCase):
+    def test_sso_admits_only_the_administrator_group(self) -> None:
+        self.assertEqual(
+            render(ui_sso=True)["general_settings"]["ui_access_mode"],
+            {
+                "type": "restricted_sso_group",
+                "restricted_sso_group": UI_SSO_GROUP,
+                "sso_group_jwt_field": UI_SSO_CLAIM,
+            },
+        )
+
+    def test_without_sso_the_ui_access_mode_is_absent(self) -> None:
+        self.assertNotIn("ui_access_mode", render()["general_settings"])
 
 
 class TestNoBackend(unittest.TestCase):

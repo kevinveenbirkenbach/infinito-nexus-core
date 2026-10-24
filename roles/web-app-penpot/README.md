@@ -35,6 +35,7 @@ handoff features.
 - Shared asset libraries and components, version history.
 - Export (SVG, PDF, images) and developer handoff (CSS/code) via the exporter.
 - Real-time collaboration over WebSockets through the proxy.
+- **Identity attributes:** the OIDC e-mail and name claims and the LDAP username, e-mail, full name and user query come from the platform `OIDC.ATTRIBUTES` and `LDAP.USER.ATTRIBUTES`; every realm user may sign in.
 
 ## Identity
 

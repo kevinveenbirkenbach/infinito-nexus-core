@@ -8,6 +8,7 @@ const zlib = require("zlib");
 const { test, expect } = require("@playwright/test");
 const { skipUnlessServiceEnabled, isServiceEnabled } = require("./service-gating");
 const {
+  apiFetchOnion,
   decodeDotenvQuotedValue,
   normalizeBaseUrl,
   performKeycloakLoginForm,
@@ -81,6 +82,10 @@ const env = {
   biberUsername: decodeDotenvQuotedValue(process.env.BIBER_USERNAME),
   biberPassword: decodeDotenvQuotedValue(process.env.BIBER_PASSWORD),
   biberEmail: decodeDotenvQuotedValue(process.env.BIBER_EMAIL),
+  keycloakBaseUrl: normalizeBaseUrl(process.env.KEYCLOAK_BASE_URL || ""),
+  keycloakRealm: decodeDotenvQuotedValue(process.env.KEYCLOAK_REALM_NAME),
+  keycloakAdminUsername: decodeDotenvQuotedValue(process.env.KEYCLOAK_ADMIN_USERNAME),
+  keycloakAdminPassword: decodeDotenvQuotedValue(process.env.KEYCLOAK_ADMIN_PASSWORD),
 };
 
 const loginRoute = (base) => `${base.replace(/\/$/, "")}/#/auth/login`;
@@ -100,7 +105,7 @@ async function assertAuthenticated(page) {
 
 // In-app OIDC (flavor: oidc): the login page renders an "OpenID" provider entry
 // (clickable text, not a role=button) that redirects to Keycloak.
-async function penpotOidcLogin(page, username, password) {
+async function penpotOidcAuthenticate(page, username, password) {
   const expectedAuth = `${env.oidcIssuerUrl}/protocol/openid-connect/auth`;
   await gotoOnion(page, loginRoute(env.baseUrl));
   const oidcEntry = page.getByText("OpenID", { exact: true });
@@ -110,7 +115,37 @@ async function penpotOidcLogin(page, username, password) {
     .poll(() => page.url(), { timeout: resolveTimeout(60_000), message: `expected redirect to ${expectedAuth}` })
     .toContain(expectedAuth);
   await performKeycloakLoginForm(page, username, password);
+  await expect
+    .poll(() => page.url(), { timeout: resolveTimeout(60_000), message: "expected the OIDC callback to hand over to a Penpot route" })
+    .toContain("#/");
+}
+
+function onOidcRegistration(page) {
+  return page.url().includes("/auth/register/validate");
+}
+
+async function confirmOidcRegistration(page) {
+  const fullnameField = page.getByLabel(/full ?name/i).first();
+  await expect(fullnameField, "Expected the Penpot registration form a first OIDC login lands on").toBeVisible({ timeout: resolveTimeout(60_000) });
+  const fullname = await fullnameField.inputValue();
+  const submit = page.getByRole("button", { name: /create an account/i }).first();
+  await expect(submit, "Expected the registration submit button to enable once the full name is set").toBeEnabled({ timeout: resolveTimeout(30_000) });
+  await submit.click({ timeout: resolveTimeout(30_000) });
+  return fullname;
+}
+
+async function penpotOidcLogin(page, username, password) {
+  await penpotOidcAuthenticate(page, username, password);
+  if (onOidcRegistration(page)) {
+    await confirmOidcRegistration(page);
+  }
   await assertAuthenticated(page);
+}
+
+async function penpotProfile(page) {
+  const response = await apiFetchOnion(page.request, `${env.baseUrl}/api/rpc/command/get-profile?_fmt=json`, { method: "GET" });
+  expect(response.status(), "Expected get-profile to answer for the signed-in Penpot session").toBe(200);
+  return response.json();
 }
 
 // LDAP: a dedicated "LDAP" submit button (enabled once the form is filled)
@@ -183,7 +218,12 @@ module.exports = {
   runGuestFlow,
   env,
   loginRoute,
+  assertAuthenticated,
+  penpotOidcAuthenticate,
+  onOidcRegistration,
+  confirmOidcRegistration,
   penpotOidcLogin,
+  penpotProfile,
   penpotLdapLogin,
   penpotNativeLogin,
   penpotRegister,

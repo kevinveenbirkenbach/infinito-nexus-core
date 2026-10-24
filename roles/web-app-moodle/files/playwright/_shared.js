@@ -21,6 +21,8 @@ const env = {
   adminUsername: decodeDotenvQuotedValue(process.env.ADMIN_USERNAME),
   adminPassword: decodeDotenvQuotedValue(process.env.ADMIN_PASSWORD),
   adminNativePassword: decodeDotenvQuotedValue(process.env.ADMIN_NATIVE_PASSWORD || ""),
+  rbacAdminUsername: decodeDotenvQuotedValue(process.env.RBAC_ADMIN_USERNAME),
+  rbacAdminPassword: decodeDotenvQuotedValue(process.env.RBAC_ADMIN_PASSWORD),
   biberUsername: decodeDotenvQuotedValue(process.env.BIBER_USERNAME),
   biberPassword: decodeDotenvQuotedValue(process.env.BIBER_PASSWORD),
   ssoEnabled: isServiceEnabled("sso"),
@@ -80,6 +82,44 @@ async function loginAsSiteAdmin(page) {
   await expect(
     page.locator(USER_MENU).first(),
     "the site administrator must reach an authenticated session; a failure here means the auth chain the deploy configured does not admit the administrator account",
+  ).toBeVisible({ timeout: resolveTimeout(60_000) });
+}
+
+/**
+ * Open a session for a directory account through the login path the deploy configured.
+ *
+ * @param {import('@playwright/test').Page} page browser page to authenticate
+ * @param {string} username directory login of the account
+ * @param {string} password directory password of the account
+ */
+async function loginAsDirectoryUser(page, username, password) {
+  if (env.ssoEnabled) {
+    await gotoOnion(page, `${env.moodleBaseUrl}/auth/oidc/?source=loginpage`, {
+      waitUntil: "domcontentloaded",
+      timeout: resolveTimeout(60_000),
+    });
+    await performKeycloakLogin(page, username, password, readEnv("CANONICAL_DOMAIN"));
+  } else {
+    await gotoOnion(page, `${env.moodleBaseUrl}/login/index.php`, {
+      waitUntil: "domcontentloaded",
+      timeout: resolveTimeout(60_000),
+    });
+    await page.locator("input[name='username'], input#username").first().fill(username);
+    const passwordInput = page
+      .locator(".toggle-sensitive-wrapper input[name='password'], .toggle-sensitive-wrapper input#password, input[name='password']")
+      .first();
+    await expect(passwordInput).toBeAttached({ timeout: resolveTimeout(30_000) });
+    await expect(async () => {
+      await passwordInput.fill(password);
+      await expect(passwordInput).toHaveValue(password);
+    }).toPass({ timeout: resolveTimeout(30_000) });
+    await page.locator("#loginbtn, button[type='submit'], input[type='submit']").first().click();
+    await page.waitForLoadState("load");
+  }
+
+  await expect(
+    page.locator(USER_MENU).first(),
+    `${username} must reach an authenticated Moodle session through the ${env.ssoEnabled ? "OIDC" : "LDAP"} login`,
   ).toBeVisible({ timeout: resolveTimeout(60_000) });
 }
 
@@ -176,6 +216,7 @@ const setMiddleNameViaAccountRest = async ({
 module.exports = {
   env,
   beforeEach,
+  loginAsDirectoryUser,
   loginAsSiteAdmin,
   runAdminFlow,
   runGuestFlow,
