@@ -26,6 +26,8 @@ sso:
       port: 80
     allowed_groups:
       - "{{ lookup('rbac_group_path', application_id='web-app-baserow', role='administrator') }}"
+      - "{{ lookup('rbac_group_path', application_id='web-app-baserow', role='user') }}"
+    claim_headers: [NAME, LOCALE]
 # nocheck: shared
 # nocheck: dynamic-flag
 # nocheck: playwright-service-flag — DB engine, covered by role-local integration tests

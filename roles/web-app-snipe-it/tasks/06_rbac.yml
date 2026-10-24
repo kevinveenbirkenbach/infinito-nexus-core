@@ -1,0 +1,45 @@
+---
+- name: "👥 snipe-it: resolve the administrator members"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/members.yml') }}"
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 snipe-it: keep the administrator members"
+  ansible.builtin.set_fact:
+    snipe_it_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 snipe-it: resolve the user members"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/members.yml') }}"
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: user
+
+- name: "🔄 snipe-it: import the directory members with their profile fields"
+  ansible.builtin.shell:
+    cmd: "container exec -i -e APP_KEY {{ SNIPE_IT_CONTAINER_ADDRESS }} php artisan snipeit:ldap-sync --summary"
+  environment:
+    APP_KEY: "{{ SNIPE_IT_APP_KEY }}"
+  changed_when: true
+  when: SNIPE_IT_LDAP_ENABLED | bool
+
+- name: "🛂 snipe-it: converge every account to the role groups"
+  ansible.builtin.shell:
+    cmd: >-
+      container exec -i
+      -e SNIPE_IT_RBAC_ADMINISTRATORS
+      -e SNIPE_IT_RBAC_USERS
+      -e SNIPE_IT_RBAC_PROTECTED
+      -e SNIPE_IT_RBAC_USER_GROUP
+      -e SNIPE_IT_RBAC_USER_PERMISSIONS
+      {{ SNIPE_IT_CONTAINER_ADDRESS }} php
+    stdin: "{{ lookup('file', 'php/apply/rbac_sync.php') }}"
+  environment:
+    SNIPE_IT_RBAC_ADMINISTRATORS: "{{ snipe_it_rbac_administrators | to_json }}"
+    SNIPE_IT_RBAC_USERS: "{{ rbac_members | to_json }}"
+    SNIPE_IT_RBAC_PROTECTED: "{{ SNIPE_IT_RBAC_PROTECTED_USERNAMES | to_json }}"
+    SNIPE_IT_RBAC_USER_GROUP: "{{ SNIPE_IT_RBAC_USER_GROUP }}"
+    SNIPE_IT_RBAC_USER_PERMISSIONS: "{{ SNIPE_IT_RBAC_USER_PERMISSIONS | to_json }}"
+  register: snipe_it_rbac_sync
+  changed_when: snipe_it_rbac_sync.stdout is search('\[CHANGED\]')
+  failed_when: snipe_it_rbac_sync.rc != 0 or snipe_it_rbac_sync.stderr is search('\[FAIL\]')

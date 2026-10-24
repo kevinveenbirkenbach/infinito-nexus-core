@@ -145,6 +145,7 @@
       container exec -i \
         -e ZAMMAD_FQDN -e ZAMMAD_HTTP_TYPE \
         -e OIDC_BUTTON_TEXT -e OIDC_CLIENT_ID -e OIDC_CLIENT_SECRET -e OIDC_ISSUER_URL \
+        -e OIDC_SCOPE -e OIDC_UID_FIELD \
         {{ ZAMMAD_RAILS_CONTAINER_ADDRESS }} \
         bundle exec rails r -
     stdin: "{{ lookup('file', 'ruby/apply/oidc_settings.rb') }}"
@@ -155,17 +156,22 @@
     OIDC_CLIENT_ID: "{{ OIDC.CLIENT.ID }}"
     OIDC_CLIENT_SECRET: "{{ OIDC.CLIENT.SECRET }}"
     OIDC_ISSUER_URL: "{{ OIDC.CLIENT.ISSUER_URL }}"
+    OIDC_SCOPE: "{{ ZAMMAD_OIDC_SCOPE }}"
+    OIDC_UID_FIELD: "{{ OIDC.ATTRIBUTES.USERNAME }}"
   register: zammad_oidc_apply
   changed_when: false
   when: ZAMMAD_OIDC_ENABLED
 
 - name: "🔧 configure Zammad LdapSource vs svc-db-openldap (post-bootstrap; idempotent)"
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
   ansible.builtin.shell:
     cmd: |
       set -euo pipefail
       container exec -i \
         -e LDAP_NAME -e LDAP_HOST -e LDAP_PORT -e LDAP_BASE_DN \
         -e LDAP_BIND_DN -e LDAP_BIND_PW -e LDAP_UID_ATTR \
+        -e LDAP_USER_FILTER -e LDAP_USER_ATTRIBUTES \
+        -e LDAP_GROUP_FILTER -e LDAP_GROUP_ROLE_MAP \
         {{ ZAMMAD_RAILS_CONTAINER_ADDRESS }} \
         bundle exec rails r -
     stdin: "{{ lookup('file', 'ruby/apply/ldap_source.rb') }}"
@@ -173,10 +179,14 @@
     LDAP_NAME: "{{ ORGANIZATION }} svc-db-openldap"
     LDAP_HOST: "{{ LDAP.SERVER.DOMAIN }}"
     LDAP_PORT: "{{ LDAP.SERVER.PORT }}"
-    LDAP_BASE_DN: "{{ LDAP.DN.OU.USERS }}"
+    LDAP_BASE_DN: "{{ LDAP.DN.ROOT }}"
     LDAP_BIND_DN: "{{ LDAP.DN.ADMINISTRATOR.DATA }}"
     LDAP_BIND_PW: "{{ LDAP.BIND_CREDENTIAL }}"
     LDAP_UID_ATTR: "{{ LDAP.USER.ATTRIBUTES.ID }}"
+    LDAP_USER_FILTER: "{{ LDAP.FILTERS.USERS.ALL }}"
+    LDAP_USER_ATTRIBUTES: "{{ ZAMMAD_LDAP_USER_ATTRIBUTES | to_json }}"
+    LDAP_GROUP_FILTER: "{{ ZAMMAD_LDAP_GROUP_FILTER }}"
+    LDAP_GROUP_ROLE_MAP: "{{ ZAMMAD_LDAP_GROUP_ROLE_MAP | to_json }}"
   register: zammad_ldap_apply
   changed_when: false
   when: ZAMMAD_LDAP_ENABLED

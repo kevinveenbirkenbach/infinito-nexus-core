@@ -30,8 +30,8 @@ sso:
       host: proxy
       port: "80"
     allowed_groups:
-      - "roles/web-app-kix/administrator"
-      - "roles/web-app-kix/user"
+      - "{{ lookup('rbac_group_path', application_id='web-app-kix', role='administrator') }}"
+      - "{{ lookup('rbac_group_path', application_id='web-app-kix', role='user') }}"
 design:
   bond: 1
   enabled: "{{ 'web-svc-design' in group_names }}"

@@ -55,9 +55,38 @@ SNIPE_IT_DESIGN_SETTINGS: >-
     | combine({'brand': 2, 'assets': ['logo', 'favicon']} if SNIPE_IT_DESIGN_BRANDING.logo is string else {'assets': []})
   }}
 
-SNIPE_IT_LDAP_FILTER_FRAGMENT: "&(objectClass=inetOrgPerson)"
+SNIPE_IT_BOOTSTRAP_ADMIN_USERNAME: "{{ lookup('users', 'platform_administrator').username }}"
+SNIPE_IT_LDAP_ADMINISTRATOR_GROUP_DN: "cn={{ application_id }}-administrator,{{ LDAP.DN.OU.ROLES }}"
+SNIPE_IT_LDAP_USER_GROUP_DN: "cn={{ application_id }}-user,{{ LDAP.DN.OU.ROLES }}"
+SNIPE_IT_LDAP_FILTER_FRAGMENT: >-
+  &(objectClass=inetOrgPerson)(|({{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}={{ SNIPE_IT_LDAP_ADMINISTRATOR_GROUP_DN }})({{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}={{ SNIPE_IT_LDAP_USER_GROUP_DN
+  }}))(!({{ LDAP.USER.ATTRIBUTES.ID }}={{ SNIPE_IT_BOOTSTRAP_ADMIN_USERNAME }}))
 SNIPE_IT_LDAP_AUTH_FILTER_QUERY: "{{ LDAP.USER.ATTRIBUTES.ID }}="
 SNIPE_IT_LDAP_USER_FIRSTNAME: "{{ LDAP.USER.ATTRIBUTES.FIRSTNAME | lower }}"
+SNIPE_IT_LDAP_FIELD_MAP:
+  ldap_display_name: "{{ LDAP.USER.ATTRIBUTES.DISPLAY_NAME | lower }}"
+  ldap_emp_num: "{{ LDAP.USER.ATTRIBUTES.EMPLOYEE_NUMBER | lower }}"
+  ldap_phone_field: "{{ LDAP.USER.ATTRIBUTES.PHONE | lower }}"
+  ldap_mobile: "{{ LDAP.USER.ATTRIBUTES.MOBILE | lower }}"
+  ldap_jobtitle: "{{ LDAP.USER.ATTRIBUTES.TITLE | lower }}"
+  ldap_dept: "{{ LDAP.USER.ATTRIBUTES.DEPARTMENT | lower }}"
+  ldap_address: "{{ LDAP.USER.ATTRIBUTES.STREET | lower }}"
+  ldap_city: "{{ LDAP.USER.ATTRIBUTES.LOCALITY | lower }}"
+  ldap_state: "{{ LDAP.USER.ATTRIBUTES.REGION | lower }}"
+  ldap_zip: "{{ LDAP.USER.ATTRIBUTES.POSTAL_CODE | lower }}"
+  ldap_country: "{{ LDAP.USER.ATTRIBUTES.COUNTRY | lower }}"
+
+SNIPE_IT_RBAC_USER_GROUP: "{{ application_id }}-user"
+SNIPE_IT_RBAC_USER_PERMISSIONS:
+  assets.view: "1"
+  licenses.view: "1"
+  accessories.view: "1"
+  consumables.view: "1"
+  components.view: "1"
+  self.two_factor: "1"
+SNIPE_IT_RBAC_PROTECTED_USERNAMES:
+  - "{{ SNIPE_IT_BOOTSTRAP_ADMIN_USERNAME }}"
+  - "{{ SNIPEIT_MCP_UPSTREAM_USER }}"
 SNIPEIT_MCP_ENABLED: "{{ lookup('config', application_id, 'services.snipeitmcp.enabled') | bool }}"
 SNIPEIT_MCP_SERVICE_KEY: "snipeitmcp"
 SNIPEIT_MCP_CONTAINER: "{{ lookup('config', application_id, 'services.snipeitmcp.name') }}"

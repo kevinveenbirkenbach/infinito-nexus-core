@@ -146,7 +146,7 @@ test("oidc-security: injected identity headers cannot re-identify an authenticat
   ).toBe(true);
 
   const tokenData = JSON.parse(body);
-  const resolvedIdentity = `${tokenData.user?.email || ""} ${tokenData.user?.username || ""}`.toLowerCase();
+  const resolvedIdentity = `${tokenData.user?.email || ""} ${tokenData.user?.username || ""} ${tokenData.user?.first_name || ""}`.toLowerCase();
   expect(
     resolvedIdentity,
     `the oauth2-proxy identity must win over injected headers (resolved: ${resolvedIdentity})`,

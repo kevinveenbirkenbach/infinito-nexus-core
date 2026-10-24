@@ -14,12 +14,17 @@ from . import PROJECT_ROOT
 MODULE_PATH = PROJECT_ROOT / "roles/web-app-baserow/files/sso/infinito_sso.py"
 DOMAIN = default_domain_primary()
 HOSTNAME = f"baserow.{DOMAIN}"
-SSO_ON = {"PROXY_HEADER_SSO": "true"}
+BOOTSTRAP_EMAIL = f"platformadmin@{DOMAIN}"
+SSO_ON = {
+    "PROXY_HEADER_SSO": "true",
+    "PROXY_HEADER_SSO_BOOTSTRAP_ADMIN_EMAIL": BOOTSTRAP_EMAIL,
+}
 IDENTITY = {
     "username": "alice",
     "email": f"alice@baserow.{DOMAIN}",
     "name": "Alice Smith",
     "is_admin": False,
+    "language": None,
 }
 
 
@@ -219,11 +224,12 @@ class TestFirstHeader(unittest.TestCase):
             "HTTP_X_AUTH_REQUEST_PREFERRED_USERNAME": "attacker",
             "HTTP_X_AUTH_REQUEST_EMAIL": "attacker@example.com",
             "HTTP_REMOTE_USER": "attacker",
-            "HTTP_X_FORWARDED_NAME": "attacker",
+            "HTTP_X_AUTH_REQUEST_NAME": "attacker",
         }
         self.assertIsNone(self.mod._first_header(meta, self.mod.USERNAME_HEADERS))
         self.assertIsNone(self.mod._first_header(meta, self.mod.EMAIL_HEADERS))
         self.assertIsNone(self.mod._first_header(meta, self.mod.NAME_HEADERS))
+        self.assertIsNone(self.mod._first_header(meta, self.mod.LOCALE_HEADERS))
 
 
 class TestFallbackDomain(unittest.TestCase):
@@ -305,6 +311,12 @@ class TestDisplayName(unittest.TestCase):
         self.assertEqual(
             self.mod._display_name("alice", "alice@example.com", "Alice Smith"),
             "Alice Smith",
+        )
+
+    def test_keeps_dots_in_a_forwarded_name(self):
+        self.assertEqual(
+            self.mod._display_name("alice", "alice@example.com", " Dr.  Alice_Smith "),
+            "Dr. Alice_Smith",
         )
 
     def test_turns_dots_and_underscores_into_spaces(self):
@@ -404,8 +416,29 @@ class TestIdentityFromRequest(unittest.TestCase):
                 "email": "alice@example.com",
                 "name": "alice smith",
                 "is_admin": False,
+                "language": None,
             },
         )
+
+    def test_reads_the_forwarded_name_and_a_supported_locale(self):
+        self.mod.settings.LANGUAGES = [("en", "English"), ("de", "Deutsch")]
+        identity = self._identity(
+            {
+                "HTTP_X_FORWARDED_PREFERRED_USERNAME": "biber",
+                "HTTP_X_FORWARDED_NAME": "Harry Beaver",
+                "HTTP_X_FORWARDED_LOCALE": "de-DE",
+            }
+        )
+        self.assertEqual(
+            (identity["name"], identity["language"]), ("Harry Beaver", "de")
+        )
+
+    def test_drops_an_unsupported_locale(self):
+        self.mod.settings.LANGUAGES = [("en", "English")]
+        identity = self._identity(
+            {"HTTP_X_FORWARDED_USER": "biber", "HTTP_X_FORWARDED_LOCALE": "xx"}
+        )
+        self.assertIsNone(identity["language"])
 
     def test_synthesises_the_email_when_only_a_username_is_forwarded(self):
         identity = self._identity({"HTTP_X_FORWARDED_USER": "alice"})
@@ -425,6 +458,9 @@ class TestIdentityFromRequest(unittest.TestCase):
 class TestGetOrCreateUser(unittest.TestCase):
     def setUp(self):
         self.mod = _load_module()
+        env = patch.dict(os.environ, SSO_ON, clear=True)
+        env.start()
+        self.addCleanup(env.stop)
 
     def test_creates_a_local_user_when_no_account_matches(self):
         _wire_orm(self.mod, existing=None)
@@ -487,12 +523,38 @@ class TestGetOrCreateUser(unittest.TestCase):
             update_fields=["is_staff", "is_superuser"]
         )
 
-    def test_never_demotes_an_existing_admin(self):
+    def test_demotes_an_existing_admin_outside_the_admin_group(self):
         existing = _fake_user(is_staff=True, is_superuser=True)
         _wire_orm(self.mod, existing=existing)
         self.mod._get_or_create_user(dict(IDENTITY))
+        self.assertFalse(existing.is_staff)
+        self.assertFalse(existing.is_superuser)
+        existing.save.assert_called_once_with(
+            update_fields=["is_staff", "is_superuser"]
+        )
+
+    def test_never_demotes_the_bootstrap_admin(self):
+        existing = _fake_user(
+            email=BOOTSTRAP_EMAIL.upper(), is_staff=True, is_superuser=True
+        )
+        _wire_orm(self.mod, existing=existing)
+        self.mod._get_or_create_user({**IDENTITY, "email": BOOTSTRAP_EMAIL})
         self.assertTrue(existing.is_staff)
         self.assertTrue(existing.is_superuser)
+        existing.save.assert_not_called()
+
+    def test_overwrites_a_stale_first_name_with_the_identity_name(self):
+        existing = _fake_user(first_name="Ally")
+        _wire_orm(self.mod, existing=existing)
+        self.mod._get_or_create_user(dict(IDENTITY))
+        self.assertEqual(existing.first_name, IDENTITY["name"])
+        existing.save.assert_called_once_with(update_fields=["first_name"])
+
+    def test_keeps_a_current_first_name_without_saving(self):
+        existing = _fake_user()
+        _wire_orm(self.mod, existing=existing)
+        self.mod._get_or_create_user(dict(IDENTITY))
+        existing.save.assert_not_called()
 
 
 class TestEnsureProfile(unittest.TestCase):
@@ -513,14 +575,28 @@ class TestEnsureProfile(unittest.TestCase):
     def test_creates_the_profile_with_the_configured_language(self):
         self._profile()
         user = _fake_user()
-        self.mod._ensure_profile(user)
+        self.mod._ensure_profile(user, None)
         self.mod.UserProfile.objects.get_or_create.assert_called_once_with(
             user=user, defaults={"language": "en"}
         )
 
+    def test_creates_the_profile_with_the_forwarded_language(self):
+        self._profile(language="de")
+        user = _fake_user()
+        self.mod._ensure_profile(user, "de")
+        self.mod.UserProfile.objects.get_or_create.assert_called_once_with(
+            user=user, defaults={"language": "de"}
+        )
+
+    def test_updates_the_language_of_an_existing_profile(self):
+        profile = self._profile(language="en")
+        self.mod._ensure_profile(_fake_user(), "de")
+        self.assertEqual(profile.language, "de")
+        profile.save.assert_called_once_with(update_fields=["language"])
+
     def test_leaves_a_complete_profile_untouched(self):
         profile = self._profile()
-        self.mod._ensure_profile(_fake_user())
+        self.mod._ensure_profile(_fake_user(), None)
         profile.save.assert_not_called()
 
     def test_repairs_an_unverified_and_unonboarded_profile(self):
@@ -529,7 +605,7 @@ class TestEnsureProfile(unittest.TestCase):
             completed_onboarding=False,
             completed_guided_tours=None,
         )
-        self.mod._ensure_profile(_fake_user())
+        self.mod._ensure_profile(_fake_user(), None)
         self.assertTrue(profile.email_verified)
         self.assertTrue(profile.completed_onboarding)
         self.assertEqual(profile.completed_guided_tours, [])

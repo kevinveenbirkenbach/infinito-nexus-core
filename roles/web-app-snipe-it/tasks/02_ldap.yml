@@ -27,12 +27,14 @@
       -e LDAP_USER_SURNAME_ATTR={{ LDAP.USER.ATTRIBUTES.SURNAME | quote }}
       -e LDAP_USER_MAIL_ATTR={{ LDAP.USER.ATTRIBUTES.MAIL | quote }}
       -e LDAP_AUTH_FILTER_QUERY={{ SNIPE_IT_LDAP_AUTH_FILTER_QUERY | quote }}
+      -e LDAP_FIELD_MAP
       -e OIDC_RESET_URL={{ OIDC.CLIENT.RESET_CREDENTIALS | quote }}
       {{ SNIPE_IT_CONTAINER_ADDRESS }} php
     stdin: "{{ lookup('file', 'php/apply/ldap_config.php') }}"
   environment:
     APP_KEY: "{{ SNIPE_IT_APP_KEY }}"
     LDAP_BIND_PASSWORD_B64: "{{ LDAP.BIND_CREDENTIAL | b64encode }}"
+    LDAP_FIELD_MAP: "{{ SNIPE_IT_LDAP_FIELD_MAP | to_json }}"
   changed_when: true
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
 

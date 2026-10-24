@@ -4,7 +4,6 @@ logout:
   bond: 1
   enabled: "{{ 'web-svc-logout' in group_names }}"
   shared: "{{ 'web-svc-logout' in group_names }}"
-# nocheck: playwright-service-flag — identity backend, no distinct Playwright surface (login covered by the persona flow)
 ldap:
   bond: 1
   enabled: "{{ 'svc-db-openldap' in group_names }}"
@@ -95,6 +94,9 @@ sso:
     acl:
       blacklist:
         - /login
+    allowed_groups:
+      - "{{ lookup('rbac_group_path', application_id='web-app-snipe-it', role='administrator') }}"
+      - "{{ lookup('rbac_group_path', application_id='web-app-snipe-it', role='user') }}"
 # nocheck: playwright-service-flag — design consumer, no Playwright surface (provider: web-svc-design)
 design:
   bond: 1

@@ -38,6 +38,10 @@ The purpose of this role is to reduce the complexity of setting up OpenProject w
 - **Role-Based Access Control & Security:**
   Manage user permissions precisely to ensure that sensitive information and critical functions remain secure.
 
+- **Restricted sign-in:** Only members of the `administrator` and `user` role groups pass the oauth2-proxy gate (`sso.oauth2.allowed_groups`) and the LDAP `filter_string` of the auth source.
+
+- **Administrator reconcile:** Every deploy grants OpenProject administrator rights to the members of the `administrator` role group, provisions those that have no account yet from LDAP, and revokes the rights from every other account except the platform administrator and the GitLab bot ([reconcile_admins.rb](./files/ruby/reconcile_admins.rb)).
+
 ## Addons
 
 OpenProject's cross-role integrations are declared in `meta/addons/`, one file per addon:
@@ -73,4 +77,4 @@ A compose deploy reads `schema_migrations` of an existing database before the pi
 
 ## Persona contract opt-outs
 
-The `administrator` persona is **not** blocked: [tasks/04_admin.yml](./tasks/04_admin.yml) seeds a native OpenProject account whose password is the Keycloak administrator secret, so the journey runs in every variant. The `biber` persona is blocked only in the `sso: false` variants — OpenProject is seeded with the administrator alone, and `biber` is auto-provisioned exclusively through the oauth2-proxy trusted-header bridge onto the LDAP auth source, which those variants remove. Both flags are declared explicitly in [templates/playwright.env.j2](./templates/playwright.env.j2).
+The `administrator` persona is **not** blocked: [tasks/04_admin.yml](./tasks/04_admin.yml) seeds a native OpenProject account whose password is the Keycloak administrator secret, so the journey runs in every variant. The `biber` persona is blocked in every variant: biber holds no OpenProject role, so the oauth2-proxy gate and the LDAP `filter_string` refuse it. [test-rbac-gate.js](./files/playwright/test-rbac-gate.js) asserts that refusal, then adds biber to the `user` role group and drives the sign-in through the trusted-header bridge. Both flags are declared explicitly in [templates/playwright.env.j2](./templates/playwright.env.j2).

@@ -13,7 +13,7 @@ Setting.set("auth_openid_connect_credentials", {
   "identifier"                   => ENV.fetch("OIDC_CLIENT_ID"),
   "secret"                       => ENV.fetch("OIDC_CLIENT_SECRET"),
   "issuer"                       => ENV.fetch("OIDC_ISSUER_URL"),
-  "scope"                        => "openid email profile",
-  "uid_field"                    => "preferred_username",
+  "scope"                        => ENV.fetch("OIDC_SCOPE"),
+  "uid_field"                    => ENV.fetch("OIDC_UID_FIELD"),
   "send_scope_to_token_endpoint" => true,
 })

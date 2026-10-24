@@ -1,0 +1,21 @@
+---
+- name: "👥 Resolve the members of the Taiga administrator role"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "🛂 Reconcile the Taiga superuser flag with the administrator role group"
+  ansible.builtin.shell: # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node
+    cmd: >
+      container exec -i
+      -e TAIGA_RBAC_ADMINISTRATORS -e TAIGA_RBAC_KEPT_SUPERUSERS
+      {{ TAIGA_MANAGER_LOCAL_CID | quote }}
+      python manage.py shell
+    stdin: "{{ lookup('file', 'python/reconcile_superusers.py') }}"
+  environment:
+    TAIGA_RBAC_ADMINISTRATORS: "{{ rbac_members | to_json }}"
+    TAIGA_RBAC_KEPT_SUPERUSERS: "{{ [TAIGA_SUPERUSER_NAME] | to_json }}"
+  register: taiga_rbac_reconcile
+  delegate_to: "{{ TAIGA_MANAGER_HOST_NODE }}"
+  changed_when: "'CHANGED=1' in taiga_rbac_reconcile.stdout"

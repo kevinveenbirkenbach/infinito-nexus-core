@@ -71,15 +71,48 @@ ZAMMAD_OIDC_GROUP_ROLE_MAP_HOST_PATH: "{{ ZAMMAD_VOLUMES_DIR }}zz_oidc_group_rol
 ZAMMAD_OIDC_HTTP_DISCOVERY_HOST_PATH: "{{ ZAMMAD_VOLUMES_DIR }}zz_oidc_http_discovery.rb"
 ZAMMAD_NETWORK_ORIGINS_HOST_PATH: "{{ ZAMMAD_VOLUMES_DIR }}zz_network_origins.rb"
 ZAMMAD_NETWORK_BASE_URLS: "{{ lookup('network_urls', lookup('tls', application_id, 'url.base')) }}"
-ZAMMAD_OIDC_ROLE_GRANTS:
+ZAMMAD_RBAC_ROLE_GRANTS:
   administrator: ["Admin", "Agent"]
   agent: ["Agent"]
   customer: ["Customer"]
 ZAMMAD_OIDC_GROUP_ROLE_MAP: >-
   {{ {
-       '/' ~ lookup('rbac_group_path', application_id=application_id, role='administrator'): ZAMMAD_OIDC_ROLE_GRANTS.administrator,
-       '/' ~ lookup('rbac_group_path', application_id=application_id, role='agent'): ZAMMAD_OIDC_ROLE_GRANTS.agent,
-       '/' ~ lookup('rbac_group_path', application_id=application_id, role='customer'): ZAMMAD_OIDC_ROLE_GRANTS.customer,
+       '/' ~ lookup('rbac_group_path', application_id=application_id, role='administrator'): ZAMMAD_RBAC_ROLE_GRANTS.administrator,
+       '/' ~ lookup('rbac_group_path', application_id=application_id, role='agent'): ZAMMAD_RBAC_ROLE_GRANTS.agent,
+       '/' ~ lookup('rbac_group_path', application_id=application_id, role='customer'): ZAMMAD_RBAC_ROLE_GRANTS.customer,
+     } }}
+ZAMMAD_OIDC_SCOPE: "openid email profile phone address"
+ZAMMAD_OIDC_PROFILE_CLAIMS:
+  firstname: "{{ OIDC.ATTRIBUTES.GIVEN_NAME }}"
+  lastname: "{{ OIDC.ATTRIBUTES.FAMILY_NAME }}"
+  email: "{{ OIDC.ATTRIBUTES.EMAIL }}"
+  phone: "{{ OIDC.ATTRIBUTES.PHONE_NUMBER }}"
+ZAMMAD_OIDC_ADDRESS_FIELDS:
+  street: "{{ OIDC.ADDRESS_CLAIMS.STREET }}"
+  zip: "{{ OIDC.ADDRESS_CLAIMS.POSTAL_CODE }}"
+  city: "{{ OIDC.ADDRESS_CLAIMS.LOCALITY }}"
+  country: "{{ OIDC.ADDRESS_CLAIMS.COUNTRY }}"
+ZAMMAD_LDAP_GROUP_ROLE_MAP: >-
+  {{ {
+       'cn=' ~ application_id ~ '-administrator,' ~ LDAP.DN.OU.ROLES: ZAMMAD_RBAC_ROLE_GRANTS.administrator,
+       'cn=' ~ application_id ~ '-agent,' ~ LDAP.DN.OU.ROLES: ZAMMAD_RBAC_ROLE_GRANTS.agent,
+       'cn=' ~ application_id ~ '-customer,' ~ LDAP.DN.OU.ROLES: ZAMMAD_RBAC_ROLE_GRANTS.customer,
+     } }}
+ZAMMAD_LDAP_GROUP_FILTER: "(|{% for flavor in LDAP.RBAC.FLAVORS %}(objectClass={{ flavor }}){% endfor %})"
+ZAMMAD_LDAP_USER_ATTRIBUTES: >-
+  {{ {
+       LDAP.USER.ATTRIBUTES.ID: 'login',
+       LDAP.USER.ATTRIBUTES.FIRSTNAME: 'firstname',
+       LDAP.USER.ATTRIBUTES.SURNAME: 'lastname',
+       LDAP.USER.ATTRIBUTES.MAIL: 'email',
+       LDAP.USER.ATTRIBUTES.PHONE: 'phone',
+       LDAP.USER.ATTRIBUTES.MOBILE: 'mobile',
+       LDAP.USER.ATTRIBUTES.DEPARTMENT: 'department',
+       LDAP.USER.ATTRIBUTES.STREET: 'street',
+       LDAP.USER.ATTRIBUTES.POSTAL_CODE: 'zip',
+       LDAP.USER.ATTRIBUTES.LOCALITY: 'city',
+       LDAP.USER.ATTRIBUTES.COUNTRY: 'country',
+       LDAP.USER.ATTRIBUTES.DESCRIPTION: 'note',
      } }}
 
 ZAMMAD_OIDC_ENABLED: "{{ lookup('config', application_id, 'services.sso.enabled')  | bool }}"

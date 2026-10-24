@@ -8,6 +8,7 @@ sso:
   oidc:
     repository: https://github.com/infinito-nexus/taiga-oidc.git
     ref: c623b753047ce9923f3e38614d86e81fc5eb2bb1
+    rbac: false
 ldap:
   bond: 1
   enabled: "{{ 'svc-db-openldap' in group_names }}"

@@ -4,7 +4,6 @@ logout:
   bond: 1
   enabled: "{{ 'web-svc-logout' in group_names }}"
   shared: "{{ 'web-svc-logout' in group_names }}"
-# nocheck: playwright-service-flag — identity backend, no Playwright surface (verified by the OIDC bridge specs)
 ldap:
   bond: 1
   enabled: "{{ 'svc-db-openldap' in group_names }}"
@@ -109,6 +108,9 @@ sso:
         - /users/me
         - /api/
         - /oauth/token
+    allowed_groups:
+      - "{{ lookup('rbac_group_path', application_id='web-app-openproject', role='administrator') }}"
+      - "{{ lookup('rbac_group_path', application_id='web-app-openproject', role='user') }}"
 # nocheck: playwright-service-flag — design consumer, no Playwright surface (provider: web-svc-design)
 design:
   bond: 1
@@ -146,8 +148,8 @@ openproject:
   ref: "stable/{{ lookup('config', 'web-app-openproject', 'services.web.version') }}"
   ldap:
     filters:
-      administrators: false
-      users: false
+      administrators: true
+      users: true
   ports:
     local:
       sso: 16483
