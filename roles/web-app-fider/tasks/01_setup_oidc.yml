@@ -87,5 +87,42 @@
       authorize_url: "{{ OIDC.CLIENT.AUTHORIZE_URL }}"
       token_url: "{{ OIDC.CLIENT.TOKEN_URL }}"
       profile_url: "{{ OIDC.CLIENT.USER_INFO_URL }}"
+      json_user_id_path: "sub"
+      json_user_name_path: "{{ OIDC.ATTRIBUTES.NAME }}"
+      json_user_email_path: "{{ OIDC.ATTRIBUTES.EMAIL }}"
     mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
   changed_when: true
+
+- name: "👥 Fider | Resolve the administrator members"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 Fider | Keep the administrator members"
+  ansible.builtin.set_fact:
+    fider_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 Fider | Resolve the collaborator members"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: collaborator
+
+- name: "🛂 Fider | Converge the user roles to the role groups"
+  database_query:
+    config: "{{ lookup('database', application_id) }}"
+    query_file: "{{ role_path }}/files/sql/reconcile-roles.sql"
+    named_args:
+      members: >-
+        {{
+          ((fider_rbac_administrators | map('combine', {'role': FIDER_ROLE_IDS.administrator}) | list)
+           + (rbac_members | map('combine', {'role': FIDER_ROLE_IDS.collaborator}) | list))
+          | to_json
+        }}
+      bootstrap_email: "{{ lookup('users', 'platform_administrator').email }}"
+      visitor_role: "{{ FIDER_ROLE_IDS.visitor }}"
+    expect_rows: true
+    mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+  register: fider_rbac_reconcile
+  changed_when: (fider_rbac_reconcile.rows[0][0] | int) > 0

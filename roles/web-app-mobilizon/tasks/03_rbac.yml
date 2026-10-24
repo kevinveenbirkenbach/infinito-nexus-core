@@ -1,0 +1,39 @@
+---
+- name: "👥 MOBILIZON | Resolve the administrator members"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 MOBILIZON | Keep the administrator members"
+  ansible.builtin.set_fact:
+    mobilizon_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 MOBILIZON | Resolve the moderator members"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: moderator
+
+- name: "🛂 MOBILIZON | Converge the roles of the Keycloak accounts to their role groups"
+  ansible.builtin.command:
+    argv:
+      - container
+      - exec
+      - -i
+      - "{{ MOBILIZON_LOCAL_CID }}" # nocheck: container-exec-resolver  MOBILIZON_LOCAL_CID resolved at delegate_to runtime
+      - /bin/mobilizon
+      - rpc
+      - "{{ lookup('file', 'elixir/rbac.exs') }}"
+    expand_argument_vars: false
+    stdin: >-
+      {{ {
+        'administrators': mobilizon_rbac_administrators | map(attribute='email') | select | list,
+        'moderators': rbac_members | map(attribute='email') | select | list,
+        'bootstrap': lookup('users', 'platform_administrator').email,
+        'provider': MOBILIZON_OIDC_PROVIDER
+      } | to_json }}
+  register: mobilizon_rbac
+  changed_when: "'MOBILIZON_RBAC=changed' in mobilizon_rbac.stdout"
+  failed_when: mobilizon_rbac.rc != 0 or 'MOBILIZON_RBAC=' not in mobilizon_rbac.stdout
+  delegate_to: "{{ MOBILIZON_HOST_NODE }}"

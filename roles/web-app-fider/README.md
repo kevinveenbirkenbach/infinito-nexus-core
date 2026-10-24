@@ -21,7 +21,8 @@ When a user logs in via Keycloak for the first time, Fider matches their email t
 
 - **Single-container deployment** via Docker Compose.
 - **PostgreSQL database:** all data including attachments stored in the database, no extra volumes needed.
-- **SSO via Keycloak:** configured automatically on first deploy.
+- **SSO via Keycloak:** configured automatically on first deploy; name and email of a new account come from the `name` and `email` claims.
+- **Role Groups:** Every deploy creates the accounts of the `administrator` and `collaborator` role group members that have none yet and sets the role of every account to administrator, collaborator or visitor from its groups ([files/sql/reconcile-roles.sql](./files/sql/reconcile-roles.sql)). The platform administrator keeps its role.
 - **Email notifications** via Mailu (optional).
 - **HTTPS** enforced via NGINX reverse proxy.
 

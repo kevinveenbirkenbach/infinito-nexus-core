@@ -15,6 +15,8 @@ This role deploys Friendica using Docker, managing the Friendica application con
 - **Robust Reset and Recovery Tools:** Easily reset and reinitialize both the application and its underlying database.
 - **Configuration Debugging:** Quickly inspect environment variables, volume data, and configuration files to troubleshoot issues.
 - **Autoinstall Capability:** Automate initial installation steps to rapidly deploy a working Friendica instance.
+- **LDAP Account Creation:** `ldapauth` creates the Friendica account on the first LDAP login and names it with the directory's full name.
+- **Site Administrators:** `config.admin_email` lists the platform administrator and every member of the `administrator` role group, so these accounts reach the admin panel.
 
 ## Addons
 

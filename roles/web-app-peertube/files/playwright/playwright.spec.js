@@ -192,3 +192,22 @@ test("biber: peertube OIDC login and logout", async ({ page }) => {
 test("guest: public-landing → auth chain → never authenticated", async ({ page }) => {
   await runGuestFlow(page);
 });
+
+const peertubeShared = {
+  env: {
+    peertubeBaseUrl,
+    adminUsername,
+    adminPassword,
+    biberUsername,
+    biberPassword,
+    biberFullName: decodeDotenvQuotedValue(process.env.BIBER_FULL_NAME),
+    biberEmail: decodeDotenvQuotedValue(process.env.BIBER_EMAIL),
+    rootUsername,
+    rootPassword,
+  },
+  signIn: signInViaDashboardOidc,
+  logout: (page) => peertubeLogout(page, peertubeBaseUrl),
+};
+
+require("./test-rbac").register(peertubeShared);
+require("./test-profile").register(peertubeShared);

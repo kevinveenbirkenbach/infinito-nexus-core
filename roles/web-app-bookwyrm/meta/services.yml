@@ -8,8 +8,7 @@ sso:
     origin:
       host: bookwyrm
       port: 8000
-    allowed_groups:
-      - "{{ lookup('rbac_group_path', application_id='web-app-bookwyrm', role='administrator') }}"
+    claim_headers: [NAME, LOCALE, ZONEINFO]
 logout:
   bond: 1
   enabled: "{{ 'web-svc-logout' in group_names }}"

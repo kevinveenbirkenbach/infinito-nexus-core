@@ -28,6 +28,12 @@ This Docker Compose deployment sets up PeerTube with integrated support for esse
 - **Automatic Upgrades:**
   Detects the release the existing data was written by, runs the upstream migration scripts up to the pinned release and reseeds the client assets, see [Upgrade.md](./Upgrade.md).
 
+- **Profile from the identity provider:**
+  An account created through the OpenID Connect plugin takes its display name, email and interface language from the `name`, `email` and `locale` claims.
+
+- **Role groups:**
+  Every deploy creates the OpenID Connect accounts of the `administrator` and `moderator` role group members that have none yet, and converges the PeerTube role of every OpenID Connect account to Administrator, Moderator or User from its groups. The local `root` account keeps its role.
+
 ## Addons
 
 Role-level extensions are declared in `meta/addons/`, one file per addon:

@@ -13,6 +13,7 @@ const {
 test.use({ ignoreHTTPSErrors: true });
 
 require("./test-native-login");
+require("./test-rbac");
 require("./test-design").register();
 
 const appBaseUrl = normalizeBaseUrl(process.env.APP_BASE_URL || "");

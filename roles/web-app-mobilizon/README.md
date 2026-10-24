@@ -15,6 +15,7 @@ This role deploys Mobilizon using Docker, automating the setup of your event man
 - **Privacy-First:** Self-hosted solution ensures data ownership and GDPR-compliance.  
 - **Customizable Setup:** Configure database connections, instance settings, and admin credentials via environment variables and a TOML configuration file.  
 - **Scalable Deployment:** Use Docker to ensure your event platform grows seamlessly with your community’s needs.
+- **Role Groups:** Every deploy creates the Keycloak accounts of the `administrator` and `moderator` role group members that have none yet and sets the role of every Keycloak account to administrator, moderator or user from its groups ([files/elixir/rbac.exs](./files/elixir/rbac.exs)). The platform administrator keeps its role.
 
 ## Further Resources
 

@@ -1,0 +1,20 @@
+---
+- name: "👥 Resolve the members of the Pixelfed administrator role"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "🛂 Reconcile the Pixelfed admin flag with the administrator role group"
+  database_query:
+    config: "{{ lookup('database', application_id) }}"
+    query_file: "{{ role_path }}/files/sql/update/rbac-admin-flags.sql"
+    named_args:
+      admin_usernames: "{{ rbac_members | map(attribute='username') | map('lower') | list | to_json }}"
+      admin_emails: "{{ rbac_members | map(attribute='email') | reject('equalto', '') | map('lower') | list | to_json }}"
+      kept_username: "{{ PIXELFED_ADMIN_USERNAME }}"
+    expect_rows: true
+    mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+  register: pixelfed_rbac_admin_flags
+  changed_when: (pixelfed_rbac_admin_flags.rows[-1][0] | int) > 0
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"

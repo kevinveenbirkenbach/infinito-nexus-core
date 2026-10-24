@@ -15,6 +15,7 @@ This role deploys Mastodon using Docker, streamlining the installation and confi
 - **Robust Content Moderation:** Utilize powerful moderation tools to manage community interactions and maintain safe spaces.
 - **Scalable Architecture:** Benefit from a multi-service, Docker-based setup that supports high user loads and seamless background processing.
 - **Flexible Authentication:** Integrated support for OpenID Connect (OIDC) simplifies user login and enhances security.
+- **Roles From Keycloak Groups:** Every OIDC login sets the Mastodon role from the `groups` claim. The `administrator` role group grants `Admin`, the `moderator` role group grants `Moderator`, and an account outside both loses either role. Accounts that hold `Owner` or a role created in Mastodon stay untouched, so the platform administrator keeps `Owner`.
 - **Customizable User Experience:** Configure themes, timeline settings, and notification options to tailor the social experience to your community.
 
 ## Further Resources

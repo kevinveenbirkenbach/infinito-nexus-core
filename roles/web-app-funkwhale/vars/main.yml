@@ -10,6 +10,17 @@ FUNKWHALE_DOCKER_API_PORT: "{{ lookup('config', application_id, 'services.api.po
 FUNKWHALE_TYPESENSE_API_KEY: "{{ lookup('config', application_id, 'secrets.credentials.api_key') }}"
 FUNKWHALE_API_CONTAINER: "{{ lookup('config', application_id, 'services.api.name') }}"
 
+FUNKWHALE_SETTINGS_MODULE: "config.settings.infinito"
+FUNKWHALE_SETTINGS_HOST: "{{ [lookup('container', application_id, 'directories.config'), 'settings.py'] | path_join }}"
+FUNKWHALE_LDAP_ENABLED: "{{ lookup('config', application_id, 'services.ldap.enabled') | bool }}"
+FUNKWHALE_LDAP_GROUP_FILTER: "(&(objectClass=groupOfNames)(cn={{ application_id }}-*))"
+FUNKWHALE_LDAP_FLAGS_BY_GROUP:
+  is_superuser: "cn={{ application_id }}-administrator,{{ LDAP.DN.OU.ROLES }}"
+  is_staff: "cn={{ application_id }}-administrator,{{ LDAP.DN.OU.ROLES }}"
+  permission_moderation: "cn={{ application_id }}-moderator,{{ LDAP.DN.OU.ROLES }}"
+  permission_library: "cn={{ application_id }}-librarian,{{ LDAP.DN.OU.ROLES }}"
+  permission_settings: "cn={{ application_id }}-settings-manager,{{ LDAP.DN.OU.ROLES }}"
+
 FUNKWHALE_OBJSTORE_ENABLED: "{{ lookup('objstore', application_id, 'enabled') | bool }}"
 FUNKWHALE_FRONT_NGINX_HOST: "{{ [lookup('container', application_id, 'directories.config'), 'nginx.conf'] | path_join }}"
 

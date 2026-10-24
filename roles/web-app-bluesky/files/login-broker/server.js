@@ -1,4 +1,3 @@
-// nocheck: mirrored-unit-test - a standalone Express server whose module body binds a port and reads the container environment at import
 /*
  * Bluesky login-broker.
  *
@@ -73,8 +72,12 @@ const CONFIG = {
   handoffCookieMaxAgeSec: parseInt(process.env.HANDOFF_COOKIE_MAX_AGE || "3300", 10),
   insecureTls: (process.env.INSECURE_TLS || "").toLowerCase() === "true",
   siteTitle: requireEnv("SITE_TITLE"),
+  nameClaim: requireEnv("OIDC_NAME_CLAIM"),
   logoutPath: "/sso/logout"
 };
+
+const PROFILE_COLLECTION = "app.bsky.actor.profile";
+const DISPLAY_NAME_MAX_GRAPHEMES = 64;
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -294,6 +297,50 @@ async function ensurePdsSession({ kcUsername, kcEmail }) {
   };
 }
 
+function tokenClaims(token) {
+  const parts = String(token || "").split(".");
+  if (parts.length !== 3) return {};
+  try {
+    const claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+    return claims && typeof claims === "object" ? claims : {};
+  } catch {
+    return {};
+  }
+}
+
+function displayNameFromRequest(req) {
+  const claims = tokenClaims(req.headers["x-forwarded-access-token"]);
+  const name = String(claims[CONFIG.nameClaim] || "").trim();
+  return Array.from(name).slice(0, DISPLAY_NAME_MAX_GRAPHEMES).join("");
+}
+
+async function syncProfileDisplayName(session, displayName) {
+  if (!displayName) return false;
+  const query = `repo=${encodeURIComponent(session.did)}&collection=${PROFILE_COLLECTION}&rkey=self`;
+  const current = await fetchJson("GET", `${CONFIG.pdsInternalUrl}/xrpc/com.atproto.repo.getRecord?${query}`);
+  const exists = current.status === 200 && current.body && current.body.value;
+  if (!exists && !(current.body && current.body.error === "RecordNotFound")) {
+    throw new Error(`PDS getRecord failed: status=${current.status} body=${current.raw}`);
+  }
+  const record = exists ? current.body.value : { $type: PROFILE_COLLECTION };
+  if (record.displayName === displayName) return false;
+  const body = {
+    repo: session.did,
+    collection: PROFILE_COLLECTION,
+    rkey: "self",
+    record: Object.assign({}, record, { $type: PROFILE_COLLECTION, displayName })
+  };
+  if (exists) body.swapRecord = current.body.cid;
+  const res = await fetchJson("POST", `${CONFIG.pdsInternalUrl}/xrpc/com.atproto.repo.putRecord`, {
+    headers: { Authorization: `Bearer ${session.accessJwt}` },
+    body
+  });
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`PDS putRecord failed: status=${res.status} body=${res.raw}`);
+  }
+  return true;
+}
+
 // --- HTTP server ----------------------------------------------------
 
 function logSafe(v) {
@@ -414,6 +461,7 @@ function proxyToSocialApp(req, res) {
   const lib = isHttps ? https : http;
   const headers = Object.assign({}, req.headers);
   headers.host = upstream.host;
+  delete headers["x-forwarded-access-token"];
   const upstreamReq = lib.request({
     method: req.method,
     hostname: upstream.hostname,
@@ -474,6 +522,8 @@ const server = http.createServer(async (req, res) => {
 
     const session = await ensurePdsSession({ kcUsername, kcEmail });
     console.log(`[broker:${reqId}] PDS session ready did=${logSafe(session.did)} handle=${logSafe(session.handle)} hasAccessJwt=${!!session.accessJwt} (${Date.now() - reqStart}ms)`);
+    const profileChanged = await syncProfileDisplayName(session, displayNameFromRequest(req));
+    console.log(`[broker:${reqId}] profile displayName ${profileChanged ? "updated" : "unchanged"} (${Date.now() - reqStart}ms)`);
     const html = renderHandoff(session, requestUrl.pathname + (requestUrl.search || ""));
     endHtml(res, 200, html);
     console.log(`[broker:${reqId}] handoff HTML sent (${Date.now() - reqStart}ms)`);

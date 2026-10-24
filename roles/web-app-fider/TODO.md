@@ -1,3 +1,5 @@
 # TODO
 
+- A role group change in Keycloak reaches Fider only on the next deploy, because Fider's OAuth provider maps no groups claim and `files/sql/reconcile-roles.sql` converges `users.role` at deploy time; the collaborator mapping therefore has no Playwright scenario (a spec cannot redeploy). Options: an upstream groups-to-role mapping in Fider's OAuth provider, or a periodic job that runs the reconcile.
+
 - With `services.sso.enabled` false the role creates no tenant: `tasks/00_core.yml` includes `tasks/01_setup_oidc.yml` (tenant bootstrap, administrator, activation, provider row) only under `FIDER_OIDC_ENABLED`. Upstream then redirects every route to its installation form `/signup`, which any visitor can submit (read from the task conditions and from `app/middlewares/tenant.go` and `app/handlers/signup.go` of the deployed commit `67c52826`; the compose stack of the design pass ran with `sso` on). Fider has no password sign-in, so such a deployment also has no account. Options: bootstrap tenant and administrator in every variant and keep only the provider row under the flag; or refuse `/signup` at the proxy while no tenant exists.

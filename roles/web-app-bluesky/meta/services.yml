@@ -26,11 +26,10 @@ sso:
   shared: "{{ 'web-app-keycloak' in group_names }}"
   flavor: oauth2
   oauth2:
+    pass_access_token: true
     origin:
       host: broker
       port: 8080
-    allowed_groups:
-      - "{{ lookup('rbac_group_path', application_id='web-app-bluesky', role='administrator') }}"
     # nocheck: shared
     # nocheck: dynamic-flag
     # nocheck: playwright-service-flag - internal sub-component (multi-entity role)

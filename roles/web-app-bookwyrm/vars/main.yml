@@ -35,6 +35,13 @@ BOOKWYRM_OIDC_JWKS_URL: "{{ OIDC.CLIENT.CERTS }}"
 BOOKWYRM_OIDC_SCOPES: "openid,email,profile"
 BOOKWYRM_OIDC_UNIQUE_ATTRIBUTE: "{{ OIDC.ATTRIBUTES.USERNAME }}"
 BOOKWYRM_SSO_PROXY_GATED: "{{ lookup('sso', application_id, 'is_proxy_gated') }}"
+BOOKWYRM_SSO_GROUP_MAP: >-
+  {{ {
+    '/' ~ lookup('rbac_group_path', application_id=application_id, role='administrator'): 'admin',
+    '/' ~ lookup('rbac_group_path', application_id=application_id, role='owner'): 'owner',
+    '/' ~ lookup('rbac_group_path', application_id=application_id, role='moderator'): 'moderator',
+    '/' ~ lookup('rbac_group_path', application_id=application_id, role='editor'): 'editor'
+  } }}
 
 BOOKWYRM_CONTAINER: "{{ lookup('config', application_id, 'services.' ~ entity_name ~'.name') }}"
 BOOKWYRM_IMAGE: "{{ lookup('config', application_id, 'services.' ~ entity_name ~'.image') }}"

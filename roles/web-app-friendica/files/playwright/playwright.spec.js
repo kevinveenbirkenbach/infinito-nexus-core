@@ -18,3 +18,5 @@ require("./test-side-by-side-sessions").register(shared);
 require("./test-anonymous-profile-view").register(shared);
 require("./test-admin-follow-biber").register(shared);
 require("./test-design").register(shared);
+require("./test-rbac-admin-panel").register(shared);
+require("./test-ldap-full-name").register(shared);

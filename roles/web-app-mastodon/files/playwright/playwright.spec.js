@@ -13,6 +13,7 @@ const {
 
 require("./test-seaweedfs");
 require("./test-design");
+require("./test-rbac");
 
 
 test.use({ ignoreHTTPSErrors: true });

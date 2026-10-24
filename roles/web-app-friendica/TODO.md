@@ -53,6 +53,10 @@ SSO with auto-account-creation, which collapses the chain to a single
 
 - An account whose `user.theme` is still empty (every account the role or a visitor creates) loses the frio scheme on its first save of `/settings/display`: `src/Module/Settings/Display.php:194` calls `theme_post()` only when the posted theme equals the stored one, so the first post only stores `theme = frio` (measured 2026-10-14: a post with `frio_scheme=dark` while the stored theme differed left the scheme at `---`; the second post stored it); options: report upstream to compare against `$user['theme'] ?: system.theme`, or let the role store `theme = frio` for the accounts it provisions.
 
+## Identity sync
+
+- A change to the `administrator` role group reaches `config.admin_email` only on the next deploy, and a changed directory name or email never reaches an existing account, because the list is rendered into `FRIENDICA_ADMIN_MAIL` at deploy time and `ldapauth` reads the directory only when it creates the account; options: the `saml` addon migration above with an attribute and group map, or a cron that refreshes the account and the list from LDAP.
+
 ## Open self-registration
 
 - `/register` serves the sign-up form to every visitor because the installer writes `'register_policy' => \Friendica\Module\Register::OPEN` into `config/local.config.php:27` (`bin/console config config register_policy` reports `2`), while upstream's own default in `static/settings.config.php:27` is `CLOSED`; options: set `config.register_policy` to `CLOSED` (or `APPROVE`) from the role through `bin/console config` or a mounted `config/*.config.php`, or make it an inventory switch.

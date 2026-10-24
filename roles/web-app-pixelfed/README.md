@@ -16,6 +16,7 @@ This Docker Compose deployment automates the installation and operation of a Pix
 - **Flexible Configuration:** Customize cache sizes, domain settings, and authentication options via environment variables and templated configuration files.
 - **Maintenance & Administration Tools:** Built-in CLI and web-app-based tools to clear caches, manage the database, and monitor application health.
 - **Single Sign-On (SSO) / OpenID Connect (OIDC):** Seamless integration with external identity providers for centralized authentication.
+- **Admin Flag From RBAC:** Every deploy sets the Pixelfed admin flag on the members of the `administrator` role group, matched by username, e-mail or OIDC mapping, and clears it on every other account. The administrator created through artisan keeps the flag.
 
 ## Further Resources
 

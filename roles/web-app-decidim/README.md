@@ -14,6 +14,7 @@ This role deploy Decidim, an open-source participatory democracy platform for pu
 - PostgreSQL database via the shared platform instance
 - Redis for caching and Action Cable
 - OIDC SSO via Keycloak using `omniauth_openid_connect`
+- **Role Groups:** Every OIDC registration and login sets `admin` from the `administrator` role group and the `user_manager` role from the `user-manager` role group ([files/ruby/initializers/infinito_rbac.rb](./files/ruby/initializers/infinito_rbac.rb)). Only accounts with an OIDC identity change; the administrator the deploy seeds keeps its rights.
 - Accessible at `https://decidim.<your-domain>`
 
 ## SSO / Authentication
