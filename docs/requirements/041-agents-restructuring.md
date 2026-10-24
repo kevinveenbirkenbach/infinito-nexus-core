@@ -342,12 +342,13 @@ flowchart LR
 | translator | Runs every translation command, opens one pull request per language, verifies the translations, and optimises the translation algorithms; suggests Weblate translations through `web-svc-translate` | Hermes | on_demand | night cron 23:00 to 07:00 UTC; day cron every 10 minutes, driven by host load |
 | documenter | Keeps role READMEs and contributor docs in line with the code | Claude Code | on_demand | merged pull request touching a role, schedule |
 | release | Prepares versions, tags and release notes | Hermes | on_demand | coordinator reports the default branch green, schedule |
-| security | Audits the repository: code, dependencies, configuration | Claude Code | on_demand | schedule, new dependency, agent pull request |
-| hacker | Tests the running instances like an attacker, files security reports, emails on failures | OpenClaw | on_demand | deploy finished, schedule |
+| security | Audits the repository (code, dependencies, configuration), watches CVE and advisory feeds for the deployed software, opens an issue per affected role and drives the fix | Claude Code | on_demand | schedule, new dependency, agent pull request, CVE feed |
+| hacker | Tests the authorised running instances like an attacker with analysers and credential brute forcing, files security reports, emails on failures | OpenClaw | on_demand | deploy finished, schedule |
+| counsel | Reviews the whole project for legal soundness: licence compatibility of code, dependencies and shipped images, attribution, copied code, data protection and trademarks, in the repository and on the running instances | Claude Code | on_demand | weekly cron; changed dependency manifest or lockfile; agent pull request |
 | support | Drafts answers to support requests, sends them after approval, files work packages for defects and wishes | Hermes | on_demand | new Zammad ticket, support email, support room message |
 | user-started | Any role of the catalog, started by a user (see Profile catalog) | the role's runtime | on_demand | start from Open WebUI, n8n or Flowise |
 
-Every field of `agent.yml` and every entry of `cron.yml` has a default and is overridable from the inventory under `agents.<role>`, except `agents.hacker.targets`, which has no default and must be set before the hacker runs. `write_enabled` defaults to `false`, `keepass.mode` to `broker`.
+Every field of `agent.yml` and every entry of `cron.yml` has a default and is overridable from the inventory under `agents.<role>`, except `agents.hacker.targets`, which has no default and must be set before the hacker runs. `agents.counsel.targets` defaults to an empty list, which skips the counsel's instance checks and names them as skipped in its report. `write_enabled` defaults to `false`, `keepass.mode` to `broker`.
 
 A human developer reconfigures any role the way applications are reconfigured: the inventory's `agents.<role>` is deep-merged over the role's `agent.yml` and `cron.yml`, and every consumer reads the merged result through one lookup (`lookup('agent_config', role, path)`), never the raw files.
 
@@ -369,6 +370,7 @@ flowchart TB
     OPR["🩺 operator"]
     SEC["🔐 security"]
     HK["🥷 hacker"]
+    LG["⚖️ counsel"]
     SU["🎧 support"]
   end
   subgraph BUILD["🛠️ Builders"]
@@ -400,6 +402,8 @@ flowchart TB
   CO -.->|"🎟️ CI slots, merge order"| BUILD
   SU -.->|"✉️ answer after approval"| TIC
   HK -.->|"📧 failure email"| HUM
+  LG -.->|"📧 blocker email"| HUM
+  LG -.->|"⛔ open blocker holds tags"| RL
   classDef human fill:#fef9c3,stroke:#a16207,color:#422006
   classDef plan fill:#e0f2fe,stroke:#0369a1,color:#082f49
   classDef build fill:#dcfce7,stroke:#15803d,color:#052e16
@@ -408,7 +412,7 @@ flowchart TB
   class HUM,ISS,TIC,ALM,HM human
   class PL,BRD plan
   class IM,MA,DE,TU,TE,TR,DO build
-  class OPR,SEC,HK,SU watch
+  class OPR,SEC,HK,LG,SU watch
   class RV,CO,RL ship
   style IN fill:#fffbeb,stroke:#a16207
   style PLAN fill:#f0f9ff,stroke:#0369a1
@@ -604,20 +608,38 @@ flowchart TD
 
 - Follow `docs/contributing/actions/release.md`.
 - Creating a tag or a release is `ask`.
+- No tag and no release while the confidential legal project has an open blocker.
 
 `agents/roles/security/AGENTS.md`:
 
 - Scans the repository only (code, dependencies, configuration), never running instances.
+- Watches the published CVE and advisory feeds for the software the repository deploys: every pinned image, every language runtime and every package the roles install. The inventory of what is deployed is built from registry and manifest metadata, without pulling an image or reaching a running instance.
+- A CVE that affects a deployed component becomes one work package per affected role in the confidential security project, with the advisory id, the affected version, the fixed version and the role that pins it. Where the fix is a public version or image bump, the role also opens a GitHub issue on the repository and hands the bump to the maintainer; where the fix is a repository change, it drives the change itself as a pull request through the normal review path.
+- Verifies the hardening floor of each deployed component once a fix lands: a minimum runtime version per container and the absence of the retired configuration the advisory names, read from registry metadata rather than from a live instance.
 - Findings go into the confidential security project of the board.
 
 `agents/roles/hacker/AGENTS.md`:
 
-- Attack only the targets listed in `agents.hacker.targets`, and only through the public front proxy, never internal ports; every other target is denied by the firewall.
+- Attack only the targets listed in `agents.hacker.targets`, and only through the public front proxy, never internal ports; every other target is denied by the firewall. The list names deployments the project owns and has authorised for testing; a target the owner does not control is never in it.
 - Every run against a production target is `ask` and runs only after the owner approves that run.
+- Searches each authorised target actively for weaknesses, in two ways:
+  - analysers, the static and dynamic scanners in its workspace (dependency and container scanners, a web application scanner against the front proxy, a TLS and header check), which read the surface and report what they find;
+  - credential brute forcing against seeded test accounts only, to prove whether the login throttle, the lockout and the rate limit hold; the attempts stay under the lockout threshold the policy promises and stop at the first proof, so a real account is never touched and no account is locked out of service.
 - Use dedicated test accounts, never real users' accounts.
-- Non-destructive tests only: no denial of service, no data deletion, no exfiltration beyond the proof of a finding, rate-limited scans.
+- Non-destructive tests only: no denial of service, no data deletion, no exfiltration beyond the proof of a finding, rate-limited scans. A brute-force lever that would lock a real account, exhaust a service or run without a rate limit is denied by the firewall like any other destructive request.
 - Every finding becomes a work package in the confidential security project with severity, affected role, reproduction steps and evidence, never with live secrets.
 - Every failed check and every failed scan run sends an email to the security contact from the inventory; the email carries only the severity and a link to the work package, never details of the finding.
+
+`agents/roles/counsel/AGENTS.md`:
+
+- Load the `i8-advocate` skill, which runs the portable `advocate` skill over the whole tree instead of the staging index: the project licence declarations, every dependency manifest and lockfile with the transitive dependencies of the resolved versions, the images and packages the roles ship, vendored and copied code, attribution, data protection and trademarks.
+- `agents/roles/counsel/cron.yml` holds one entry, a full run every Monday at 02:00 UTC; a changed dependency manifest or lockfile on the default branch and every agent pull request start a run scoped to that change.
+- The instance checks run only against `agents.counsel.targets`, only through the public front proxy and only with read requests: every request to a host outside the instance's own domains (fonts, CDNs, analytics, embeds), every cookie or storage entry set before consent, and the reachability of the imprint and privacy pages.
+- Read-only: never edit a licence file, add a header, remove a dependency or change an instance; every fix is proposed in the finding and goes through the planner and the `Approved` gate.
+- Every blocker is hardened with the dialectic skill before it is filed.
+- Every finding becomes a work package in the confidential legal project with severity (blocker, finding, note), check, location, licence or law, proposed fix and evidence (`proven` or `derived`); a finding that an earlier run already filed updates its work package instead of opening a new one.
+- Every new blocker sends an email to the legal contact from the inventory; the email carries only the severity and a link to the work package.
+- Every report states in one line that it is no legal advice.
 
 `agents/roles/support/AGENTS.md`:
 
@@ -707,6 +729,7 @@ This naming is a breaking change and ships in a major release; existing accounts
 | robot | `robo` | reviewer | `revw` | planner | `plan` | coordinator | `coor` |
 | operator | `oper` | tester | `test` | translator | `tran` | documenter | `docu` |
 | release | `rels` | security | `secu` | hacker | `hack` | support | `supp` |
+| counsel | `cnsl` | | | | | | |
 
 ### Model selection
 
@@ -1083,6 +1106,42 @@ flowchart TD
   class H1 human
 ```
 
+Counsel routine:
+
+```mermaid
+flowchart TD
+  T1(["🔔 Weekly cron, changed manifest<br/>or lockfile, or agent pull request"])
+  D1["📜 Read the project licence declarations"]
+  D2["📦 Licence inventory: dependencies with transitive ones,<br/>shipped images, vendored files<br/>(make legal-inventory)"]
+  D3{"🌐 agents.counsel.targets set?"}
+  D4["🕵️ Read-only probe through the front proxy:<br/>third-party requests, cookies before consent,<br/>imprint and privacy pages (make legal-probe)"]
+  L1{{"🧠 advocate checks 1 to 7:<br/>blocker, finding or note?"}}
+  L2{{"⚖️ Blocker survives the dialectic?"}}
+  D5["📋 Work package in the confidential<br/>legal project (new or updated)"]
+  D6["📋 Blocker work package<br/>in the legal project"]
+  D7["📧 Email to the legal contact:<br/>severity and link only"]
+  D8["⛔ Release holds tags while it is open"]
+  D9(["✅ Report: nothing found, no legal advice"])
+  T1 --> D1 --> D2 --> D3
+  D3 -->|"✅ yes"| D4 --> L1
+  D3 -->|"❌ no, reported as skipped"| L1
+  L1 -->|"🧾 finding or note"| D5
+  L1 -->|"🛑 blocker"| L2
+  L1 -->|"🙅 nothing"| D9
+  L2 -->|"✅ survives"| D6 --> D7 --> D8
+  L2 -->|"❌ refuted, filed as finding"| D5
+  classDef trigger fill:#dbeafe,stroke:#1d4ed8,color:#0b1b3f
+  classDef det fill:#dcfce7,stroke:#15803d,color:#052e16
+  classDef llm fill:#ede9fe,stroke:#6d28d9,color:#2e1065
+  classDef good fill:#ccfbf1,stroke:#0f766e,color:#042f2e
+  classDef alert fill:#fee2e2,stroke:#b91c1c,color:#450a0a
+  class T1 trigger
+  class D1,D2,D3,D4,D5 det
+  class L1,L2 llm
+  class D9 good
+  class D6,D7,D8 alert
+```
+
 Support routine:
 
 ```mermaid
@@ -1129,7 +1188,8 @@ Make targets the tool nodes need:
 - run a test against another ref in a temporary worktree and print the imported module path (`make test-ref ref=<ref> test=<path>`);
 - wait for an external state with a fixed interval and timeout (`make ci-wait kind=job-log|run|check id=<id> interval=<s> timeout=<s>`), so no routine needs a shell loop;
 - cache the rendered control fixture of the oracle per language, so a judge pass stops re-rendering a fixture that never changes (about half of the pass today);
-- pause and resume the translation lane (`make i18n-pause`, `make i18n-resume`) and report the host load without the lane (`make i18n-load`), so the translator's crons never touch Docker directly.
+- pause and resume the translation lane (`make i18n-pause`, `make i18n-resume`) and report the host load without the lane (`make i18n-load`), so the translator's crons never touch Docker directly;
+- build the licence inventory of the tree and of the shipped images (`make legal-inventory`) and probe a running instance through the front proxy for third-party requests, cookies set before consent and the imprint and privacy pages (`make legal-probe target=<domain>`), so the counsel's checks start from deterministic data.
 
 Defects to fix in existing targets:
 
@@ -1150,7 +1210,7 @@ Defects to fix in existing targets:
 
 - OpenProject is the single source of requirements and work items. The URL and project come from the inventory; the default is the platform's own `web-app-openproject`.
 - A requirement is a work package with a user story and a checklist of acceptance criteria. Every criterion carries a stable id; the ids and their proof kind are kept in the repository (`agents/criteria.yml`), so lints and scenarios never depend on the board being reachable.
-- The requirements project is publicly readable (anonymous read role); the confidential security project is not.
+- The requirements project is publicly readable (anonymous read role); the confidential security and legal projects are not.
 - The orchestrator creates requirements as `Proposed` on an agent's behalf, under that agent's own identity (its OIDC JWT); no agent writes to the board directly. Only a human sets `Approved` or `Rejected`, in their own OpenProject session (OpenProject UI or Open WebUI through SSO); no agent account and no channel reply can set them. The implementer only takes `Approved` work packages assigned to its role group (see Remote board and detached instances, Claim).
 - The maintainer may start work without the `Approved` gate only on failed runs of the own repository's CI and on security alerts. Issues from non-collaborators and fork pull request runs go through the planner and the gate.
 
@@ -1302,6 +1362,7 @@ Baseline roles shipped in `agents/firewall/`, taken from the field data of the r
 | `release` | everything of `forge-reader` | create a tag or a release | push to the default branch |
 | `security` | everything of `forge-reader`; work packages in the confidential security project | | egress to running instances |
 | `hacker` | egress only to `agents.hacker.targets` through the front proxy; scanners in its workspace; work packages in the confidential security project; email to the security contact | every run against a production target | any other egress, internal ports, destructive requests, denial-of-service tooling |
+| `counsel` | everything of `forge-reader` and `package-consumer`; read requests to `agents.counsel.targets` through the front proxy; work packages in the confidential legal project; email to the legal contact | | commit, push, any write request to an instance, internal ports, any other egress to instances |
 | `support` | read Zammad tickets, support mailbox and support room; draft replies; create `Proposed` work packages | send a reply to a customer | secrets, other customers' data |
 
 The firewall is compiled into:
@@ -1399,7 +1460,9 @@ sequenceDiagram
 - Triggers: `call-test-agents-local.yml` runs from `entry-pr-change-orchestrate.yml` on every pull request that touches `agents/` or an AI role; `call-test-agents-saas.yml` runs on manual dispatch, nightly, and is required before `feature/agents` merges into `main`.
 - `make agents-verify mode=compose|swarm` selects the deploy mode; without `mode` both run in sequence.
 - `make agents-verify scenario=<id>` runs one scenario against the already running stack without redeploying, for the edit-test loop.
-- A deliberately vulnerable fixture app with seeded findings is the hacker's scenario target; its role fails hard when deployed by any inventory other than the agents bundle.
+- A deliberately vulnerable fixture app with seeded findings is the hacker's scenario target; its role fails hard when deployed by any inventory other than the agents bundle. The same app loads a web font from a third-party host and sets a cookie before consent, as the counsel's instance target. It carries a seeded weak test credential behind a seeded login throttle and lockout, so the hacker's credential brute forcing is exercised without a real account. It ships a known-vulnerable dependency, a missing security header and a weak TLS setting for the analysers to report.
+- A fixture CVE feed naming one of the bundle's pinned images is the security role's scenario source, so its CVE path is exercised without reaching a live advisory service.
+- A fixture tree with seeded legal findings is the counsel's repository target: a dependency whose licence the project licence cannot absorb, a vendored file without a licence, an Apache-2.0 dependency without its NOTICE, a build-only dependency under a copyleft licence that is never distributed, and a third-party logo used beyond plain reference.
 - A second instance with OpenProject, Nextcloud, Matrix, Gitea and Keycloak plays the remote live instance; it has no webhook path to the first, so every remote scenario runs in polling mode.
 - External services have local stand-ins:
   - `web-app-gitea` acts as the forge for every fork, push and pull request scenario;
@@ -1513,6 +1576,7 @@ Every rule of this requirement that can be checked without a running stack has a
 | L30 | every `cron.yml` entry has a unique `name`, a valid UTC cron `schedule`, an existing `routine`, an `action` of `start` or `pause`, and a `condition` the orchestrator knows |
 | L31 | no code reads `agent.yml` or `cron.yml` directly; every consumer goes through `lookup('agent_config', ...)`, and every inventory override under `agents.<role>` names an existing role and field |
 | L32 | every skill is Markdown; every routine is a Python graph; routine steps call repository logic in `cli/` or `utils/` instead of reimplementing it (no copy of a function that exists there) |
+| L33 | the counsel's `agent.yml` has `write_enabled: false`, its firewall role grants no commit, push or write request, and `agents/skills/i8-advocate` names the portable `advocate` skill |
 
 ### Iteration plan
 
@@ -1583,7 +1647,7 @@ flowchart TD
 
 ### Layout
 
-- [ ] `agents/roles/{maintainer,designer,tuner,implementer,robot,reviewer,planner,coordinator,operator,tester,translator,documenter,release,security,hacker,support}/` each contain `AGENTS.md`, `SOUL.md` and `agent.yml`.
+- [ ] `agents/roles/{maintainer,designer,tuner,implementer,robot,reviewer,planner,coordinator,operator,tester,translator,documenter,release,security,hacker,counsel,support}/` each contain `AGENTS.md`, `SOUL.md` and `agent.yml`.
 - [ ] `agents/SOUL.md` holds the content of `docs/agents/meta/` and every shared principle listed under Role files, and every role `SOUL.md` links to it.
 - [ ] Every role's `AGENTS.md` and `SOUL.md` contain every rule listed for it under Role files.
 - [ ] `agents/skills/` holds every former `skills/i8-*` skill and one skill per former `docs/agents/files/*` page; `skills/` no longer exists.
@@ -1865,10 +1929,21 @@ flowchart TD
 - [ ] documenter: a merged pull request that changes a role's variables produces a README pull request that matches them, with the docs build green.
 - [ ] release: a green default branch produces a release draft with notes; the tag waits for approval.
 - [ ] security: a seeded vulnerable dependency becomes a work package in the confidential security project.
+- [ ] security: a seeded CVE feed entry for a pinned image produces one work package per affected role with the advisory id, the affected and the fixed version, and, where the fix is a public bump, a GitHub issue handed to the maintainer (fixture feed).
+- [ ] security: the deployed-component inventory and the hardening floor are built from registry and manifest metadata with no image pull and no request to a running instance (probe recorded).
 - [ ] hacker: every seeded finding of the fixture app becomes a work package in the confidential security project with severity, affected role and reproduction steps, and without live secrets.
+- [ ] hacker: the analysers report the fixture app's seeded weaknesses (vulnerable dependency, missing security header, weak TLS) as findings (one fixture per analyser).
+- [ ] hacker: credential brute forcing runs only against seeded test accounts, stays under the lockout threshold, stops at the first proof, and locks no account out of service (fixture with a seeded weak test credential and a seeded throttle).
 - [ ] hacker: every failed check and a failed scan run send an email to the security contact that carries only severity and link.
 - [ ] hacker: a scan against a target outside `agents.hacker.targets`, or against an internal port, is refused by the firewall (probe recorded).
 - [ ] hacker: without `agents.hacker.targets` the hacker does not start; a production run waits for the owner's approval of that run.
+- [ ] counsel: every seeded legal finding of the fixture tree becomes a work package in the confidential legal project with severity, check, location, licence or law, proposed fix and evidence, and every report states that it is no legal advice.
+- [ ] counsel: a second run over the unchanged fixture tree updates the existing work packages and opens none.
+- [ ] counsel: the seeded build-only copyleft dependency is refuted as a blocker by the dialectic and filed as a finding (fixture).
+- [ ] counsel: a new blocker sends an email to the legal contact that carries only severity and link, and the release role refuses to tag while that blocker is open (fixture).
+- [ ] counsel: the Monday 02:00 UTC cron entry starts a full run, and a changed lockfile on the default branch starts a run scoped to that change (fixture clock and webhook).
+- [ ] counsel: the instance probe reports the fixture app's third-party font host and its cookie set before consent; without `agents.counsel.targets` the report names the instance checks as skipped.
+- [ ] counsel: a request to a target outside `agents.counsel.targets` and any write request to an instance are refused by the firewall (probe recorded), and a full run leaves no commit, push or file change.
 - [ ] hacker: no scan sends more requests per second than its configured rate limit.
 - [ ] support: a new Zammad ticket gets a drafted answer with cited sources as internal note, drawn only from public docs, role READMEs and approved answers with customer data removed.
 - [ ] support: the approval view shows the full outgoing text and every attachment.
@@ -1906,7 +1981,7 @@ flowchart TD
 
 ### Lint tests
 
-- [ ] Every lint of the catalog (L01 to L32) exists under `tests/lint/agents/` and runs in `make test-lint`.
+- [ ] Every lint of the catalog (L01 to L33) exists under `tests/lint/agents/` and runs in `make test-lint`.
 - [ ] Every lint of the catalog runs alone through the lint target for one role or one file.
 - [ ] Every lint of the catalog has a fixture that turns it red, and the red run is recorded in its test.
 - [ ] The repository as delivered passes every lint of the catalog.
