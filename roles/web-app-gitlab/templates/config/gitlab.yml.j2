@@ -66,6 +66,8 @@ production:
     allow_single_sign_on: ["openid_connect"]
     block_auto_created_users: false
     auto_link_user: ["openid_connect"]
+    sync_profile_from_provider: ["openid_connect"]
+    sync_profile_attributes: ["name", "email"]
     providers:
       - name: "openid_connect"
         label: {{ GITLAB_OIDC_LABEL | to_json }}

@@ -1,0 +1,44 @@
+---
+- name: "👥 Mattermost | Resolve the members of the administrator role"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/members.yml') }}"
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "📋 Mattermost | List the accounts and their system roles"
+  ansible.builtin.command:
+    argv:
+      - container
+      - exec
+      - -i
+      - "{{ MATTERMOST_LOCAL_CID }}" # nocheck: container-exec-resolver
+      - "{{ MATTERMOST_MMCTL }}"
+      - --local
+      - --json
+      - --suppress-warnings
+      - user
+      - list
+      - --all
+  register: mm_rbac_user_list
+  changed_when: false
+  delegate_to: "{{ MATTERMOST_HOST_NODE }}"
+
+- name: "🛂 Mattermost | Reconcile the system_admin role with the administrator role group"
+  vars:
+    mm_rbac_plan: "{{ mm_rbac_user_list.stdout | from_json | mattermost_rbac_plan(rbac_members, [lookup('users', 'platform_administrator').username]) }}"
+  block:
+    - name: "⬆️ Mattermost | Grant system_admin to the members of the administrator role"
+      ansible.builtin.shell: | # nocheck: container-exec-resolver  MATTERMOST_LOCAL_CID resolved at delegate_to runtime; container_address would return a manager-only subshell
+        container exec -i {{ MATTERMOST_LOCAL_CID | quote }} \
+          {{ MATTERMOST_MMCTL }} --local roles system_admin {{ mm_rbac_plan.promote | map('quote') | join(' ') }}
+      when: mm_rbac_plan.promote | length > 0
+      changed_when: true
+      delegate_to: "{{ MATTERMOST_HOST_NODE }}"
+
+    - name: "⬇️ Mattermost | Revoke system_admin from accounts outside the administrator role"
+      ansible.builtin.shell: | # nocheck: container-exec-resolver  MATTERMOST_LOCAL_CID resolved at delegate_to runtime; container_address would return a manager-only subshell
+        container exec -i {{ MATTERMOST_LOCAL_CID | quote }} \
+          {{ MATTERMOST_MMCTL }} --local roles member {{ mm_rbac_plan.demote | map('quote') | join(' ') }}
+      when: mm_rbac_plan.demote | length > 0
+      changed_when: true
+      delegate_to: "{{ MATTERMOST_HOST_NODE }}"

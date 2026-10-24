@@ -101,8 +101,23 @@ test("guest: public-landing → auth chain → never authenticated", async ({ pa
   await runGuestFlow(page);
 });
 
-test("biber: app → universal logout", async ({ page }) => {
-  await runBiberFlow(page);
+test("biber: app → no admin or external flag, provider-synced profile → universal logout", async ({ page }) => {
+  await runBiberFlow(page, {
+    biberInteraction: async (interactivePage) => {
+      const response = await interactivePage.request.get(`${appBaseUrl}/api/v4/user`, { timeout: resolveTimeout(30_000) });
+      const body = await response.text();
+      expect(response.ok(), `GET /api/v4/user must answer for biber, got ${response.status()}: ${body.slice(0, 300)}`).toBe(true);
+      const self = JSON.parse(body);
+      expect(self.is_admin === true, "the deploy-time reconcile must leave biber without GitLab admin rights").toBe(false);
+      expect(self.external, "the deploy-time reconcile must leave biber outside the external role").toBe(false);
+
+      await gotoOnion(interactivePage, `${appBaseUrl}/-/user_settings/profile`);
+      await expect(
+        interactivePage.locator("#user_name"),
+        "sync_profile_attributes must make the provider-synced full name read-only",
+      ).toHaveAttribute("readonly", "readonly", { timeout: resolveTimeout(30_000) });
+    },
+  });
 });
 
 test("administrator: app → universal logout", async ({ page }) => {

@@ -13,6 +13,8 @@ This role provisions a complete Nextcloud deployment using Docker Compose. It au
 - **Fully Dockerized Deployment:** Simplifies installation using Docker Compose for the Nextcloud application and its MariaDB backend.
 - **Secure Access:** Integrates with an NGINX reverse proxy for encrypted, high-performance access.
 - **Robust Authentication:** Supports LDAP and OIDC for secure identity and access management.
+- **Administrator Role Mapping:** Members of the `administrator` role group are Nextcloud administrators. With LDAP, `user_ldap` reads the role group as its admin group at runtime and a change reaches Nextcloud within `NEXTCLOUD_LDAP_CACHE_TTL` seconds; with `sociallogin`, the groups claim maps to the `admin` group at every login; with `oidc_login` outside the LDAP proxy mode, the `is_admin` attribute reads the groups claim.
+- **Directory Profile:** `user_ldap` syncs phone, website, street, organisation, title, description, quota and avatar from the directory, and Nextcloud shows those profile fields read-only.
 - **Automated Configuration Management:** Uses additive configuration files to dynamically merge system settings into `config.php`.
 - **Integrated Backup & Recovery:** Provides built-in support for backup and restoration operations to safeguard your data.
 - **Extensible Plugin Framework:** Easily manage and configure hundreds of Nextcloud plugins using the OCC command line tool.

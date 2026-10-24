@@ -34,6 +34,7 @@ NEXTCLOUD_DESIGN_THEMING:
   background: backgroundColor
 NEXTCLOUD_USER_LDAP_ENABLED: "{{ lookup('config', application_id, 'addons.user_ldap.enabled') }}"
 NEXTCLOUD_LDAP_CONFIG_PREFIX: "s01"
+NEXTCLOUD_LDAP_CACHE_TTL: 60 # Seconds until a role or profile change in the directory reaches Nextcloud
 
 NEXTCLOUD_HOST_CONF_ADD_PATH: "{{ [ lookup('container', application_id, 'directories.volumes'), 'infinito' ] | path_join }}"
 NEXTCLOUD_HOST_NGINX_PATH: "{{ [ lookup('container', application_id, 'directories.volumes'), 'nginx.conf' ] | path_join }}"

@@ -29,3 +29,5 @@ require("./test-mcp-guest").register(shared);
 require("./test-biber-persona").register(shared);
 require("./test-administrator-persona").register(shared);
 require("./test-seaweedfs");
+require("./test-ldap-profile").register(shared);
+require("./test-rbac-administrator").register(shared);

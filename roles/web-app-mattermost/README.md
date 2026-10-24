@@ -13,6 +13,7 @@ This role unite your team with Mattermost, an open-source, self-hosted messaging
 - Single-container deployment via Docker Compose
 - PostgreSQL database (MySQL/MariaDB not supported since Mattermost v8+)
 - SSO via Keycloak using the GitLab OAuth2 provider (see note below)
+- **System Admin Reconcile:** Every deploy grants `system_admin` to the members of the `administrator` role group and revokes it from every other human account except the platform administrator, through `mmctl --local roles`. A member who has not signed in yet has no Mattermost account, so the next deploy after the first sign-in applies the role.
 - Email notifications via Mailu (optional)
 - Persistent storage for config, data, logs, and plugins
 - Accessible at `https://mattermost.<your-domain>`

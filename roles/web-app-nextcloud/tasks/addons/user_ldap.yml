@@ -55,3 +55,7 @@
 - name: 🗂️ Warm LDAP cache (to guaranty that all LDAP users are present)
   shell: >
     {{ NEXTCLOUD_DOCKER_EXEC_OCC }} ldap:search ""
+- name: 🛂 Map the Nextcloud role groups of the directory
+  shell: >
+    {{ NEXTCLOUD_DOCKER_EXEC_OCC }} ldap:search --group ""
+  changed_when: false

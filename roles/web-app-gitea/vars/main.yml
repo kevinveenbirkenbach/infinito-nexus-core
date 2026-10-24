@@ -8,16 +8,28 @@ GITEA_LDAP_AUTH_ARGS:
   - "--port {{ LDAP.SERVER.PORT }}"
   - '--security-protocol "{{ LDAP.SERVER.SECURITY | trim or "unencrypted" }}"'
   - '--bind-dn "{{ LDAP.DN.ADMINISTRATOR.DATA }}"'
-  - '--bind-password "{{ LDAP.BIND_CREDENTIAL }}"'
+  - '--bind-password "$GITEA_LDAP_BIND_PASSWORD"'
   - '--user-search-base "{{ LDAP.DN.OU.USERS }}"'
-  - '--user-filter "(&(objectClass=inetOrgPerson)(uid=%s))"'
-  - '--admin-filter "(memberOf=cn={{ application_id }}-administrator,{{ LDAP.DN.OU.ROLES }})"'
+  - '--user-filter "(&(objectClass=inetOrgPerson)({{ LDAP.USER.ATTRIBUTES.ID }}=%s))"'
+  - '--admin-filter "({{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}=cn={{ application_id }}-administrator,{{ LDAP.DN.OU.ROLES }})"'
+  - '--restricted-filter "({{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}=cn={{ application_id }}-restricted,{{ LDAP.DN.OU.ROLES }})"'
   - '--username-attribute "{{ LDAP.USER.ATTRIBUTES.ID }}"'
   - '--firstname-attribute "{{ LDAP.USER.ATTRIBUTES.FIRSTNAME }}"'
   - '--surname-attribute "{{ LDAP.USER.ATTRIBUTES.SURNAME }}"'
   - '--email-attribute "{{ LDAP.USER.ATTRIBUTES.MAIL }}"'
   - '--public-ssh-key-attribute "{{ LDAP.USER.ATTRIBUTES.SSH_PUBLIC_KEY }}"'
+  - '--avatar-attribute "{{ LDAP.USER.ATTRIBUTES.PHOTO }}"'
   - "--synchronize-users"
+GITEA_OIDC_AUTH_ARGS:
+  - "--provider openidConnect"
+  - '--name "{{ OIDC.BUTTON_TEXT }}"'
+  - '--key "{{ OIDC.CLIENT.ID }}"'
+  - '--secret "$GITEA_OIDC_CLIENT_SECRET"'
+  - '--auto-discover-url "{{ OIDC.CLIENT.DISCOVERY_DOCUMENT }}"'
+  - '--scopes "openid profile email {{ RBAC.GROUP.CLAIM }}"'
+  - '--group-claim-name "{{ RBAC.GROUP.CLAIM }}"'
+  - '--admin-group "/{{ lookup(''rbac_group_path'', application_id=application_id, role=''administrator'') }}"'
+  - '--restricted-group "/{{ lookup(''rbac_group_path'', application_id=application_id, role=''restricted'') }}"'
 GITEA_CONTAINER: "{{ lookup('config', application_id, 'services.gitea.name') }}"
 GITEA_CONTAINER_ADDRESS: "{{ lookup('container_address', application_id, entity_name) }}"
 GITEA_USER: "git"

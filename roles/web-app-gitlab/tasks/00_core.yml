@@ -36,6 +36,9 @@
 - name: "👤 Give the platform administrator GitLab admin rights"
   include_tasks: utils/platform_admin.yml
 
+- name: "🛂 Reconcile GitLab administrators and external users with the role groups"
+  include_tasks: utils/rbac.yml
+
 - name: "🔌 Provision the MCP server surface"
   include_tasks: utils/mcp.yml
   when: GITLAB_MCP_ENABLED | bool

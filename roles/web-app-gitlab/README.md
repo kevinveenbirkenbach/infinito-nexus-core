@@ -14,6 +14,8 @@ This role deploys GitLab from the official Cloud Native GitLab (CNG) CE images a
 - **External/central PostgreSQL and Redis:** rails `database.yml`, `resque.yml`, `cable.yml` and the workhorse config are pre-rendered by Ansible and mounted read-only.
 - **Consolidated object storage:** artifacts, LFS, uploads, packages, external diffs, dependency proxy, terraform state, CI secure files and pages buckets on any S3-compatible endpoint; named volumes (`gitlab_shared`, `gitlab_uploads`, `gitlab_builds`) carry the data when object storage is disabled.
 - **OIDC single sign-on and SMTP:** rendered into `gitlab.yml` and an `smtp_settings.rb` initializer.
+- **Provider-Synced Profile:** Every OIDC sign-in syncs the full name and the email from Keycloak, and GitLab shows both read-only.
+- **Role Reconcile:** Every deploy makes the members of the `administrator` role group GitLab administrators and the members of the `external` role group external users, and revokes both flags from every other human account except `root` and the platform administrator. A member who has not signed in yet has no GitLab account, so the next deploy after the first sign-in applies the role.
 - **Git over SSH:** gitlab-sshd on the public SSH port with role-generated host keys under `<instance>/config/hostkeys/`. Back up that directory: it is not part of any named volume, and a host rebuild or instance purge regenerates the keys, so every git client then sees a host-key-changed warning until it re-trusts the new key.
 - **MCP server contract:** Fronts GitLab's built-in MCP server with the repository-owned adapter. Clients reach `/mcp` on the `gitlabmcp` sidecar; the adapter alone talks to `/api/v4/mcp` upstream, so only the contracted tools are reachable.
 

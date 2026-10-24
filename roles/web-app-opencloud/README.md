@@ -12,8 +12,8 @@ This role deploys OpenCloud using Docker Compose in single-binary mode and expos
 
 - **Sovereign File Sync and Share:** Self-host file sync, shares, and collaborative spaces under your own domain.
 - **Single Sign-On:** Users authenticate once via Keycloak and reuse the session across the platform.
-- **Central User Directory:** Users and groups are read from a shared OpenLDAP backend, so accounts stay consistent across apps.
-- **Auto-Provisioning:** New OIDC users are created on first login with username equal to the LDAP `uid`, and group claims drive role assignment.
+- **Central User Directory:** Users and groups are read from a shared OpenLDAP backend, so accounts stay consistent across apps, and the display name comes from the directory full name.
+- **Role Mapping:** With SSO, every login sets the OpenCloud role from the Keycloak realm roles: members of the `administrator`, `spaceadmin` and `guest` role groups become `admin`, `spaceadmin` and `user-light`, and every other realm user signs in as `user` through `default-roles-<realm>`. Without SSO, every account signs in as `user`.
 - **OpenTalk Cross-Launch:** Start a video meeting in OpenTalk from a file context without re-authenticating when `web-app-opentalk` is deployed alongside.
 - **Coexists with Nextcloud:** Runs in parallel with `web-app-nextcloud` on a distinct canonical hostname.
 
