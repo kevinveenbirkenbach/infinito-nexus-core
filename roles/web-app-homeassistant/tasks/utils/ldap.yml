@@ -1,0 +1,48 @@
+---
+- name: "👥 Resolve the administrator members of {{ application_id }}"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/members.yml') }}"
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 Keep the administrator members of {{ application_id }}"
+  ansible.builtin.set_fact:
+    homeassistant_ldap_administrators: "{{ rbac_members | map(attribute='username') | list }}"
+
+- name: "👥 Resolve the user members of {{ application_id }}"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/members.yml') }}"
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: user
+
+- name: "🛂 Regroup, enable or disable the directory accounts of the hub"
+  ansible.builtin.command:
+    argv:
+      - container
+      - exec
+      - -i
+      - -e
+      - "HA_PORT={{ HOMEASSISTANT_PORT_INTERNAL }}"
+      - -e
+      - "HA_USERNAME={{ HOMEASSISTANT_ADMIN_USERNAME }}"
+      - -e
+      - HA_PASSWORD
+      - -e
+      - "HA_AUTH_STORE={{ HOMEASSISTANT_AUTH_STORE }}"
+      - -e
+      - HA_ADMIN_MEMBERS
+      - -e
+      - HA_USER_MEMBERS
+      - "{{ HOMEASSISTANT_LOCAL_CID }}" # nocheck: container-exec-resolver
+      - python3
+      - "-"
+    stdin: "{{ lookup('file', 'python/align_ldap_users.py') }}"
+  environment:
+    HA_PASSWORD: "{{ HOMEASSISTANT_ADMIN_PASSWORD }}"
+    HA_ADMIN_MEMBERS: "{{ homeassistant_ldap_administrators | to_json }}"
+    HA_USER_MEMBERS: "{{ rbac_members | map(attribute='username') | list | to_json }}"
+  register: homeassistant_ldap_alignment
+  changed_when: "'CHANGED' in homeassistant_ldap_alignment.stdout"
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+  delegate_to: "{{ HOMEASSISTANT_HOST_NODE }}"
+  run_once: true

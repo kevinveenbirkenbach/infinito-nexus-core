@@ -43,6 +43,11 @@ logout:
   enabled: false
   shared: false
 
+ldap:
+  bond: 1
+  enabled: "{{ 'svc-db-openldap' in group_names }}"
+  shared: "{{ 'svc-db-openldap' in group_names }}"
+
 # nocheck: playwright-service-flag
 dashboard:
   bond: 1

@@ -12,3 +12,12 @@ homeassistant_configuration:
   mounts:
     - service: homeassistant
       target: /config/configuration.yaml
+
+homeassistant_ldap_login:
+  type: config
+  source: "{{ [ lookup('container', 'web-app-homeassistant', 'directories.config'), 'ldap_login.py' ] | path_join }}"
+  mode: "0444"
+  mounts:
+    - service: homeassistant
+      target: /usr/local/share/infinito/ldap_login.py
+      when: "{{ lookup('config', 'web-app-homeassistant', 'services.ldap.enabled') | bool }}"
