@@ -1,0 +1,28 @@
+---
+- name: "👥 Start the RBAC member collection"
+  ansible.builtin.set_fact:
+    erpnext_rbac_members: {}
+
+- name: "👥 Resolve the members of every declared RBAC role"
+  ansible.builtin.include_tasks: 04_rbac/members.yml
+  loop: "{{ ERPNEXT_RBAC_ROLE_GRANTS | list }}"
+  loop_control:
+    loop_var: erpnext_rbac_role
+
+- name: "🛂 Reconcile the ERPNext roles of the RBAC members"
+  ansible.builtin.shell:
+    cmd: > # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node
+      container exec -i
+      -e SITE_NAME -e ROLE_GRANTS_JSON -e ROLE_MEMBERS_JSON -e PROTECTED_USERS_JSON
+      {{ ERPNEXT_BACKEND_LOCAL_CID | quote }}
+      {{ ERPNEXT_BENCH_PYTHON }}
+    stdin: "{{ lookup('ansible.builtin.file', role_path ~ '/files/python/apply/rbac_roles.py') }}"
+  delegate_to: "{{ ERPNEXT_BACKEND_HOST_NODE }}"
+  environment:
+    SITE_NAME: "{{ ERPNEXT_SITE_NAME }}"
+    ROLE_GRANTS_JSON: "{{ ERPNEXT_RBAC_ROLE_GRANTS | to_json }}"
+    ROLE_MEMBERS_JSON: "{{ erpnext_rbac_members | to_json }}"
+    PROTECTED_USERS_JSON: "{{ ERPNEXT_RBAC_PROTECTED_USERS | to_json }}"
+  register: erpnext_rbac_apply
+  changed_when: >-
+    (erpnext_rbac_apply.stdout_lines | last | from_json).values() | select | list | length > 0

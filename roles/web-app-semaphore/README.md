@@ -19,6 +19,21 @@ The role deploys the single Semaphore container (with its embedded task runner) 
 - **LDAP login:**
   When `svc-db-openldap` is present, Semaphore's login form binds against the central OpenLDAP directory (`SEMAPHORE_LDAP_*`). With LDAP enabled the form is LDAP-only; there is no local-password fallback.
 
+- **LDAP role gate:**
+  The LDAP search filter only finds members of the `administrator` and `user` role groups (`memberOf` under the roles OU), so a directory account without either group cannot sign in through the form.
+
+- **OIDC role gate:**
+  The provider's `email_claim` is a Go template rendered from `templates/oidc/email_claim.j2`. It yields the email only when the groups claim holds the `administrator` or `user` role group, so Semaphore refuses the Keycloak sign-in of every other realm account with a missing email claim and returns it to the login page.
+
+- **Admin flag reconcile:**
+  Every deploy with SSO or LDAP pre-provisions the members of the `administrator` role group as external Semaphore admins and converges the admin flag of every account to that group in PostgreSQL. The break-glass account and the platform administrator are never demoted.
+
+- **Directory profile reconcile:**
+  The same deploy writes the directory email, and the full name when the member list carries one, into every external account of an `administrator` or `user` member (`files/sql/rbac/converge-profiles.sql`). An email another account already holds is left in place.
+
+- **Outsider sign-out:**
+  The same deploy expires the sessions and API tokens of every external account that belongs to neither role group (`files/sql/rbac/expire-outsiders.sql`). The break-glass account and the platform administrator are exempt.
+
 - **Break-glass local admin:**
   `SEMAPHORE_ADMIN*` seeds a local admin from the `web-app-semaphore-breakglass` user in every variant, reachable through the login form only when LDAP is disabled.
 

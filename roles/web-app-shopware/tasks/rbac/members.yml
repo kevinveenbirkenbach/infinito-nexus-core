@@ -1,0 +1,20 @@
+---
+- name: "👥 Resolve the administrator group members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 Keep the administrator group members of {{ application_id }}"
+  ansible.builtin.set_fact:
+    shopware_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 Resolve the editor group members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: editor
+
+- name: "👥 Keep the editor group members of {{ application_id }}"
+  ansible.builtin.set_fact:
+    shopware_rbac_editors: "{{ rbac_members }}"

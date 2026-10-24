@@ -14,6 +14,8 @@
 - name: "🧩 load docker and db for {{ application_id }}"
   include_role:
     name: sys-stk-full
+  vars:
+    webserver_location_extra_configuration: 'proxy_set_header {{ OPENCLAW_TRUSTED_PROXY_SECRET_HEADER }} "1";'
 
 - name: "🎨 Stage the corporate logo set of {{ application_id }}"
   ansible.builtin.include_tasks: utils/design.yml

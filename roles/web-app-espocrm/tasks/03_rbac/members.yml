@@ -1,0 +1,20 @@
+---
+# Param espocrm_rbac_role: declared RBAC role whose member usernames are collected into espocrm_rbac_members.
+- name: "👥 Resolve the members of '{{ espocrm_rbac_role }}'"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: "{{ espocrm_rbac_role }}"
+
+- name: "👥 Collect the members of '{{ espocrm_rbac_role }}'"
+  ansible.builtin.set_fact:
+    espocrm_rbac_members: "{{ espocrm_rbac_members | combine({espocrm_rbac_role: rbac_members | map(attribute='username') | list}) }}"
+
+- name: "🧩 Describe the team tier '{{ espocrm_rbac_role }}'"
+  ansible.builtin.set_fact:
+    espocrm_rbac_tiers: >-
+      {{ espocrm_rbac_tiers | combine({espocrm_rbac_role: ESPOCRM_RBAC_TIERS[espocrm_rbac_role] | combine({
+           'path': '/' ~ lookup('rbac_group_path', application_id=application_id, role=espocrm_rbac_role),
+           'members': rbac_members | map(attribute='username') | list
+         })}) }}
+  when: espocrm_rbac_role in ESPOCRM_RBAC_TIERS

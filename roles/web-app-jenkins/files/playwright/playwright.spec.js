@@ -64,6 +64,7 @@ test("LDAP: Jenkins LDAP plugin authenticates against svc-db-openldap (variant 1
 
 require("./test-mcp-guest");
 require("./test-partner-plugins");
+require("./test-rbac-roles");
 require("./test-design");
 
 // Persona scenarios.

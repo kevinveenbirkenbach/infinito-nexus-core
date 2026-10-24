@@ -1,0 +1,23 @@
+---
+- name: "👥 Resolve the administrator group members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "🛂 Keep only the Magento admin accounts of the administrator group active"
+  ansible.builtin.shell:
+    cmd: >-
+      container exec -i --user {{ MAGENTO_USER }}
+      -e MAGENTO_RBAC_ROOT -e MAGENTO_RBAC_ADMINS -e MAGENTO_RBAC_PROTECTED
+      {{ MAGENTO_PHP_CONTAINER_ADDRESS }} php
+    stdin: "{{ lookup('file', 'php/rbac/reconcile_admin_users.php') }}"
+  environment:
+    MAGENTO_RBAC_ROOT: "{{ MAGENTO_ROOT }}"
+    MAGENTO_RBAC_ADMINS: "{{ rbac_members | map(attribute='username') | list | to_json }}"
+    MAGENTO_RBAC_PROTECTED: "{{ [MAGENTO_ADMIN_USERNAME] | to_json }}"
+  register: magento_admin_reconcile
+  changed_when: magento_admin_reconcile.stdout is search('\[CHANGED\]')
+  failed_when: >-
+    magento_admin_reconcile.rc != 0
+    or magento_admin_reconcile.stdout is search('\[FAIL\]')

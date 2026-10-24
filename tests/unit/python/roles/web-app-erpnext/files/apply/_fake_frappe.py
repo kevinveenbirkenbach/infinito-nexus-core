@@ -60,6 +60,8 @@ def _matches(record, filters):
             operator, operand = expected
             if value is None:
                 return False
+            if operator == "in" and value not in operand:
+                return False
             if operator == "<=" and not value <= operand:
                 return False
             if operator == ">=" and not value >= operand:
@@ -91,6 +93,19 @@ class FakeDoc:
 
     def append(self, table, row):
         self._values[table].append(SimpleNamespace(**row))
+
+    def add_roles(self, *roles):
+        held = {row.role for row in self._values["roles"]}
+        for role in roles:
+            if role not in held:
+                self.append("roles", {"role": role})
+        self.save()
+
+    def remove_roles(self, *roles):
+        self._values["roles"] = [
+            row for row in self._values["roles"] if row.role not in roles
+        ]
+        self.save()
 
     def insert(self, ignore_permissions=False):
         self._values["name"] = self._frappe.insert(self.doctype, self._values)
@@ -193,10 +208,20 @@ class FakeFrappe:
     def new_doc(self, doctype):
         return FakeDoc(self, doctype, {})
 
+    def generate_hash(self):
+        return "generated-hash"
+
+    def _rows(self, doctype):
+        if doctype == "Has Role":
+            return [
+                {"parent": name, "parenttype": "User", "role": row.role}
+                for name, user in self.db._table("User").items()
+                for row in user.get("roles", [])
+            ]
+        return list(self.db._table(doctype).values())
+
     def get_all(self, doctype, filters=None, pluck=None):
-        rows = [
-            r for r in self.db._table(doctype).values() if _matches(r, filters or {})
-        ]
+        rows = [r for r in self._rows(doctype) if _matches(r, filters or {})]
         return [row[pluck] for row in rows] if pluck else rows
 
     def insert(self, doctype, values):

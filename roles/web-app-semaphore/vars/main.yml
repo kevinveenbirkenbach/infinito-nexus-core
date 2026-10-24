@@ -29,10 +29,18 @@ SEMAPHORE_OIDC_PROVIDERS_JSON: >-
          "client_secret":  OIDC.CLIENT.SECRET,
          "redirect_url":   (lookup('tls', application_id, 'url.base') | regex_replace('/+$', '')) ~ "/api/auth/oidc/keycloak/redirect",
          "username_claim": OIDC.ATTRIBUTES.USERNAME,
-         "email_claim":    "email",
-         "name_claim":     "name",
+         "email_claim":    lookup('template', lookup('path_absolute', 'roles', application_id, 'templates/oidc/email_claim.j2')) | trim,
+         "name_claim":     OIDC.ATTRIBUTES.NAME,
          "scopes":         ["openid", "profile", "email"]
        }
      } | to_json }}
 
-SEMAPHORE_LDAP_SEARCH_FILTER: "(&(objectClass=inetOrgPerson)({{ LDAP.USER.ATTRIBUTES.ID }}=%s))"
+SEMAPHORE_RBAC_LOGIN_ROLES:
+  - administrator
+  - user
+SEMAPHORE_RBAC_KEPT_ADMINISTRATORS:
+  - "{{ SEMAPHORE_ADMIN_USERNAME }}"
+  - "{{ SEMAPHORE_OIDC_ADMIN_LOGIN }}"
+SEMAPHORE_LDAP_SEARCH_FILTER: >-
+  (&(objectClass=inetOrgPerson)({{ LDAP.USER.ATTRIBUTES.ID }}=%s)(|{% for semaphore_login_role in SEMAPHORE_RBAC_LOGIN_ROLES %}({{ LDAP.USER.ATTRIBUTES.MEMBER_OF
+  }}=cn={{ application_id }}-{{ semaphore_login_role }},{{ LDAP.DN.OU.ROLES }}){% endfor %}))

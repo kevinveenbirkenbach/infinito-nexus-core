@@ -15,6 +15,10 @@ sso:
     origin:
       host: nginx
       port: "{{ lookup('config', 'web-app-magento', 'services.magento.ports.internal.http') }}"
+    restricted_locations:
+      - location: "/{{ lookup('config', 'web-app-magento', 'services.magento.backend_frontname') }}"
+        groups:
+          - "{{ lookup('rbac_group_path', application_id='web-app-magento', role='administrator') }}"
 dashboard:
   bond: 1
   enabled: "{{ 'web-app-dashboard' in group_names }}"
@@ -117,6 +121,7 @@ prometheus:
 magento:
   # nocheck: default-placement-manager  01_setup.yml bootstraps through `container exec` from IS_STACK_HOST, which can only reach a container the manager itself runs
   placement: manager
+  backend_frontname: admin
   composer:
     repository: https://mirror.mage-os.org/
     package: magento/project-community-edition

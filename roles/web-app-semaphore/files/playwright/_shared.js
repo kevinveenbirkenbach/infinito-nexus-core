@@ -9,6 +9,7 @@ const {
   requireDotenvValue,
 } = require("./personas");
 const { isServiceEnabled, skipUnlessServiceEnabled } = require("./service-gating");
+const keycloakAdmin = require("./personas/utils/keycloak");
 
 const oidcEnabled         = isServiceEnabled("sso");
 const ldapEnabled         = isServiceEnabled("ldap");
@@ -20,7 +21,15 @@ const breakglassUsername  = decodeDotenvQuotedValue(process.env.BREAKGLASS_USERN
 const breakglassPassword  = decodeDotenvQuotedValue(process.env.BREAKGLASS_PASSWORD);
 const biberUsername       = decodeDotenvQuotedValue(process.env.BIBER_USERNAME);
 const biberPassword       = decodeDotenvQuotedValue(process.env.BIBER_PASSWORD);
+const biberEmail          = decodeDotenvQuotedValue(process.env.BIBER_EMAIL);
 const canonicalDomain     = decodeDotenvQuotedValue(process.env.CANONICAL_DOMAIN);
+const keycloakBaseUrl     = normalizeBaseUrl(requireDotenvValue(process.env.KEYCLOAK_BASE_URL, "KEYCLOAK_BASE_URL"));
+const realmName           = decodeDotenvQuotedValue(process.env.KEYCLOAK_REALM_NAME);
+const superAdminUsername  = decodeDotenvQuotedValue(process.env.SUPER_ADMIN_USERNAME);
+const superAdminPassword  = decodeDotenvQuotedValue(process.env.SUPER_ADMIN_PASSWORD);
+const keycloakAdminRealm  = decodeDotenvQuotedValue(process.env.KEYCLOAK_ADMIN_REALM);
+const keycloakAdminCliClientId = decodeDotenvQuotedValue(process.env.KEYCLOAK_ADMIN_CLI_CLIENT_ID);
+const userGroupPath       = decodeDotenvQuotedValue(process.env.RBAC_USER_GROUP_PATH);
 
 const LOGIN_PATH = "/auth/login";
 
@@ -124,6 +133,84 @@ async function logout(page, label = "session") {
     .toContain(LOGIN_PATH);
 }
 
+/**
+ * Return Semaphore's record of the signed-in account from /api/user.
+ *
+ * Args:
+ *   page: a Playwright page whose context carries the Semaphore session.
+ */
+async function currentUser(page) {
+  const response = await page.request.get(`${semaphoreBaseUrl}/api/user`, {
+    failOnStatusCode: false,
+    timeout: resolveTimeout(30_000),
+  });
+  expect(response.status(), "Semaphore must answer /api/user for a signed-in session").toBe(200);
+  return response.json();
+}
+
+/**
+ * Submit the LDAP login form and return the status Semaphore answers the
+ * login request with.
+ *
+ * Args:
+ *   page: the Playwright page to drive.
+ *   username: the directory login name.
+ *   password: the directory password.
+ */
+async function submitLdapLogin(page, username, password) {
+  await gotoLogin(page);
+  const loginResponse = page.waitForResponse(
+    (response) => response.url().includes("/api/auth/login") && response.request().method() === "POST",
+    { timeout: resolveTimeout(60_000) },
+  );
+  await fillLocalLogin(page, username, password);
+  return (await loginResponse).status();
+}
+
+/**
+ * Run `fn` while biber is a member of the Keycloak group at `groupPath`,
+ * removing the membership afterwards only when this call granted it.
+ *
+ * Args:
+ *   browser: the Playwright browser, used for an isolated admin context.
+ *   groupPath: the full Keycloak group path, with leading slash.
+ *   fn: async body executed while the membership holds.
+ */
+async function withBiberInGroup(browser, groupPath, fn) {
+  const adminOpts = { adminRealm: keycloakAdminRealm, adminClientId: keycloakAdminCliClientId };
+  const adminCtx = await browser.newContext({ ignoreHTTPSErrors: true });
+  let biberAdded = false;
+  try {
+    biberAdded = await keycloakAdmin.keycloakAdminAddUserToGroup(
+      adminCtx.request,
+      keycloakBaseUrl,
+      realmName,
+      groupPath,
+      biberUsername,
+      superAdminUsername,
+      superAdminPassword,
+      adminOpts,
+    );
+    return await fn();
+  } finally {
+    if (biberAdded) {
+      await keycloakAdmin
+        .keycloakRemoveUserFromGroupViaRest(
+          adminCtx.request,
+          keycloakBaseUrl,
+          realmName,
+          superAdminUsername,
+          superAdminPassword,
+          groupPath,
+          biberUsername,
+          adminOpts,
+        )
+        .catch((err) => console.warn(`Cleanup removal of biber from ${groupPath} failed: ${err}`));
+    }
+    await adminCtx.close().catch(() => {});
+  }
+}
+
 async function beforeEach({ page }) {
   await page.setViewportSize({ width: 1440, height: 1100 });
   expect(semaphoreBaseUrl, "SEMAPHORE_BASE_URL must be set").toBeTruthy();
@@ -143,15 +230,20 @@ module.exports = {
     breakglassPassword,
     biberUsername,
     biberPassword,
+    biberEmail,
     canonicalDomain,
+    userGroupPath,
   },
   LOGIN_PATH,
   gotoLogin,
   onLoginPage,
   assertAuthenticated,
+  currentUser,
   signInViaLocal,
   signInViaLdap,
   signInViaOidc,
+  submitLdapLogin,
+  withBiberInGroup,
   logout,
   beforeEach,
   skipUnlessServiceEnabled,

@@ -9,6 +9,16 @@ OPENCLAW_PORT_INTERNAL: "{{ lookup('config', application_id, 'services.openclaw.
 OPENCLAW_URL: "{{ lookup('tls', application_id, 'url.base') | regex_replace('/+$', '') }}"
 OPENCLAW_CONFIG_PATH_HOST: "{{ [ lookup('container', application_id, 'directories.config'), 'openclaw.json' ] | path_join }}"
 OPENCLAW_MCP_SERVERS: "{{ MCP_DISCOVERED_SERVERS if (lookup('config', application_id, 'mcp.enabled') | bool) else [] }}"
+OPENCLAW_GATEWAY_SECRET: "{{ lookup('config', application_id, 'secrets.credentials.gateway_token') }}"
+
+OPENCLAW_TRUSTED_PROXY_ENABLED: "{{ lookup('config', application_id, 'services.sso.enabled') | bool }}"
+OPENCLAW_TRUSTED_PROXY_USER_HEADER: "x-forwarded-preferred-username"
+OPENCLAW_TRUSTED_PROXY_SECRET_HEADER_PREFIX: "x-infinito-sso-proxy"
+OPENCLAW_TRUSTED_PROXY_SECRET_HEADER: "{{ OPENCLAW_TRUSTED_PROXY_SECRET_HEADER_PREFIX }}-{{ lookup('config', application_id, 'secrets.credentials.sso_proxy_secret')
+  }}"
+OPENCLAW_TRUSTED_PROXY_REQUIRED_HEADERS: ["x-forwarded-user", "{{ OPENCLAW_TRUSTED_PROXY_SECRET_HEADER }}"]
+# Swarm overlays, the front proxy's included, draw from Docker's default 10.0.0.0/8 pool because svc-swarm-node initializes the swarm without default-addr-pool.
+OPENCLAW_TRUSTED_PROXY_SOURCES: "{{ [NETWORK_ROLE_SUBNET_POOL] if (IS_COMPOSE_MODE | bool) else [NETWORK_PRIVATE_CIDRS.class_a] }}"
 
 OPENCLAW_LITELLM_ENABLED: "{{ lookup('config', application_id, 'services.litellm.enabled') }}"
 OPENCLAW_LITELLM_BASE_URL: "{{ LITELLM_OPENAI_BASE_LOCAL_URL }}"

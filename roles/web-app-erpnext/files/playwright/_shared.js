@@ -1,7 +1,7 @@
 const { expect } = require("@playwright/test");
 const { resolveTimeout } = require("./timeouts");
 
-const { decodeDotenvQuotedValue, normalizeBaseUrl, performKeycloakLoginForm, gotoOnion } = require("./personas");
+const { decodeDotenvQuotedValue, normalizeBaseUrl, performKeycloakLoginForm, gotoOnion, requireDotenvValue } = require("./personas");
 const { isServiceEnabled, skipUnlessServiceEnabled } = require("./service-gating");
 
 const oidcEnabled    = isServiceEnabled("sso");
@@ -13,6 +13,8 @@ const adminPassword       = decodeDotenvQuotedValue(process.env.ADMIN_PASSWORD);
 const adminNativePassword = decodeDotenvQuotedValue(process.env.ADMIN_NATIVE_PASSWORD);
 const biberUsername       = decodeDotenvQuotedValue(process.env.BIBER_USERNAME);
 const biberPassword       = decodeDotenvQuotedValue(process.env.BIBER_PASSWORD);
+const biberEmail          = requireDotenvValue(process.env.BIBER_EMAIL, "BIBER_EMAIL").toLowerCase();
+const managedRoles        = JSON.parse(decodeDotenvQuotedValue(process.env.RBAC_MANAGED_ROLES_JSON || "[]"));
 const canonicalDomain     = decodeDotenvQuotedValue(process.env.CANONICAL_DOMAIN);
 
 const LOGIN_SECTION = "section.for-login";
@@ -104,6 +106,8 @@ module.exports = {
     adminNativePassword,
     biberUsername,
     biberPassword,
+    biberEmail,
+    managedRoles,
     canonicalDomain,
   },
   signInViaErpnextOidc,

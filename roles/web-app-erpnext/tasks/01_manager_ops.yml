@@ -30,8 +30,11 @@
 - name: "🔧 configure LDAP"
   include_tasks: 03_ldap.yml
   when: ERPNEXT_LDAP_ENABLED
+- name: "🛂 reconcile the ERPNext roles of the RBAC groups"
+  include_tasks: 04_rbac.yml
+  when: ERPNEXT_OIDC_ENABLED | bool or ERPNEXT_LDAP_ENABLED | bool
 - name: "🔧 configure outbound email"
   include_tasks: addons/email_account.yml
   when: ERPNEXT_EMAIL_ENABLED
 - name: "🎨 converge corporate design"
-  include_tasks: 04_design.yml
+  include_tasks: 05_design.yml

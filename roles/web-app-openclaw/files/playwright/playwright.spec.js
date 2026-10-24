@@ -13,4 +13,5 @@ require("./test-mcp").register(shared);
 require("./test-administrator-persona").register(shared);
 require("./test-oidc-login");
 require("./test-control-ui").register(shared);
+require("./test-rbac").register(shared);
 require("./test-design").register(shared);

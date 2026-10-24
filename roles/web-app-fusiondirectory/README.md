@@ -14,6 +14,10 @@ This role deploys FusionDirectory on Docker Compose against the project's centra
 - **Containerized deployment:** Run FusionDirectory through Docker Compose with the project's standard role-meta wiring.
 - **Native OIDC SSO via SSO-proxy sidecar:** Gate the FusionDirectory web UI through the project's SSO-proxy sidecar (provided by `web-app-keycloak`) for OIDC-authenticated entry.
 - **Front-proxy integration:** Publish the app through `sys-stk-front-proxy` for TLS termination and per-domain routing.
+- **Single sign-on through the proxy header:** with the oauth2-proxy gate active, `files/shell/ldap/bootstrap.sh` sets `fdLoginMethod: LoginHTTPHeader` and reads the user name from the `X-Forwarded-Preferred-Username` header that the vhost always overwrites from the oauth2-proxy identity. Without the gate it sets `LoginPost`, so FusionDirectory shows its own login form. Both values are reconciled on every deploy.
+- **Identity header bound to the front proxy:** the vhost sends the `sso_proxy_secret` credential as `X-Infinito-Sso-Proxy` with every request, and a `server-begin` fragment mounted into the image's nginx (`templates/sso_proxy.conf.j2`) answers 403 to every request that carries `X-Forwarded-Preferred-Username` without that secret. A client that reaches the container port, the oauth2-proxy port or the role network directly can no longer sign in as another user. `files/test/test.sh` asserts the refusal inside the container on every CLI test run.
+- **RBAC through ACL roles:** every deploy creates the ACL roles `admin`, `user-manager` and `self-service` under `ou=aclroles` and assigns them on the base DN to the matching RBAC groups `web-app-fusiondirectory-administrator`, `-user-manager` and `-self-service` in the roles OU. FusionDirectory resolves the `member` attribute of these `groupOfNames` entries. The platform administrator persona keeps its direct `admin` grant.
+- **Login recovery:** when the header login fails, deploy with the `sso` service disabled, or replace `fdLoginMethod` of `cn=config,ou=fusiondirectory,<base DN>` with `LoginPost`, to get the login form back.
 
 ## Further Resources
 
@@ -23,5 +27,5 @@ This role deploys FusionDirectory on Docker Compose against the project's centra
 ## Persona contract opt-outs
 
 The shared `biber` and `administrator` persona journeys are opted out via `PERSONA_BIBER_BLOCKED` / `PERSONA_ADMINISTRATOR_BLOCKED` in `templates/playwright.env.j2`.
-The oauth2-proxy sidecar only gates the vhost — FusionDirectory keeps its own LDAP-bind login behind it, which the role's OIDC scenario in `files/playwright/playwright.spec.js` asserts by expecting a "Sign in" button to still be visible after the Keycloak round-trip.
-`tasks/main.yml` provisions no FusionDirectory account, so the Keycloak identity maps to no directory session the shared helpers could carry through to an in-app logout.
+`biber` holds no FusionDirectory role, so the oauth2-proxy denies it. [`files/playwright/test-rbac.js`](./files/playwright/test-rbac.js) asserts that denial and adds `biber` to each role group in turn to assert the rights of the matching ACL role.
+The shared admin flow has not been verified against the header login. [`files/playwright/test-design.js`](./files/playwright/test-design.js) asserts the administrator's sign-in and rights in both variants, and [`files/playwright/playwright.spec.js`](./files/playwright/playwright.spec.js) asserts that the Keycloak sign-in lands in FusionDirectory without a second login form.

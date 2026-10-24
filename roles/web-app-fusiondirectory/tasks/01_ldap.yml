@@ -11,13 +11,20 @@
 - name: "📇 Add the FusionDirectory schemas, admin ACL and configuration to LDAP"
   ansible.builtin.shell:
     cmd: >- # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node
-      container exec -i -e FD_ADMIN_DN -e FD_GROUP_RDN -e FD_TIMEZONE -e FD_USER_RDN
+      container exec -i -e FD_ADMIN_DN -e FD_ADMINISTRATOR_GROUP_DN -e FD_USER_MANAGER_GROUP_DN -e FD_SELF_SERVICE_GROUP_DN
+      -e FD_GROUP_RDN -e FD_HTTP_HEADER_NAME -e FD_LOGIN_ATTRIBUTE -e FD_LOGIN_METHOD -e FD_TIMEZONE -e FD_USER_RDN
       {{ FUSIONDIRECTORY_LOCAL_CID | quote }}
       bash -s
     stdin: "{{ lookup('ansible.builtin.file', role_path ~ '/files/shell/ldap/bootstrap.sh') }}"
   environment:
     FD_ADMIN_DN: "{{ LDAP.USER.ATTRIBUTES.ID }}=platform_administrator,{{ LDAP.DN.OU.USERS }}"
+    FD_ADMINISTRATOR_GROUP_DN: "{{ FUSIONDIRECTORY_ADMINISTRATOR_GROUP_DN }}"
+    FD_USER_MANAGER_GROUP_DN: "{{ FUSIONDIRECTORY_USER_MANAGER_GROUP_DN }}"
+    FD_SELF_SERVICE_GROUP_DN: "{{ FUSIONDIRECTORY_SELF_SERVICE_GROUP_DN }}"
     FD_GROUP_RDN: "{{ LDAP.DN.OU.GROUPS | regex_replace(',.*$', '') }}"
+    FD_HTTP_HEADER_NAME: "{{ FUSIONDIRECTORY_HTTP_HEADER_NAME }}"
+    FD_LOGIN_ATTRIBUTE: "{{ LDAP.USER.ATTRIBUTES.ID }}"
+    FD_LOGIN_METHOD: "{{ FUSIONDIRECTORY_LOGIN_METHOD }}"
     FD_TIMEZONE: "{{ HOST_TIMEZONE }}"
     FD_USER_RDN: "{{ LDAP.DN.OU.USERS | regex_replace(',.*$', '') }}"
   delegate_to: "{{ FUSIONDIRECTORY_HOST_NODE }}"

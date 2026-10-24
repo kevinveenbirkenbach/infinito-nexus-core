@@ -1,0 +1,89 @@
+---
+- name: "🔍 Resolve {{ application_id }} hosting node + container id"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'roles/sys-svc-compose/tasks/utils/swarm/resolve_host_cid.yml') }}"
+  vars:
+    resolve_service_key: semaphore
+    resolve_output_prefix: SEMAPHORE
+    resolve_compose_cid: "{{ SEMAPHORE_NAME }}"
+
+- name: "👥 Start the RBAC member collection"
+  ansible.builtin.set_fact:
+    semaphore_rbac_members: {}
+
+- name: "👥 Resolve the members of every login role"
+  ansible.builtin.include_tasks: 03_rbac/members.yml
+  loop: "{{ SEMAPHORE_RBAC_LOGIN_ROLES }}"
+  loop_control:
+    loop_var: semaphore_rbac_role
+
+- name: "⏳ List the Semaphore accounts once the API/DB is ready"
+  ansible.builtin.shell: > # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node
+    container exec {{ SEMAPHORE_LOCAL_CID | quote }}
+    semaphore user list
+  register: semaphore_rbac_user_list
+  changed_when: false
+  retries: 30
+  delay: 5
+  until: semaphore_rbac_user_list.rc == 0
+  delegate_to: "{{ SEMAPHORE_HOST_NODE }}"
+
+- name: "➕ Pre-provision the administrator members as external Semaphore admins"
+  ansible.builtin.shell: > # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node
+    container exec {{ SEMAPHORE_LOCAL_CID | quote }}
+    semaphore user add
+    --admin --external
+    --login {{ item.username | quote }}
+    --name {{ item.username | quote }}
+    --email {{ item.email | quote }}
+  loop: >-
+    {{
+      semaphore_rbac_members.administrator
+      | selectattr('email')
+      | rejectattr('username', 'in', semaphore_rbac_user_list.stdout_lines)
+      | list
+    }}
+  loop_control:
+    label: "{{ item.username }}"
+  register: semaphore_rbac_added
+  changed_when: semaphore_rbac_added.rc == 0
+  failed_when: >-
+    semaphore_rbac_added.rc != 0
+    and 'duplicate key' not in (semaphore_rbac_added.stderr | lower)
+    and 'exist' not in (semaphore_rbac_added.stderr | lower)
+    and 'exist' not in (semaphore_rbac_added.stdout | lower)
+  delegate_to: "{{ SEMAPHORE_HOST_NODE }}"
+
+- name: "🛂 Converge the admin flag of every account to the administrator role group"
+  database_query:
+    mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+    config: "{{ lookup('database', application_id) }}"
+    query_file: "{{ role_path }}/files/sql/rbac/reconcile-admins.sql"
+    named_args:
+      members: "{{ semaphore_rbac_members.administrator | to_json }}"
+      kept: "{{ SEMAPHORE_RBAC_KEPT_ADMINISTRATORS | to_json }}"
+    expect_rows: true
+  register: semaphore_rbac_reconciled
+  changed_when: semaphore_rbac_reconciled.rows | length > 0
+
+- name: "🪪 Converge the email and name of every member account to the directory"
+  database_query:
+    mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+    config: "{{ lookup('database', application_id) }}"
+    query_file: "{{ role_path }}/files/sql/rbac/converge-profiles.sql"
+    named_args:
+      members: "{{ semaphore_rbac_members.values() | list | flatten | to_json }}"
+    expect_rows: true
+  register: semaphore_rbac_profiles
+  changed_when: semaphore_rbac_profiles.rows | length > 0
+
+- name: "🚪 End sessions and API tokens of external accounts outside the login roles"
+  database_query:
+    mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+    config: "{{ lookup('database', application_id) }}"
+    query_file: "{{ role_path }}/files/sql/rbac/expire-outsiders.sql"
+    named_args:
+      members: "{{ semaphore_rbac_members.values() | list | flatten | to_json }}"
+      kept: "{{ SEMAPHORE_RBAC_KEPT_ADMINISTRATORS | to_json }}"
+    expect_rows: true
+  register: semaphore_rbac_expired
+  changed_when: semaphore_rbac_expired.rows | length > 0

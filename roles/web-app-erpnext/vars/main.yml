@@ -52,7 +52,7 @@ ERPNEXT_REDIS_URL: "{{ lookup('engine', 'redis', application_id, 'url') }}"
 
 ERPNEXT_MAIL: "{{ lookup('email', application_id) if ERPNEXT_EMAIL_ENABLED else {} }}"
 
-ERPNEXT_OIDC_ROLE_GRANTS:
+ERPNEXT_RBAC_ROLE_GRANTS:
   administrator:
     - "System Manager"
   manager:
@@ -62,9 +62,13 @@ ERPNEXT_OIDC_ROLE_GRANTS:
     - "Accounts User"
   customer:
     - "Customer"
-ERPNEXT_OIDC_GROUP_ROLE_MAP: >-
-  {{ {
-       '/' ~ lookup('rbac_group_path', application_id=application_id, role='administrator'): ERPNEXT_OIDC_ROLE_GRANTS.administrator,
-       '/' ~ lookup('rbac_group_path', application_id=application_id, role='manager'): ERPNEXT_OIDC_ROLE_GRANTS.manager,
-       '/' ~ lookup('rbac_group_path', application_id=application_id, role='customer'): ERPNEXT_OIDC_ROLE_GRANTS.customer,
-     } }}
+ERPNEXT_RBAC_PROTECTED_USERS:
+  - "Administrator"
+  - "Guest"
+  - "{{ ERPNEXT_API_BOT_USER.email }}"
+  - "{{ lookup('users', 'platform_administrator').email }}"
+ERPNEXT_SSO_PROVIDER_NAME: "keycloak"
+
+ERPNEXT_LDAP_MEMBER_OF_ATTRIBUTE: "{{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}"
+ERPNEXT_LDAP_GROUP_MEMBER_ATTRIBUTE: "{{ LDAP.RBAC.MEMBER_ATTRIBUTE }}"
+ERPNEXT_LDAP_GROUP_OBJECTCLASS: "{{ LDAP.RBAC.FLAVORS | first }}"

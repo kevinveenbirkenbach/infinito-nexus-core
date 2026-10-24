@@ -13,10 +13,11 @@ This role deploys Jenkins on Docker Compose. It builds a custom Jenkins image th
 - **Containerized deployment:** Run Jenkins through Docker Compose with the role-specific custom image.
 - **Native OIDC SSO:** Authenticate users against Keycloak via the `oic-auth` plugin, configured by JCasC at boot.
 - **LDAP variant:** Switch to Jenkins's core `ldap` plugin via the role's matrix-deploy variant 1 against `svc-db-openldap`.
-- **Role-strategy authorisation:** Map Keycloak groups and LDAP groups onto Jenkins authorities through the `role-strategy` plugin.
+- **Role-strategy authorisation:** Map the RBAC groups of `meta/rbac.yml` onto the global roles `admin` (`administrator`), `developer` (create, configure, build and delete jobs) and `viewer` (read jobs and builds) through the `role-strategy` plugin. The OIDC realm matches the group paths of the groups claim, the LDAP realm matches the `web-app-jenkins-<role>` group names under the roles OU. A signed-in account without one of these groups is refused.
+- **Profile sync:** Take the full name and email from the OIDC claims on every login, or from the directory's full name and mail attributes in the LDAP variant.
 - **JCasC-managed configuration:** Persist the security realm and authorisation strategy as code via Configuration as Code.
 - **Pre-installed plugin set:** Bake build-pipeline, credentials, and SCM plugins into the image so first start-up does not block on plugin downloads.
-- **MCP server surface:** Serve the `mcp-server` plugin's streamable-HTTP endpoint on the container network, guarded by an administrator API token and limited to the read-only tool default.
+- **MCP server surface:** Serve the `mcp-server` plugin's streamable-HTTP endpoint on the container network, guarded by a service-account API token and limited to the read-only tool default.
 
 ## MCP Server
 
@@ -53,9 +54,10 @@ Off. `mcp.enabled` is true only while `web-app-hermes` or
 
 ### Authorization subject
 
-`auth_subject: administrator`: the API token is issued against the
-administrator account, so every call carries that account's rights no matter who
-asked the client. Reaching the tool server is gated on the role's `mcp` RBAC
+`auth_subject: service_account`: the API token is issued against the MCP
+credential owner, so every call carries that account's rights no matter who
+asked the client. `templates/casc.yaml.j2` grants that account the `viewer`
+role, or the `developer` role while `mcp.tools.mutating_tools_enabled` is on. Reaching the tool server is gated on the role's `mcp` RBAC
 group, which is a separate grant from administering Jenkins.
 
 ### Tool scope

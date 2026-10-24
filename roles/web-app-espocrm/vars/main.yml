@@ -35,6 +35,27 @@ ESPOCRM_OIDC_ONION_ISSUER: "{{ (lookup('tls', 'web-app-keycloak', 'domain') | ne
 ESPOCRM_OIDC_SOCKS_PROXY: "{{ lookup('tor_socks_proxy') if ESPOCRM_OIDC_ONION_ISSUER | bool else '' }}"
 ESPOCRM_LDAP_ENABLED: "{{ lookup('config', application_id, 'services.ldap.enabled') }}"
 ESPOCRM_LDAP_AUTOCREATE: "{{ lookup('config', application_id, 'services.ldap.autocreate') }}"
+ESPOCRM_LDAP_MEMBER_OF_ATTRIBUTE: "{{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}"
+ESPOCRM_LDAP_USER_LOGIN_FILTER: >-
+  (|{% for espocrm_rbac_role in ['administrator'] + (ESPOCRM_RBAC_TIERS | list) %}({{ ESPOCRM_LDAP_MEMBER_OF_ATTRIBUTE }}=cn={{ application_id }}-{{ espocrm_rbac_role
+  }},{{ LDAP.DN.OU.ROLES }}){% endfor %})
+ESPOCRM_RBAC_TIERS:
+  manager:
+    team: "Managers"
+    role: "Manager"
+    access: "manage"
+  user:
+    team: "Users"
+    role: "User"
+    access: "use"
+ESPOCRM_RBAC_MODULE_PATH: "custom/Espo/Modules/InfinitoRbac"
+ESPOCRM_RBAC_MODULE_CONFIG_PARAMS:
+  infinitoOidcAllowedGroups:
+    level: system
+  infinitoOidcAdministratorGroups:
+    level: system
+  infinitoOidcProtectedUsers:
+    level: system
 ESPOCRM_USER: "www-data"
 
 ESPOCRM_SCRIPT_SEED_FILE: "seed_config.php"

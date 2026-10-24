@@ -24,6 +24,14 @@
   notify:
     - compose-up
 
+- name: "📄 Deploy the AdminOpenAuth role gate that adminopenauth.yaml registers"
+  copy:
+    src: "php/oidc/role_gate.php"
+    dest: "{{ SHOPWARE_ROLE_GATE_HOST }}"
+    mode: "0644"
+  notify:
+    - compose-up
+
 - name: "📄 Render shopware.yaml (SeaweedFS S3 filesystem)"
   stack_host_template:
     src: "shopware.yaml.j2"
@@ -59,6 +67,10 @@
     apply:
       no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
       delegate_to: "{{ SHOPWARE_WEB_HOST_NODE }}"
+
+- name: "👥 Resolve the administrator and editor group members of {{ application_id }}"
+  ansible.builtin.include_tasks: rbac/members.yml
+  when: SHOPWARE_OIDC_ENABLED | bool
 
 - name: "🔐 Install & configure the enabled admin auth plugins"
   ansible.builtin.include_tasks:
