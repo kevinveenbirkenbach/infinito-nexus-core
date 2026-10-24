@@ -1,0 +1,183 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Joomla\CMS\Plugin {
+    if (!class_exists(CMSPlugin::class, false)) {
+        abstract class CMSPlugin
+        {
+        }
+    }
+}
+
+namespace Joomla\Event {
+    if (!interface_exists(SubscriberInterface::class, false)) {
+        interface SubscriberInterface
+        {
+            public static function getSubscribedEvents(): array;
+        }
+    }
+
+    if (!class_exists(Priority::class, false)) {
+        final class Priority
+        {
+            public const MIN = -3;
+            public const NORMAL = 0;
+        }
+    }
+}
+
+namespace {
+    use Joomla\Event\Priority;
+    use Joomla\Plugin\System\Keycloak\Extension\Keycloak;
+    use PHPUnit\Framework\TestCase;
+
+    final class KeycloakTest extends TestCase
+    {
+        private const PLUGIN = '/roles/web-app-joomla/files/joomla-oidc-plugin/plg_system_keycloak/src/Extension/Keycloak.php';
+
+        private const TRIMMED = [
+            'JOOMLA_OIDC_GROUP_MAP',
+            'JOOMLA_OIDC_PROFILE_CLAIMS',
+            'JOOMLA_OIDC_ISSUER_URL',
+        ];
+
+        private const SCALAR_CLAIMS = ['phone' => 'phone_number', 'website' => 'website'];
+
+        private const ADDRESS_FIELDS = [
+            'address1' => 'street_address',
+            'city' => 'locality',
+            'region' => 'region',
+            'postal_code' => 'postal_code',
+            'country' => 'country',
+        ];
+
+        public static function setUpBeforeClass(): void
+        {
+            if (!defined('_JEXEC')) {
+                define('_JEXEC', 1);
+            }
+            require_once dirname(__DIR__, 10) . self::PLUGIN;
+        }
+
+        protected function tearDown(): void
+        {
+            foreach (self::TRIMMED as $name) {
+                putenv($name);
+            }
+        }
+
+        private function call(string $method, mixed ...$arguments): mixed
+        {
+            $plugin = (new ReflectionClass(Keycloak::class))->newInstanceWithoutConstructor();
+            $reflection = new ReflectionMethod(Keycloak::class, $method);
+
+            return $reflection->invoke($plugin, ...$arguments);
+        }
+
+        public function testAMissingVariableRaisesAndNamesIt(): void
+        {
+            putenv('JOOMLA_OIDC_ISSUER_URL');
+
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('JOOMLA_OIDC_ISSUER_URL');
+
+            $this->call('requireEnv', 'JOOMLA_OIDC_ISSUER_URL');
+        }
+
+        public function testAnEmptyVariableRaisesInsteadOfFallingBack(): void
+        {
+            putenv('JOOMLA_OIDC_ISSUER_URL=');
+
+            $this->expectException(RuntimeException::class);
+
+            $this->call('requireEnv', 'JOOMLA_OIDC_ISSUER_URL');
+        }
+
+        public function testASetVariableIsReturnedVerbatim(): void
+        {
+            putenv('JOOMLA_OIDC_ISSUER_URL=https://auth.example/realms/main');
+
+            self::assertSame('https://auth.example/realms/main', $this->call('requireEnv', 'JOOMLA_OIDC_ISSUER_URL'));
+        }
+
+        public function testAGroupMapThatIsNoObjectRaises(): void
+        {
+            putenv('JOOMLA_OIDC_GROUP_MAP=[]');
+
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('JOOMLA_OIDC_GROUP_MAP');
+
+            $this->call('mapGroupsToJoomla', ['/roles/web-app-joomla/editor']);
+        }
+
+        public function testGroupPathsMapWithOrWithoutTheirLeadingSlashOnce(): void
+        {
+            putenv('JOOMLA_OIDC_GROUP_MAP=' . json_encode(['/roles/web-app-joomla/editor' => 4, '/roles/web-app-joomla/manager' => 6]));
+
+            self::assertSame(
+                [4, 6],
+                $this->call('mapGroupsToJoomla', ['/roles/web-app-joomla/editor', 'roles/web-app-joomla/editor', '/roles/web-app-joomla/manager', '/unrelated'])
+            );
+        }
+
+        public function testAnEmptyProfileClaimMapRaises(): void
+        {
+            putenv('JOOMLA_OIDC_PROFILE_CLAIMS={}');
+
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('JOOMLA_OIDC_PROFILE_CLAIMS');
+
+            $this->call('jsonEnv', 'JOOMLA_OIDC_PROFILE_CLAIMS');
+        }
+
+        public function testPhoneWebsiteAndAddressClaimsFillTheirProfileKeys(): void
+        {
+            $claims = [
+                'phone_number' => ' +49 40 1234 ',
+                'website' => 'https://biber.example',
+                'address' => [
+                    'street_address' => 'Dammweg 1',
+                    'locality' => 'Hamburg',
+                    'region' => 'HH',
+                    'postal_code' => '20095',
+                    'country' => 'DE',
+                ],
+            ];
+
+            self::assertSame(
+                [
+                    'phone' => '+49 40 1234',
+                    'website' => 'https://biber.example',
+                    'address1' => 'Dammweg 1',
+                    'city' => 'Hamburg',
+                    'region' => 'HH',
+                    'postal_code' => '20095',
+                    'country' => 'DE',
+                ],
+                Keycloak::profileFromClaims($claims, self::SCALAR_CLAIMS, 'address', self::ADDRESS_FIELDS)
+            );
+        }
+
+        public function testAbsentClaimsClearTheirProfileKeys(): void
+        {
+            $profile = Keycloak::profileFromClaims(
+                ['website' => ['not', 'a', 'string'], 'address' => 'not an object'],
+                self::SCALAR_CLAIMS,
+                'address',
+                self::ADDRESS_FIELDS
+            );
+
+            self::assertSame(array_fill_keys(['phone', 'website', 'address1', 'city', 'region', 'postal_code', 'country'], ''), $profile);
+        }
+
+        public function testTheProfileFormIsLockedAfterEveryOtherListener(): void
+        {
+            $events = Keycloak::getSubscribedEvents();
+
+            self::assertSame(['onContentPrepareForm', Priority::MIN], $events['onContentPrepareForm']);
+            self::assertSame('onAfterRoute', $events['onAfterRoute']);
+            self::assertSame('onContentNormaliseRequestData', $events['onContentNormaliseRequestData']);
+        }
+    }
+}

@@ -8,8 +8,8 @@
 #
 # Idempotent: if the network is already enabled, `wp core multisite-convert`
 # prints an informative message and exits 1 - we ignore that so re-runs
-# stay green. Sites that already exist are detected via `wp site list`
-# before `wp site create` runs.
+# stay green. `files/php/multisite/sites.php` skips a site whose domain
+# already exists.
 
 - name: "🌐 Multisite: convert Single-Site to Multisite network (subdomain install)"
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
@@ -51,29 +51,13 @@
     - { key: "PATH_CURRENT_SITE", value: "/" }
   changed_when: true
 
-- name: "🌐 Multisite: list the existing sites in the network"
-  shell: >
-    container exec -u {{ WORDPRESS_USER }} {{ WORDPRESS_CONTAINER_ADDRESS }}
-    wp site list --field=url --path={{ WORDPRESS_DOCKER_HTML_PATH }}
+- name: "🌐 Multisite: give every further canonical domain the site of exactly that domain"
+  ansible.builtin.shell:
+    cmd: >-
+      container exec -i --user {{ WORDPRESS_USER | quote }}
+      -e {{ ('WORDPRESS_MULTISITE_SITES=' ~ (WORDPRESS_MULTISITE_SITES | to_json | b64encode)) | quote }}
+      {{ WORDPRESS_CONTAINER_ADDRESS }}
+      wp eval-file - --path={{ WORDPRESS_DOCKER_HTML_PATH | quote }}
+    stdin: "{{ lookup('file', 'php/multisite/sites.php') }}"
   register: wp_ms_sites
-  changed_when: false
-
-- name: "🌐 Multisite: create any missing per-canonical-domain site"
-  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
-  shell: >
-    container exec -u {{ WORDPRESS_USER }} {{ WORDPRESS_CONTAINER_ADDRESS }}
-    wp site create
-    --slug="{{ item }}"
-    --title="{{ item }}"
-    --email="{{ WORDPRESS_ADMIN_EMAIL }}"
-    --path={{ WORDPRESS_DOCKER_HTML_PATH }}
-  loop: "{{ (WORDPRESS_DOMAINS | default([]))[1:] }}"
-  when:
-    - (WORDPRESS_DOMAINS | default([])) | length > 1
-    - ('https://' ~ item) not in wp_ms_sites.stdout
-    - ('http://' ~ item) not in wp_ms_sites.stdout
-  register: wp_ms_site_create
-  changed_when: wp_ms_site_create.rc == 0
-  failed_when: >
-    wp_ms_site_create.rc != 0
-    and ('already exists' not in (wp_ms_site_create.stderr | default('') | lower))
+  changed_when: wp_ms_sites.stdout_lines | last != 'unchanged'

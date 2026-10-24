@@ -1,0 +1,39 @@
+---
+- name: "👥 Resolve the members of the administrator role"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 Keep the administrator members apart from the next lookup"
+  ansible.builtin.set_fact:
+    discourse_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 Resolve the members of the moderator role"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: moderator
+
+- name: "🛂 Reconcile the admin and moderator flags with the role groups"
+  ansible.builtin.command:
+    argv:
+      - container
+      - exec
+      - -i
+      - -e
+      - DISCOURSE_RBAC_ADMINISTRATORS
+      - -e
+      - DISCOURSE_RBAC_MODERATORS
+      - -e
+      - DISCOURSE_RBAC_KEPT_ADMINISTRATORS
+      - "{{ DISCOURSE_CONTAINER }}" # nocheck: container-exec-resolver  the launcher names the container itself, so the bare name resolves in both modes
+      - rails
+      - r
+      - "{{ lookup('file', 'ruby/reconcile_staff.rb') }}"
+  environment:
+    DISCOURSE_RBAC_ADMINISTRATORS: "{{ discourse_rbac_administrators | to_json }}"
+    DISCOURSE_RBAC_MODERATORS: "{{ rbac_members | to_json }}"
+    DISCOURSE_RBAC_KEPT_ADMINISTRATORS: "{{ [lookup('users', 'platform_administrator').username] | to_json }}"
+  register: discourse_rbac_reconcile
+  changed_when: "'changed=true' in discourse_rbac_reconcile.stdout_lines"

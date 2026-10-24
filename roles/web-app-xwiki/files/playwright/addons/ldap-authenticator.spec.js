@@ -14,6 +14,79 @@ test.use({ ignoreHTTPSErrors: true });
 const appBaseUrl = normalizeBaseUrl(process.env.APP_BASE_URL || "");
 const canonicalDomain = requireDotenvValue(process.env.CANONICAL_DOMAIN, "CANONICAL_DOMAIN");
 const ssoEnabled = (process.env.SSO_SERVICE_ENABLED || "").toLowerCase() === "true";
+const ADMIN_PATH = "/bin/admin/XWiki/XWikiPreferences";
+
+function gateLdapLogin() {
+  skipUnlessAddonEnabled("ldap-authenticator");
+  skipUnlessServiceEnabled("ldap");
+  test.skip(ssoEnabled, "LDAP is the active XWiki authservice only when SSO/OIDC is off");
+}
+
+async function signInViaLdap(page, username, password) {
+  const base = appBaseUrl.replace(/\/$/, "");
+  await gotoOnion(page, `${base}/bin/login/XWiki/XWikiLogin`, { waitUntil: "domcontentloaded" });
+  const usernameField = page.locator("input#j_username, input[name='j_username']").first();
+  const passwordField = page.locator("input#j_password, input[name='j_password']").first();
+  await expect(usernameField, "XWiki MUST serve its LDAP-backed login form").toBeVisible({
+    timeout: resolveTimeout(30_000),
+  });
+  await usernameField.fill(username);
+  await passwordField.fill(password);
+  await passwordField.press("Enter");
+  await page.waitForURL((url) => !/\/bin\/(login|loginsubmit)\//.test(url.pathname), {
+    timeout: resolveTimeout(60_000),
+  });
+  await page.waitForLoadState("domcontentloaded");
+  return page.locator("html").getAttribute("data-xwiki-user-reference");
+}
+
+async function adminPageStatus(page) {
+  const base = appBaseUrl.replace(/\/$/, "");
+  const response = await gotoOnion(page, `${base}${ADMIN_PATH}`, { waitUntil: "domcontentloaded" });
+  expect(response, `Expected a response for ${ADMIN_PATH}`).toBeTruthy();
+  return response.status();
+}
+
+test("ldap-authenticator: biber binds with its uid, gets its directory profile and no admin rights", async ({ page }) => {
+  gateLdapLogin();
+  test.setTimeout(resolveTimeout(180_000));
+  const username = requireDotenvValue(process.env.BIBER_USERNAME, "BIBER_USERNAME");
+  const firstname = requireDotenvValue(process.env.BIBER_FIRSTNAME, "BIBER_FIRSTNAME");
+
+  const reference = await signInViaLdap(page, username, requireDotenvValue(process.env.BIBER_PASSWORD, "BIBER_PASSWORD"));
+  expect(
+    reference,
+    `the LDAP bind MUST resolve ${username} through the uid attribute and land on XWiki.${username}`,
+  ).toMatch(new RegExp(`XWiki\\.${username}$`, "i"));
+
+  const base = appBaseUrl.replace(/\/$/, "");
+  await gotoOnion(page, `${base}/bin/view/XWiki/${encodeURIComponent(username)}`, { waitUntil: "domcontentloaded" });
+  await expect(
+    page.locator("body"),
+    "the LDAP fields mapping MUST copy the directory first name into the XWiki profile",
+  ).toContainText(firstname, { timeout: resolveTimeout(30_000) });
+
+  expect(await adminPageStatus(page), `${username} holds no administrator role, so ${ADMIN_PATH} MUST answer 403`).toBe(
+    403,
+  );
+});
+
+test("ldap-authenticator: the administrator binds and lands in XWikiAdminGroup through its directory role group", async ({
+  page,
+}) => {
+  gateLdapLogin();
+  test.setTimeout(resolveTimeout(180_000));
+  const username = requireDotenvValue(process.env.ADMIN_USERNAME, "ADMIN_USERNAME");
+
+  const reference = await signInViaLdap(page, username, requireDotenvValue(process.env.ADMIN_PASSWORD, "ADMIN_PASSWORD"));
+  expect(reference, `the LDAP bind MUST land ${username} on XWiki.${username}`).toMatch(
+    new RegExp(`XWiki\\.${username}$`, "i"),
+  );
+  expect(
+    await adminPageStatus(page),
+    `${username} is a member of the administrator role group in the directory, so the LDAP group sync MUST grant XWikiAdminGroup and ${ADMIN_PATH} MUST open`,
+  ).toBeLessThan(400);
+});
 
 test("ldap-authenticator: XWiki enforces its LDAP-backed native credential form on protected pages", async ({ page }) => {
   skipUnlessAddonEnabled("ldap-authenticator");

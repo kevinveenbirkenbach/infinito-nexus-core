@@ -1,6 +1,10 @@
 require("./test-oidc-login");
 require("./test-oidc-fallback");
+require("./test-rbac-groups");
+require("./test-profile-sync");
+require("./test-sso-logout");
 require("./test-ldap-login");
+require("./test-ldap-disabled");
 require("./test-guest-persona");
 require("./test-biber-persona");
 require("./test-administrator-persona");

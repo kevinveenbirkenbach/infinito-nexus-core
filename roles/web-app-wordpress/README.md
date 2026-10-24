@@ -34,6 +34,10 @@ This automated Docker Compose deployment streamlines the process by building a c
 ## Features
 
 - **Automated provisioning:** Configured by Ansible without manual steps.
+- **OIDC profile sync:** Every OIDC login overwrites the WordPress first name, last name, display name, email, website and language of the user with the Keycloak claims, so Keycloak stays the source of the profile.
+- **Read-only IdP fields:** On `profile.php` of an OIDC account these fields are read-only, and saving the profile keeps their stored values.
+- **OIDC role mapping:** Every OIDC login sets the WordPress role from the user's Keycloak role groups; a user without one is a Subscriber.
+- **Multisite RBAC:** Under Multisite, per-site groups set the role on each site, and the network-administrator group grants super-admin and revokes the super-admin rights it granted. The bootstrap administrator keeps its super-admin rights.
 
 ## Purpose
 
@@ -41,12 +45,14 @@ The goal of this deployment is to provide a production-ready, scalable WordPress
 
 ## Multisite
 
-WordPress Multisite is opt-in. Set `services.wordpress.multisite.enabled: true` in the inventory to convert the deployed instance into a sub-domain Multisite network. Every entry in `domains.canonical` becomes a site in the network; the first entry is the network primary, subsequent entries are child sites.
+WordPress Multisite is opt-in. Set `services.wordpress.multisite.enabled: true` in the inventory to convert the deployed instance into a sub-domain Multisite network. Every entry in `domains.canonical` becomes the site of exactly that domain in the network; the first entry is the network primary, subsequent entries are child sites. [files/php/multisite/sites.php](files/php/multisite/sites.php) creates them and moves a site that an earlier deploy created at `<domain>.<network domain>` to `<domain>`.
 
 RBAC under Multisite uses the hierarchical Keycloak group path:
 
 - Per-site role: `/roles/web-app-wordpress/<canonical-domain>/<role>`
 - Network-wide super-admin: `/roles/web-app-wordpress/network-administrator`
+
+The Multisite variant in [meta/variants.yml](meta/variants.yml) sets `rbac.tenancy.axis: domain`, declares `network-administrator` with `scope: global` and keeps `mcp` global. [rbac_group_map.json.j2](templates/rbac_group_map.json.j2) builds every group path with `rbac_group_path` and hands the map to the mu-plugin as `WORDPRESS_RBAC_GROUP_MAP`.
 
 Operator-facing instructions for assigning these groups live in [Administration RBAC](../../docs/administration/configuration/rbac.md). The design contract is in [RBAC design](../../docs/contributing/design/iam/rbac.md).
 
@@ -66,14 +72,14 @@ the unified addon contract. The OIDC and WP-Discourse runtime config lives in ea
 | `infinito-s3-uploads` | `mu_plugin` | enabled with the `seaweedfs` service | none |
 
 The OIDC login + RBAC paths are covered by `test-admin-oidc-login.js` /
-`test-rbac-roles.js`, the Discourse round-trip by `test-discourse-roundtrip.js`.
+`test-rbac-roles.js` / `test-multisite-rbac.js`, the profile sync by `test-profile-sync.js`, the Discourse round-trip by `test-discourse-roundtrip.js`.
 
 ## Playwright service dependencies
 
 The Playwright suite in [files/playwright/playwright.spec.js](files/playwright/playwright.spec.js) gates its scenarios on the following shared services. Scenarios that depend on a service report as `skipped` when the corresponding `<SERVICE>_SERVICE_ENABLED=false` in the staged `.env`:
 
-- `oidc`: baseline admin OIDC round-trip plus the three RBAC scenarios (subscriber/editor/administrator).
-- `ldap`: the three RBAC scenarios additionally depend on LDAP group sync; disabling LDAP skips them alongside OIDC.
+- `oidc`: baseline admin OIDC round-trip, the three Single-Site RBAC scenarios (subscriber/editor/administrator), the Multisite scenarios (bootstrap super-admin kept, network-administrator grant and revoke, per-site Editor on the primary and on a child site only) and the profile sync and read-only scenario.
+- `ldap`: the RBAC scenarios additionally depend on LDAP group sync; disabling LDAP skips them alongside OIDC.
 - `discourse`: the WP->Discourse post round-trip scenario. Disabling Discourse skips it; front-page reachability and CSP baselines stay active.
 - `seaweedfs`: the media-library upload scenario in `test-seaweedfs.js`, which lists the role's bucket over the S3 API before and after the upload.
 

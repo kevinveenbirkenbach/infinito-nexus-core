@@ -45,6 +45,18 @@ MEDIAWIKI_OIDC_BUTTON_TEXT: "{{ OIDC.BUTTON_TEXT }}"
 MEDIAWIKI_OIDC_AUTOLOGIN: true
 MEDIAWIKI_OIDC_LOCALLOGIN: false
 MEDIAWIKI_LOCAL_PASSWORD_LOGIN: "{{ (not (MEDIAWIKI_OIDC_ENABLED | bool)) or (MEDIAWIKI_OIDC_LOCALLOGIN | bool) }}"
+MEDIAWIKI_RBAC_ADMINISTRATOR_PATH: "/{{ lookup('rbac_group_path', application_id=application_id, role='administrator') }}"
+MEDIAWIKI_RBAC_BUREAUCRAT_PATH: "/{{ lookup('rbac_group_path', application_id=application_id, role='bureaucrat') }}"
+MEDIAWIKI_RBAC_INTERFACE_ADMIN_PATH: "/{{ lookup('rbac_group_path', application_id=application_id, role='interface-admin') }}"
+MEDIAWIKI_RBAC_GROUP_MAP:
+  sysop:
+    - "{{ MEDIAWIKI_RBAC_ADMINISTRATOR_PATH }}"
+  bureaucrat:
+    - "{{ MEDIAWIKI_RBAC_ADMINISTRATOR_PATH }}"
+    - "{{ MEDIAWIKI_RBAC_BUREAUCRAT_PATH }}"
+  interface-admin:
+    - "{{ MEDIAWIKI_RBAC_ADMINISTRATOR_PATH }}"
+    - "{{ MEDIAWIKI_RBAC_INTERFACE_ADMIN_PATH }}"
 
 MEDIAWIKI_OBJSTORE_ENABLED: "{{ lookup('objstore', application_id, 'enabled') | bool }}"
 MEDIAWIKI_OBJSTORE_BUCKET: "{{ lookup('objstore', application_id, 'bucket') }}"

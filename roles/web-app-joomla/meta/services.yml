@@ -7,10 +7,11 @@ sso:
   flavor: oidc
   oidc:
     fallback_enabled: true
-# nocheck: dynamic-flag
+# nocheck: bond-baseline variant 0 is the OIDC-only round and variant 1 the LDAP-only round, so the directory joins the LDAP round only
 ldap:
-  enabled: false
-  shared: false
+  bond: 1
+  enabled: "{{ 'svc-db-openldap' in group_names }}"
+  shared: "{{ 'svc-db-openldap' in group_names }}"
 logout:
   bond: 1
   enabled: "{{ 'web-svc-logout' in group_names }}"

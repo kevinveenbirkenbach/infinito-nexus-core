@@ -39,6 +39,27 @@ JOOMLA_USER_PASSWORD: "{{ lookup('users', 'platform_administrator').password }}"
 JOOMLA_USER_EMAIL: "{{ lookup('users', 'platform_administrator').email }}"
 JOOMLA_WEB_USER: "www-data"
 
+JOOMLA_PROFILE_FIELDS: ["address1", "address2", "city", "region", "country", "postal_code", "phone", "website", "favoritebook", "aboutme", "dob"]
+JOOMLA_PROFILE_SHOWN: >-
+  {{ (lookup('config', application_id, 'addons.plg_system_keycloak.config.profile.claims') | list)
+     + (lookup('config', application_id, 'addons.plg_system_keycloak.config.profile.address') | list) }}
+
+JOOMLA_LDAP_ENABLED: "{{ lookup('config', application_id, 'services.ldap.enabled') | bool }}"
+JOOMLA_LDAP_PARAMS:
+  host: "{{ LDAP.SERVER.DOMAIN }}"
+  port: "{{ LDAP.SERVER.PORT }}"
+  use_ldapV3: "1"
+  encryption: "{{ 'ssl' if (LDAP.SERVER.URI is match('ldaps://')) else ((LDAP.SERVER.SECURITY | lower) if LDAP.SERVER.SECURITY else 'none') }}"
+  no_referrals: "0"
+  auth_method: "search"
+  base_dn: "{{ LDAP.DN.OU.USERS }}"
+  search_string: "{{ LDAP.USER.ATTRIBUTES.ID }}=[search]"
+  users_dn: "[username]"
+  username: "{{ LDAP.DN.ADMINISTRATOR.DATA }}"
+  ldap_fullname: "{{ LDAP.USER.ATTRIBUTES.FULLNAME }}"
+  ldap_email: "{{ LDAP.USER.ATTRIBUTES.MAIL }}"
+  ldap_uid: "{{ LDAP.USER.ATTRIBUTES.ID }}"
+
 JOOMLA_DESIGN_ENABLED: "{{ lookup('config', application_id, 'services.design.enabled') | bool }}"
 JOOMLA_DESIGN_LOGO_ENABLED: "{{ JOOMLA_DESIGN_ENABLED | bool and lookup('design', application_id).logo is string }}"
 JOOMLA_DESIGN_ASSETS_DIR: "{{ lookup('design', application_id).dest }}"

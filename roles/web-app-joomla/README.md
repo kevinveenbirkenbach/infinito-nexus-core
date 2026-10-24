@@ -26,8 +26,13 @@ Its enablement derives directly from the `sso` service flag, and its OIDC runtim
 
 - **Containerized deployment:** Run Joomla through Docker Compose with the role-specific custom image.
 - **Native OIDC SSO:** Authenticate users against Keycloak via the in-role `plg_system_keycloak` plugin, with `?fallback=local` as an env-toggleable emergency hatch.
-- **RBAC group mapping:** Map Keycloak group paths onto Joomla's built-in `Super Users`, `Editor`, and `Registered` user groups inside the plugin.
-- **LDAP variant:** Switch to Joomla's core LDAP plugin via the role's matrix-deploy variant 1, for sites that prefer direct LDAP federation.
+- **RBAC group mapping:** Map the Keycloak groups of the `administrator`, `manager`, `publisher`, `editor`, `author` and `registered` roles onto Joomla's built-in `Super Users`, `Manager`, `Publisher`, `Editor`, `Author` and `Registered` user groups on every login.
+- **Open access:** Let every realm user sign in; a user without a mapped role group lands in the com_users "New User Registration Group" (`Registered`).
+- **Profile sync:** Overwrite name, email, frontend language (from the `locale` claim, resolved to an installed site language) and time zone (from the `zoneinfo` claim) on every login, so Keycloak stays the source of truth.
+- **Contact sync:** Enable the core `plg_user_profile` and overwrite its phone, street, city, region, postal code, country and website fields from the `phone_number`, `address` and `website` claims on every login; the plugin requests the `phone` and `address` scopes, and the profile form hides the profile fields Keycloak does not feed.
+- **Read-only IdP fields:** Render every field Keycloak overwrites read-only in the com_users profile form of an SSO account, and keep the stored values when a profile save carries others.
+- **SSO logout:** Route a com_users Log out request through Keycloak's end-session endpoint, so signing out of Joomla also ends the Keycloak session; with the `logout` service on, its injected script sends the button to the universal logout first.
+- **LDAP variant:** Configure and enable Joomla's core `plg_authentication_ldap` against `svc-db-openldap` whenever the `ldap` service is enabled (variant 1), binding with the directory administrator, searching users by their login attribute and reading full name and email from the directory; new directory users are created in `Registered`.
 - **External database:** Persist Joomla content in the project's central RDBMS through the standard role-meta wiring.
 - **NGINX reverse proxy:** Front the Joomla container with the project's `sys-stk-front-proxy` for TLS termination and per-domain routing.
 
@@ -37,12 +42,15 @@ See [README.md](./files/joomla-oidc-plugin/README.md) for the OIDC plugin's mani
 
 ## End-to-end tests
 
-The Playwright spec at [`playwright.spec.js`](./files/playwright/playwright.spec.js) currently exercises the **administrator** path only: Keycloak SSO into the admin backend plus the local form-login emergency hatch (`?fallback=local`). The non-admin RBAC path via the canonical `biber` user is not yet covered.
+The Playwright spec at [`playwright.spec.js`](./files/playwright/playwright.spec.js) covers:
 
-Until the biber path is added:
+- the administrator's Keycloak SSO handshake and the local form-login emergency hatch (`?fallback=local`);
+- `biber` in each of the `administrator`, `manager`, `publisher`, `editor`, `author` and `registered` groups landing in the matching Joomla group, the bootstrap administrator keeping `Super Users` without the `administrator` group, and `biber` without a role group landing in `Registered`, read from Users: Manage ([`test-rbac-groups.js`](./files/playwright/test-rbac-groups.js));
+- the `locale`, `zoneinfo`, phone, address and website Keycloak attributes of `biber` arriving as Joomla language, time zone and `plg_user_profile` fields, every synced field read-only, and a save with a tampered name keeping the Keycloak name ([`test-profile-sync.js`](./files/playwright/test-profile-sync.js));
+- the com_users Log out button ending the Keycloak session, through the issuer's end-session endpoint when `logout` is off and through the universal logout otherwise ([`test-sso-logout.js`](./files/playwright/test-sso-logout.js));
+- the administrator and `biber` signing in through the core LDAP plugin in the LDAP variant ([`test-ldap-login.js`](./files/playwright/test-ldap-login.js)), and `plg_authentication_ldap` staying disabled in Extensions: Plugins while `ldap` is off ([`test-ldap-disabled.js`](./files/playwright/test-ldap-disabled.js)).
 
-- the role's [`playwright.env.j2`](./templates/playwright.env.j2) MUST NOT carry stale `BIBER_USERNAME` / `BIBER_PASSWORD` keys (the lint at [`test_env_keys_used.py`](../../tests/lint/ansible/roles/web-app/playwright/test_env_keys_used.py) enforces this);
-- the admin scenarios stay gated on `oidc` (and on `ldap` for the LDAP-variant scenarios), so a deploy with `disable=oidc` reports the SSO scenario as `skipped`, never `failed`.
+SSO scenarios are gated on `sso` and LDAP scenarios on `ldap`, so a deploy without the service reports them as `skipped`, never `failed`.
 
 ## Further Resources
 
@@ -53,5 +61,5 @@ Until the biber path is added:
 ## Persona contract opt-outs
 
 The shared `biber` and `administrator` persona journeys are opted out via `PERSONA_BIBER_BLOCKED` / `PERSONA_ADMINISTRATOR_BLOCKED` in `templates/playwright.env.j2`.
-Joomla's site template ships no login/logout module, and `plg_system_keycloak` exposes sign-out only as the route `index.php?option=keycloak&task=logout` (`files/joomla-oidc-plugin/plg_system_keycloak/src/Extension/Keycloak.php`, `handleLogout`) rather than as a rendered control, so the persona's mandatory in-app logout click has no target and navigating a logout URL directly is forbidden by the contract.
-The OIDC handshake itself, the LDAP variant and the `/administrator?fallback=local` hatch are covered by `files/playwright/test-oidc-login.js`, `test-ldap-login.js` and `test-oidc-fallback.js`.
+The site front page renders no logout control: Joomla's site template places no login module, and the only rendered Log out button sits on the com_users login view, so the persona's mandatory in-app logout click on the front page has no target and navigating a logout URL directly is forbidden by the contract.
+The OIDC handshake itself, the Keycloak logout from the com_users Log out button, the LDAP variant and the `/administrator?fallback=local` hatch are covered by `files/playwright/test-oidc-login.js`, `test-sso-logout.js`, `test-ldap-login.js` and `test-oidc-fallback.js`.

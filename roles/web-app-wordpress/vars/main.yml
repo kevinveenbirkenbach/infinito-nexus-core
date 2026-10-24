@@ -66,6 +66,14 @@ WORDPRESS_S3_UPLOADS_SRC: "/usr/src/s3-uploads"
 WORDPRESS_S3_UPLOADS_DIR: "{{ [WORDPRESS_PLUGINS_DIR, 's3-uploads'] | path_join }}"
 WORDPRESS_PERMALINK_STRUCTURE: "/%postname%/"
 
+WORDPRESS_RBAC_SITE_ROLES: ["administrator", "editor", "author", "contributor", "subscriber"]
+WORDPRESS_RBAC_NETWORK_ADMIN_ROLE: "network-administrator"
+WORDPRESS_RBAC_GROUP_MAP: "{{ lookup('template', lookup('path_absolute', 'roles', application_id, 'templates/rbac_group_map.json.j2')) | from_json }}"
+WORDPRESS_MULTISITE_SITES:
+  scheme: "{{ WORDPRESS_URL | urlsplit('scheme') }}"
+  owner: "{{ WORDPRESS_ADMIN_USER }}"
+  domains: "{{ WORDPRESS_DOMAINS[1:] }}"
+
 WORDPRESS_ADMIN_EMAIL: "{{ lookup('config', application_id, 'users.platform_administrator.email') }}"
 WORDPRESS_ADMIN_USER: "{{ lookup('users', 'platform_administrator').username }}"
 WORDPRESS_ADMIN_PASSWORD: "{{ lookup('users', 'platform_administrator').password }}"

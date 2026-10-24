@@ -1,53 +1,75 @@
 <?php
-// nocheck: mirrored-unit-test - extends CMSPlugin, so every method depends on Joomla's dispatcher, application and session being live
 namespace Joomla\Plugin\System\Keycloak\Extension;
 
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Event\Model\NormaliseRequestDataEvent;
+use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Session\Session;
 use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserHelper;
 use Joomla\Event\Event;
+use Joomla\Event\Priority;
+use Joomla\Event\SubscriberInterface;
 use Jumbojett\OpenIDConnectClient;
 
-/**
- * Native OIDC SSO against Keycloak for Joomla 6.
- *
- * Modus 3 ("Force-Frontend, Local-Backup-Backend") per the project's
- * RBAC requirement 013: every visit to "/" or "/administrator" is
- * redirected to Keycloak unless the request explicitly carries the
- * `?fallback=local` query AND the env-var
- * JOOMLA_OIDC_FALLBACK_ENABLED is "true".
- *
- * Keycloak-Group-Paths are mapped onto Joomla's standard usergroup
- * IDs (8 = Super Users, 4 = Editor, 2 = Registered) via the env-vars
- * JOOMLA_OIDC_GROUP_{ADMIN,EDITOR,USER}. A user whose Keycloak groups
- * match none of those paths is refused; this is the documented RBAC
- * gate per requirement 013.
- */
-class Keycloak extends CMSPlugin
+class Keycloak extends CMSPlugin implements SubscriberInterface
 {
     protected $autoloadLanguage = true;
     protected ?CMSApplicationInterface $app = null;
 
-    private const ENV_ISSUER         = 'JOOMLA_OIDC_ISSUER_URL';
-    private const ENV_CLIENT_ID      = 'JOOMLA_OIDC_CLIENT_ID';
-    private const ENV_CLIENT_SECRET  = 'JOOMLA_OIDC_CLIENT_SECRET';
-    private const ENV_REDIRECT_URI   = 'JOOMLA_OIDC_REDIRECT_URI';
-    private const ENV_SOCKS_PROXY    = 'JOOMLA_OIDC_SOCKS_PROXY';
-    private const ENV_FALLBACK       = 'JOOMLA_OIDC_FALLBACK_ENABLED';
-    private const ENV_GROUP_ADMIN    = 'JOOMLA_OIDC_GROUP_ADMIN';
-    private const ENV_GROUP_EDITOR   = 'JOOMLA_OIDC_GROUP_EDITOR';
-    private const ENV_GROUP_USER     = 'JOOMLA_OIDC_GROUP_USER';
-    private const ENV_LOGOUT_URL     = 'JOOMLA_OIDC_END_SESSION_URL';
+    private const ENV_ISSUER          = 'JOOMLA_OIDC_ISSUER_URL';
+    private const ENV_CLIENT_ID       = 'JOOMLA_OIDC_CLIENT_ID';
+    private const ENV_CLIENT_SECRET   = 'JOOMLA_OIDC_CLIENT_SECRET';
+    private const ENV_REDIRECT_URI    = 'JOOMLA_OIDC_REDIRECT_URI';
+    private const ENV_SOCKS_PROXY     = 'JOOMLA_OIDC_SOCKS_PROXY';
+    private const ENV_FALLBACK        = 'JOOMLA_OIDC_FALLBACK_ENABLED';
+    private const ENV_GROUP_MAP       = 'JOOMLA_OIDC_GROUP_MAP';
+    private const ENV_LOGOUT_URL      = 'JOOMLA_OIDC_END_SESSION_URL';
+    private const ENV_CLAIM_USERNAME  = 'JOOMLA_OIDC_CLAIM_USERNAME';
+    private const ENV_CLAIM_EMAIL     = 'JOOMLA_OIDC_CLAIM_EMAIL';
+    private const ENV_CLAIM_GIVEN     = 'JOOMLA_OIDC_CLAIM_GIVEN_NAME';
+    private const ENV_CLAIM_FAMILY    = 'JOOMLA_OIDC_CLAIM_FAMILY_NAME';
+    private const ENV_CLAIM_LOCALE    = 'JOOMLA_OIDC_CLAIM_LOCALE';
+    private const ENV_CLAIM_ZONEINFO  = 'JOOMLA_OIDC_CLAIM_ZONEINFO';
+    private const ENV_CLAIM_GROUPS    = 'JOOMLA_OIDC_CLAIM_GROUPS';
+    private const ENV_CLAIM_ADDRESS   = 'JOOMLA_OIDC_CLAIM_ADDRESS';
+    private const ENV_PROFILE_CLAIMS  = 'JOOMLA_OIDC_PROFILE_CLAIMS';
+    private const ENV_PROFILE_ADDRESS = 'JOOMLA_OIDC_PROFILE_ADDRESS_FIELDS';
+    private const ENV_BOOTSTRAP_ADMIN = 'JOOMLA_ADMIN_USERNAME';
 
-    private const JOOMLA_GROUP_SUPER      = 8;
-    private const JOOMLA_GROUP_EDITOR     = 4;
-    private const JOOMLA_GROUP_REGISTERED = 2;
+    private const JOOMLA_GROUP_SUPER = 8;
+
+    private const PROFILE_FORM  = 'com_users.profile';
+    private const MANAGED_PARAM = 'keycloak_managed';
+    private const MANAGED_FIELDS = [
+        ['name', null],
+        ['email1', null],
+        ['language', 'params'],
+        ['timezone', 'params'],
+    ];
+
+    /**
+     * Returns:
+     *   array: the events this plugin listens to; the profile form is locked after every other plugin, plg_user_profile
+     *   included, has added its fields.
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            'onAfterInitialise'             => 'onAfterInitialise',
+            'onAfterRoute'                  => 'onAfterRoute',
+            'onContentPrepareForm'          => ['onContentPrepareForm', Priority::MIN],
+            'onContentNormaliseRequestData' => 'onContentNormaliseRequestData',
+        ];
+    }
 
     public function setApplication(CMSApplicationInterface $app): void
     {
@@ -79,8 +101,147 @@ class Keycloak extends CMSPlugin
         }
     }
 
+    public function onAfterRoute(Event $event): void
+    {
+        if ($this->app === null || !$this->app->isClient('site')) {
+            return;
+        }
+        $input = $this->app->getInput();
+        if ((string) $input->getCmd('option', '') !== 'com_users' || (string) $input->getCmd('task', '') !== 'user.logout') {
+            return;
+        }
+        $identity = $this->app->getIdentity();
+        if ($identity === null || $identity->guest || !Session::checkToken('post')) {
+            return;
+        }
+        $this->handleKeycloakRoute('logout');
+    }
+
+    public function onContentPrepareForm(PrepareFormEvent $event): void
+    {
+        $form = $event->getForm();
+        if ($form->getName() !== self::PROFILE_FORM || $this->managedUser() === null) {
+            return;
+        }
+        foreach ($this->managedFields() as [$field, $group]) {
+            $form->setFieldAttribute($field, 'readonly', 'true', $group);
+        }
+    }
+
+    public function onContentNormaliseRequestData(NormaliseRequestDataEvent $event): void
+    {
+        $data = $event->getData();
+        $user = $event->getForm()->getName() === self::PROFILE_FORM ? $this->managedUser() : null;
+        if ($user === null || !is_object($data)) {
+            return;
+        }
+        $data->name   = $user->name;
+        $data->email1 = $user->email;
+        foreach ($this->managedFields() as [$field, $group]) {
+            if ($group !== null && isset($data->{$group}) && is_array($data->{$group})) {
+                unset($data->{$group}[$field]);
+            }
+        }
+    }
+
+    /**
+     * Returns:
+     *   ?User: the signed-in account when its profile comes from Keycloak, null otherwise.
+     */
+    private function managedUser(): ?User
+    {
+        $identity = $this->app === null ? null : $this->app->getIdentity();
+        if ($identity === null || $identity->guest) {
+            return null;
+        }
+        $user = User::getInstance((int) $identity->id);
+        return (int) $user->getParam(self::MANAGED_PARAM) === 1 ? $user : null;
+    }
+
+    /**
+     * Returns:
+     *   array: [field, group] pairs of the profile form that Keycloak overwrites on every login.
+     */
+    private function managedFields(): array
+    {
+        $fields = self::MANAGED_FIELDS;
+        foreach (array_keys($this->jsonEnv(self::ENV_PROFILE_CLAIMS) + $this->jsonEnv(self::ENV_PROFILE_ADDRESS)) as $key) {
+            $fields[] = [(string) $key, 'profile'];
+        }
+        return $fields;
+    }
+
+    /**
+     * Args:
+     *   $name: environment variable carrying a JSON object.
+     * Returns:
+     *   array: the decoded, non-empty object; anything else raises.
+     */
+    private function jsonEnv(string $name): array
+    {
+        $value = json_decode($this->requireEnv($name), true);
+        if (!is_array($value) || $value === []) {
+            throw new \RuntimeException('plg_system_keycloak: ' . $name . ' is not a non-empty JSON object');
+        }
+        return $value;
+    }
+
+    /**
+     * Args:
+     *   $claims: verified ID token claims, nested objects decoded to arrays.
+     *   $scalarClaims: plg_user_profile key => name of a string claim.
+     *   $addressClaim: name of the structured address claim.
+     *   $addressFields: plg_user_profile key => member of the address claim.
+     * Returns:
+     *   array<string, string>: every mapped profile key with its trimmed claim value, '' where the token carries none.
+     */
+    public static function profileFromClaims(array $claims, array $scalarClaims, string $addressClaim, array $addressFields): array
+    {
+        $address = is_array($claims[$addressClaim] ?? null) ? $claims[$addressClaim] : [];
+        $profile = [];
+        foreach ($scalarClaims as $key => $claim) {
+            $profile[(string) $key] = self::scalar($claims[$claim] ?? null);
+        }
+        foreach ($addressFields as $key => $member) {
+            $profile[(string) $key] = self::scalar($address[$member] ?? null);
+        }
+        return $profile;
+    }
+
+    private static function scalar(mixed $value): string
+    {
+        return is_scalar($value) ? trim((string) $value) : '';
+    }
+
     private const FALLBACK_FLAG = 'keycloak.fallback_until';
     private const FALLBACK_TTL  = 600;
+
+    /**
+     * Args:
+     *   $name: environment variable the container MUST carry.
+     * Returns:
+     *   string: its non-empty value; a missing or empty variable raises.
+     */
+    private function requireEnv(string $name): string
+    {
+        $value = getenv($name);
+        if (!is_string($value) || $value === '') {
+            throw new \RuntimeException('plg_system_keycloak: missing required env ' . $name);
+        }
+        return $value;
+    }
+
+    /**
+     * Args:
+     *   $name: environment variable that is only set in some deployments.
+     * Returns:
+     *   string: its value, or '' when the deployment does not set it.
+     */
+    private function optionalEnv(string $name): string
+    {
+        $value = getenv($name);
+        return is_string($value) ? $value : '';
+    }
 
     private function shouldGuardRoute(): bool
     {
@@ -88,8 +249,7 @@ class Keycloak extends CMSPlugin
         if (!$user->guest) {
             return false;
         }
-        $fallbackEnabled = strtolower(getenv(self::ENV_FALLBACK) ?: 'true') === 'true';
-        if (!$fallbackEnabled) {
+        if (strtolower($this->requireEnv(self::ENV_FALLBACK)) !== 'true') {
             return true;
         }
         $input = $this->app->getInput();
@@ -155,22 +315,17 @@ class Keycloak extends CMSPlugin
 
     private function buildOidcClient(): OpenIDConnectClient
     {
-        $issuer       = (string) (getenv(self::ENV_ISSUER) ?: '');
-        $clientId     = (string) (getenv(self::ENV_CLIENT_ID) ?: '');
-        $clientSecret = (string) (getenv(self::ENV_CLIENT_SECRET) ?: '');
-        $redirectUri  = (string) (getenv(self::ENV_REDIRECT_URI) ?: '');
-        if ($issuer === '' || $clientId === '' || $clientSecret === '' || $redirectUri === '') {
-            throw new \RuntimeException(
-                'plg_system_keycloak: missing required env (issuer, client_id, client_secret, redirect_uri)'
-            );
-        }
-        $client = new OpenIDConnectClient($issuer, $clientId, $clientSecret);
-        $socksProxy = (string) (getenv(self::ENV_SOCKS_PROXY) ?: '');
+        $client = new OpenIDConnectClient(
+            $this->requireEnv(self::ENV_ISSUER),
+            $this->requireEnv(self::ENV_CLIENT_ID),
+            $this->requireEnv(self::ENV_CLIENT_SECRET)
+        );
+        $socksProxy = $this->optionalEnv(self::ENV_SOCKS_PROXY);
         if ($socksProxy !== '') {
             $client->setHttpProxy($socksProxy);
         }
-        $client->setRedirectURL($redirectUri);
-        $client->addScope(['openid', 'profile', 'email', 'groups']);
+        $client->setRedirectURL($this->requireEnv(self::ENV_REDIRECT_URI));
+        $client->addScope(['openid', 'profile', 'email', 'phone', 'address', $this->requireEnv(self::ENV_CLAIM_GROUPS)]);
         $client->setVerifyHost(true);
         $client->setVerifyPeer(true);
         $caPath = $this->resolveCaBundlePath();
@@ -192,13 +347,8 @@ class Keycloak extends CMSPlugin
      */
     private function resolveCaBundlePath(): string
     {
-        $candidates = [
-            getenv('CURL_CA_BUNDLE') ?: '',
-            getenv('CA_TRUST_CERT') ?: '',
-            getenv('SSL_CERT_FILE') ?: '',
-        ];
-        foreach ($candidates as $candidate) {
-            $candidate = (string) $candidate;
+        foreach (['CURL_CA_BUNDLE', 'CA_TRUST_CERT', 'SSL_CERT_FILE'] as $variable) {
+            $candidate = $this->optionalEnv($variable);
             if ($candidate !== '' && is_file($candidate)) {
                 return $candidate;
             }
@@ -206,20 +356,32 @@ class Keycloak extends CMSPlugin
         return '';
     }
 
+    /**
+     * Args:
+     *   $oidc: client that completed the authorization-code exchange.
+     *   $variable: environment variable naming the claim.
+     * Returns:
+     *   string: the claim value, or '' when the ID token does not carry it.
+     */
+    private function stringClaim(OpenIDConnectClient $oidc, string $variable): string
+    {
+        $value = $oidc->getVerifiedClaims($this->requireEnv($variable));
+        return is_scalar($value) ? trim((string) $value) : '';
+    }
+
     private function handleCallback(): void
     {
         $oidc = $this->buildOidcClient();
         $oidc->authenticate();
 
-        $sub      = (string) ($oidc->getVerifiedClaims('sub') ?? '');
-        $email    = (string) ($oidc->getVerifiedClaims('email') ?? '');
-        $username = (string) ($oidc->getVerifiedClaims('preferred_username') ?? $sub);
-        $given    = (string) ($oidc->getVerifiedClaims('given_name') ?? '');
-        $family   = (string) ($oidc->getVerifiedClaims('family_name') ?? '');
-        $groups   = (array)  ($oidc->getVerifiedClaims('groups') ?? []);
+        $username = $this->stringClaim($oidc, self::ENV_CLAIM_USERNAME);
+        $email    = $this->stringClaim($oidc, self::ENV_CLAIM_EMAIL);
+        $given    = $this->stringClaim($oidc, self::ENV_CLAIM_GIVEN);
+        $family   = $this->stringClaim($oidc, self::ENV_CLAIM_FAMILY);
+        $groups   = (array) ($oidc->getVerifiedClaims($this->requireEnv(self::ENV_CLAIM_GROUPS)) ?? []);
 
         if ($username === '') {
-            throw new \RuntimeException('Keycloak callback: missing preferred_username/sub');
+            throw new \RuntimeException('Keycloak callback: the ID token carries no ' . $this->requireEnv(self::ENV_CLAIM_USERNAME) . ' claim');
         }
         if ($email === '') {
             $email = $username . '@kc.local';
@@ -227,25 +389,32 @@ class Keycloak extends CMSPlugin
         $name = trim($given . ' ' . $family) ?: $username;
 
         $mappedGroups = $this->mapGroupsToJoomla($groups);
-        if (count($mappedGroups) === 0) {
-            $this->app->enqueueMessage(
-                'Keycloak: no Joomla group mapping for your roles; access refused.',
-                'error'
-            );
-            $this->app->redirect('index.php?option=keycloak&task=logout');
-            return;
+        if ($username === $this->requireEnv(self::ENV_BOOTSTRAP_ADMIN) && !in_array(self::JOOMLA_GROUP_SUPER, $mappedGroups, true)) {
+            $mappedGroups[] = self::JOOMLA_GROUP_SUPER;
         }
+        $language = $this->resolveLanguage($this->stringClaim($oidc, self::ENV_CLAIM_LOCALE));
+        $timezone = $this->resolveTimezone($this->stringClaim($oidc, self::ENV_CLAIM_ZONEINFO));
+        $profile  = self::profileFromClaims(
+            json_decode((string) json_encode($oidc->getVerifiedClaims()), true) ?: [],
+            $this->jsonEnv(self::ENV_PROFILE_CLAIMS),
+            $this->requireEnv(self::ENV_CLAIM_ADDRESS),
+            $this->jsonEnv(self::ENV_PROFILE_ADDRESS)
+        );
 
         $user = $this->withProvisioningIdentity(
-            function () use ($username, $email, $name, $mappedGroups): User {
+            function () use ($username, $email, $name, $mappedGroups, $language, $timezone, $profile): User {
                 $userId = (int) UserHelper::getUserId($username);
                 if ($userId === 0) {
                     $userId = $this->createJoomlaUser($username, $email, $name, $mappedGroups);
                 }
                 $user = User::getInstance($userId);
-                $user->name   = $name;
-                $user->email  = $email;
-                $user->groups = $mappedGroups;
+                $user->name    = $name;
+                $user->email   = $email;
+                $user->groups  = $mappedGroups;
+                $user->profile = $profile;
+                $user->setParam('language', $language);
+                $user->setParam('timezone', $timezone);
+                $user->setParam(self::MANAGED_PARAM, 1);
                 if (!$user->save()) {
                     throw new \RuntimeException('Keycloak: failed to update Joomla user: ' . implode(' ', $user->getErrors()));
                 }
@@ -312,40 +481,77 @@ class Keycloak extends CMSPlugin
         return (int) $user->id;
     }
 
+    /**
+     * Args:
+     *   $kcGroups: group paths of the groups claim.
+     * Returns:
+     *   int[]: the mapped Joomla usergroup IDs; the com_users registration group when none maps.
+     */
     private function mapGroupsToJoomla(array $kcGroups): array
     {
-        $admin  = (string) (getenv(self::ENV_GROUP_ADMIN)  ?: '/roles/web-app-joomla/administrator');
-        $editor = (string) (getenv(self::ENV_GROUP_EDITOR) ?: '/roles/web-app-joomla/editor');
-        $user   = (string) (getenv(self::ENV_GROUP_USER)   ?: '/roles/web-app-joomla');
-        $admin  = '/' . ltrim($admin, '/');
-        $editor = '/' . ltrim($editor, '/');
-        $user   = '/' . ltrim($user, '/');
+        $map = json_decode($this->requireEnv(self::ENV_GROUP_MAP), true);
+        if (!is_array($map) || $map === []) {
+            throw new \RuntimeException('plg_system_keycloak: ' . self::ENV_GROUP_MAP . ' is not a JSON object of group path to usergroup ID');
+        }
 
         $mapped = [];
-        foreach ($kcGroups as $g) {
-            $g = '/' . ltrim((string) $g, '/');
-            if ($g === $admin) {
-                $mapped[] = self::JOOMLA_GROUP_SUPER;
-            } elseif ($g === $editor) {
-                $mapped[] = self::JOOMLA_GROUP_EDITOR;
-            } elseif ($g === $user) {
-                $mapped[] = self::JOOMLA_GROUP_REGISTERED;
+        foreach ($kcGroups as $group) {
+            $path = '/' . ltrim((string) $group, '/');
+            if (array_key_exists($path, $map)) {
+                $mapped[] = (int) $map[$path];
             }
         }
+        if ($mapped === []) {
+            $registration = (int) ComponentHelper::getParams('com_users')->get('new_usertype');
+            if ($registration <= 0) {
+                throw new \RuntimeException('plg_system_keycloak: com_users carries no New User Registration Group');
+            }
+            $mapped[] = $registration;
+        }
         return array_values(array_unique($mapped));
+    }
+
+    /**
+     * Args:
+     *   $locale: BCP 47 locale claim such as "de" or "en-GB".
+     * Returns:
+     *   string: the installed site language tag it names, or '' for the site default.
+     */
+    private function resolveLanguage(string $locale): string
+    {
+        $wanted = strtolower(str_replace('_', '-', $locale));
+        if ($wanted === '') {
+            return '';
+        }
+        $tags = array_keys(LanguageHelper::getKnownLanguages(JPATH_SITE));
+        foreach ($tags as $tag) {
+            if (strtolower($tag) === $wanted) {
+                return $tag;
+            }
+        }
+        $primary = explode('-', $wanted)[0];
+        foreach ($tags as $tag) {
+            if (strtolower(explode('-', $tag)[0]) === $primary) {
+                return $tag;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Args:
+     *   $zoneinfo: IANA time zone claim such as "Europe/Berlin".
+     * Returns:
+     *   string: the zone when PHP knows it, or '' for the site default.
+     */
+    private function resolveTimezone(string $zoneinfo): string
+    {
+        return in_array($zoneinfo, \DateTimeZone::listIdentifiers(), true) ? $zoneinfo : '';
     }
 
     private function handleLogout(): void
     {
         $this->app->logout();
-        $endSession = (string) (getenv(self::ENV_LOGOUT_URL) ?: '');
-        if ($endSession === '') {
-            $issuer = (string) (getenv(self::ENV_ISSUER) ?: '');
-            if ($issuer !== '') {
-                $endSession = rtrim($issuer, '/') . '/protocol/openid-connect/logout';
-            }
-        }
-        $target = $endSession !== '' ? $endSession : 'index.php?fallback=local';
-        $this->app->redirect($target);
+        $this->app->redirect($this->requireEnv(self::ENV_LOGOUT_URL));
     }
 }

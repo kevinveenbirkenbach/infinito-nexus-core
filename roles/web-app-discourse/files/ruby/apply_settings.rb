@@ -22,6 +22,12 @@ if ENV.fetch("DISCOURSE_OIDC_ENABLED") == "true"
   SiteSetting.openid_connect_rp_initiated_logout_redirect = ENV.fetch("DISCOURSE_OIDC_LOGOUT_REDIRECT")
   SiteSetting.openid_connect_allow_association_change = false
   SiteSetting.openid_connect_rp_initiated_logout = true
+  SiteSetting.openid_connect_groups_claim = ENV.fetch("DISCOURSE_OIDC_GROUPS_CLAIM")
+
+  SiteSetting.email_editable = false
+  SiteSetting.auth_overrides_email = true
+  SiteSetting.auth_overrides_name = true
+  SiteSetting.auth_overrides_username = false
 
   url = SiteSetting.openid_connect_discovery_document.to_s.strip
   host = url.sub(%r{\Ahttps?://}i, "").split("/").first.to_s.strip.split(":").first.to_s.strip

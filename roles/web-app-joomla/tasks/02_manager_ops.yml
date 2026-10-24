@@ -31,3 +31,9 @@
 
 - name: "🎨 Converge the corporate design of {{ application_id }}"
   include_tasks: 09_design.yml
+
+- name: "🔐 Converge the LDAP authentication of {{ application_id }}"
+  include_tasks:
+    file: 10_ldap.yml
+    apply:
+      delegate_to: "{{ JOOMLA_HOST_NODE }}"

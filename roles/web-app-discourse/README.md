@@ -15,6 +15,9 @@ This role deploys Discourse using Docker, automating tasks such as container orc
 - **Customizable Layouts & Themes:** Tailor your forum’s look and functionality to suit your community’s unique style.
 - **Scalable Architecture:** Utilize a Docker-based deployment that adapts easily to increasing traffic and community size.
 - **Extensive Plugin Support:** Enhance your forum with a wide range of plugins and integrations for additional functionality.
+- **IdP-Managed Profile:** Every OIDC login overwrites the Discourse name and email with the Keycloak values, and both fields are read-only in Discourse. The username is not overwritten.
+- **Associated Groups:** The OIDC `groups` claim becomes the user's associated groups, so a Discourse group can add the members of a Keycloak role group automatically.
+- **Staff Flags From RBAC:** Every deploy grants the admin flag to the members of the `administrator` role group and the moderator flag to the members of the `moderator` role group, and revokes both from every other account. The platform administrator keeps the admin flag. A member who has never signed in gets the flag on the first deploy after the first login.
 
 ## Addons
 

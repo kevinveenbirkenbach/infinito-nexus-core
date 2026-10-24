@@ -111,8 +111,8 @@
     litellm:
       enabled: false
     sso:
-      enabled: false
-      shared: false # nocheck: variants-static-override backup shared stays literally true
+      enabled: true
+      shared: true
     prometheus:
       enabled: false
       shared: false # nocheck: variants-static-override backup shared stays literally true
@@ -139,6 +139,16 @@
         - blog.{{ DOMAIN_PRIMARY }}
         - biberblog.{{ DOMAIN_PRIMARY }}
         - biber.blog.{{ DOMAIN_PRIMARY }}
+  rbac:
+    tenancy:
+      axis: domain
+      source: domains.canonical
+    roles:
+      network-administrator:
+        description: Holds super-admin rights across every site of the Multisite network
+        scope: global
+      mcp:
+        scope: global
 
 - services:
     docs:

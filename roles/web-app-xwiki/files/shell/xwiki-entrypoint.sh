@@ -61,6 +61,7 @@ if [ -n "${XWIKI_CFG_LDAP_SERVER:-}" ]; then
 			"xwiki.authentication.ldap.group_mapping=${XWIKI_CFG_LDAP_GROUP_MAPPING}" \
 			"xwiki.authentication.ldap.mode_group_sync=always" \
 			"xwiki.authentication.ldap.trylocal=${XWIKI_CFG_LDAP_TRYLOCAL}" \
+			"xwiki.authentication.ldap.UID_attr=${XWIKI_CFG_LDAP_UID_ATTR}" \
 			"xwiki.authentication.ldap.update_user=1" \
 			>>"${cfg}"
 	done

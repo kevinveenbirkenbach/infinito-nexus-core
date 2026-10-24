@@ -187,3 +187,4 @@ test("guest: public-landing → auth chain → never authenticated", async ({ pa
 });
 
 require("./test-design").register();
+require("./test-rbac").register();

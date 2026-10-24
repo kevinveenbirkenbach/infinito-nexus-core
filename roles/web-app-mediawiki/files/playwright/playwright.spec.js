@@ -13,6 +13,8 @@ const {
 
 require("./test-seaweedfs");
 require("./test-partner-extensions");
+require("./test-rbac-groups");
+require("./test-profile-sync");
 
 test.use({ ignoreHTTPSErrors: true });
 

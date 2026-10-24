@@ -25,7 +25,9 @@ const env = {
   localAdminUsername: decodeDotenvQuotedValue(process.env.WORDPRESS_ADMIN_USERNAME),
   localAdminPassword: decodeDotenvQuotedValue(process.env.WORDPRESS_ADMIN_PASSWORD),
   canonicalDomain: decodeDotenvQuotedValue(process.env.CANONICAL_DOMAIN),
-  rbacGroupPathPrefix: decodeDotenvQuotedValue(process.env.RBAC_GROUP_PATH_PREFIX),
+  rbacGroupMapJson: decodeDotenvQuotedValue(process.env.WORDPRESS_RBAC_GROUP_MAP),
+  profileAttributeLocale: decodeDotenvQuotedValue(process.env.PROFILE_ATTRIBUTE_LOCALE),
+  profileAttributeWebsite: decodeDotenvQuotedValue(process.env.PROFILE_ATTRIBUTE_WEBSITE),
   multisiteEnabled:
     (process.env.WORDPRESS_MULTISITE_ENABLED || "").toLowerCase() === "true",
   discourseBaseUrl: normalizeBaseUrl(process.env.DISCOURSE_BASE_URL || ""),
@@ -539,6 +541,27 @@ async function discourseDeleteTopic(request, topicId) {
   }).catch(() => {});
 }
 
+/**
+ * Args:
+ *   wanted: { role, tenant } for a site role (tenant only under Multisite), or { network: true }.
+ * Returns:
+ *   The Keycloak group path WORDPRESS_RBAC_GROUP_MAP maps to that entry.
+ */
+function rbacGroupPath(wanted) {
+  const entries = Object.entries(JSON.parse(env.rbacGroupMapJson));
+  const match = entries.find(([, entry]) =>
+    wanted.network
+      ? entry.network === true
+      : entry.role === wanted.role && (entry.tenant || "") === (wanted.tenant || "").toLowerCase()
+  );
+  if (!match) {
+    throw new Error(
+      `WORDPRESS_RBAC_GROUP_MAP has no group for ${JSON.stringify(wanted)}; groups: ${entries.map(([path]) => path).join(", ")}`
+    );
+  }
+  return match[0];
+}
+
 async function beforeEach({ page }) {
   await page.setViewportSize({ width: 1440, height: 1100 });
   expect(env.appBaseUrl, "APP_BASE_URL must be set").toBeTruthy();
@@ -555,7 +578,7 @@ async function beforeEach({ page }) {
   expect(env.biberUsername, "BIBER_USERNAME must be set").toBeTruthy();
   expect(env.biberPassword, "BIBER_PASSWORD must be set").toBeTruthy();
   expect(env.canonicalDomain, "CANONICAL_DOMAIN must be set").toBeTruthy();
-  expect(env.rbacGroupPathPrefix, "RBAC_GROUP_PATH_PREFIX must be set").toBeTruthy();
+  expect(env.rbacGroupMapJson, "WORDPRESS_RBAC_GROUP_MAP must be set").toBeTruthy();
   await page.context().clearCookies();
   await installCspViolationObserver(page);
 }
@@ -577,5 +600,6 @@ module.exports = {
   discourseApiRequest,
   discourseSearchTopicByTitle,
   discourseDeleteTopic,
+  rbacGroupPath,
   beforeEach,
 };

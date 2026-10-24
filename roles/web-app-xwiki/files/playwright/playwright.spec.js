@@ -16,6 +16,7 @@ require("./test-seaweedfs");
 test.use({ ignoreHTTPSErrors: true });
 
 require("./test-design").register();
+require("./test-rbac-oidc");
 
 const appBaseUrl = normalizeBaseUrl(process.env.APP_BASE_URL || "");
 const canonicalDomain = requireDotenvValue(process.env.CANONICAL_DOMAIN, "CANONICAL_DOMAIN");
