@@ -126,6 +126,32 @@ jvb:
   mem_reservation: 1g
   mem_limit: 2g
   pids_limit: 2048
+# nocheck: dynamic-flag  operator switch for the JWT moderator path; vars/main.yml also requires services.sso.enabled, so the adapter never runs without Keycloak
+# nocheck: dockerfile-custom  built from the upstream nordeck/jitsi-keycloak-adapter sources at `ref` on the multi-arch Deno image, because the published ghcr.io image is amd64-only and its stock context.ts issues a moderator token to every realm user
+keycloak_adapter:
+  enabled: false
+  shared: false
+  name: jitsi-keycloak-adapter
+  image: denoland/deno
+  version: "2.8.3"
+  custom: true
+  repository: https://github.com/nordeck/jitsi-keycloak-adapter.git
+  ref: v20260623
+  update:
+    - key: ref
+      type: git_tags
+      repository: https://github.com/nordeck/jitsi-keycloak-adapter.git
+      match: "v"
+  healthcheck:
+    flavor: http_status
+    path: health
+  ports:
+    internal:
+      http: 9000
+  cpus: "0.25"
+  mem_reservation: 64m
+  mem_limit: 256m
+  pids_limit: 128
 
 # nocheck: playwright-service-flag
 tor:

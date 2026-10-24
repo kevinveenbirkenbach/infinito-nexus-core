@@ -29,6 +29,8 @@
     sso:
       enabled: true
       shared: true
+    keycloak_adapter:
+      enabled: true # nocheck: variants-static-override  only this role reads the switch, through vars/main.yml after the variant merge
     prometheus:
       enabled: true
       shared: true
@@ -91,6 +93,8 @@
     sso:
       enabled: false
       shared: false
+    keycloak_adapter:
+      enabled: false # nocheck: variants-static-override
     prometheus:
       enabled: false
       shared: false

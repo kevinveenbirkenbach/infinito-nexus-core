@@ -48,7 +48,6 @@ BBB_GREENLIGHT_ENABLED: "{{ lookup('config', application_id, 'services.greenligh
 BBB_POSTGRES_CONTAINER_ADDRESS: "{{ lookup('container_address', application_id, 'postgres') }}"
 BBB_GREENLIGHT_CONTAINER_ADDRESS: "{{ lookup('container_address', application_id, 'greenlight') }}"
 
-BBB_LDAP_ENABLED: "{{ lookup('config', application_id, 'services.ldap.enabled') }}"
 BBB_OIDC_ENABLED: "{{ lookup('config', application_id, 'services.sso.enabled') }}"
 
 BBB_DESIGN_ENABLED: "{{ lookup('config', application_id, 'services.design.enabled') | bool }}"

@@ -10,6 +10,12 @@ MATRIX_ONION_PRIMARY: "{{ (MATRIX_ONION_NODE | length > 0) and (lookup('domain',
 MATRIX_SERVER_NAME: "{{ lookup('matrix_server_name') }}"
 MATRIX_ADMINISTRATOR_USERNAME: "{{ lookup('users', 'platform_administrator').username }}"
 MATRIX_ADMINISTRATOR_PASSWORD: "{{ lookup('users', 'platform_administrator').password }}"
+MATRIX_RBAC_USER_PAGE_SIZE: 100000
+MATRIX_RBAC_PROTECTED_MXIDS: >-
+  {{ ([MATRIX_ADMINISTRATOR_USERNAME, 'chatgptbot']
+      + ([MATRIX_ADDON_BAIBOT_LOCALPART] if MATRIX_ADDON_BAIBOT_ENABLED | bool else []))
+     | map('mxid', MATRIX_SERVER_NAME) | list }}
+MATRIX_SYNAPSE_LOOPBACK_URL: "http://127.0.0.1:{{ MATRIX_SYNAPSE_PORT }}"
 MATRIX_WELL_KNOWN_DIRECTORY: "{{ [ lookup('nginx','directories.data.well_known'), 'matrix' ] | path_join }}"
 MATRIX_WELL_KNOWN_FILE: "{{ MATRIX_WELL_KNOWN_DIRECTORY }}server"
 MATRIX_REGISTRATION_FILE_FOLDER: "/registrations/"

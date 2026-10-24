@@ -1,0 +1,43 @@
+---
+- name: "👥 Resolve the administrator members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "🔑 Log the platform administrator in against the Synapse admin API"
+  uri_retry:
+    url: "{{ MATRIX_SYNAPSE_LOOPBACK_URL }}/_matrix/client/v3/login"
+    method: POST
+    body_format: json
+    body:
+      type: m.login.password
+      identifier:
+        type: m.id.user
+        user: "{{ MATRIX_ADMINISTRATOR_USERNAME }}"
+      password: "{{ MATRIX_ADMINISTRATOR_PASSWORD }}"
+      initial_device_display_name: infinito-rbac-reconcile
+    status_code: 200
+  register: matrix_rbac_login
+  retries: 10
+  delay: 6
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "👑 Reconcile the Synapse admin flag with the administrator role"
+  vars:
+    matrix_rbac_auth:
+      Authorization: "Bearer {{ matrix_rbac_login.json.access_token }}"
+    matrix_rbac_member_mxids: "{{ rbac_members | map(attribute='username') | map('mxid', MATRIX_SERVER_NAME) | list }}"
+  block:
+    - name: "👑 Grant and revoke the Synapse admin flag per account"
+      ansible.builtin.include_tasks: 01_rbac_administrator/admin_flags.yml
+  always:
+    - name: "🚪 Log the reconcile session out"
+      uri_retry:
+        url: "{{ MATRIX_SYNAPSE_LOOPBACK_URL }}/_matrix/client/v3/logout"
+        method: POST
+        body_format: json
+        body: {}
+        headers: "{{ matrix_rbac_auth }}"
+        status_code: 200
+      no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"

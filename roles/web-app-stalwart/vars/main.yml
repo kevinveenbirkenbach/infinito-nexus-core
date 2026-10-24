@@ -75,10 +75,9 @@ STALWART_ADMIN_PASSWORD: "{{ lookup('users', 'stalwartadmin').password }}"
 
 STALWART_USERS: "{{ lookup('stalwart_users') }}"
 STALWART_ADMIN_ACCOUNT_NAMES: >-
-  {{ STALWART_USERS | dict2items | map(attribute='value')
-     | selectattr('roles', 'defined')
-     | selectattr('roles', 'contains', 'administrator')
-     | map(attribute='username') | list }}
+  {{ ([STALWART_ADMIN_USER, lookup('users', 'platform_administrator').username]
+      + (stalwart_rbac_administrators | map(attribute='username') | list))
+     | unique | list }}
 
 STALWART_DMARC_RUF: "{{ lookup('config', application_id, 'users.platform_administrator.email') }}"
 

@@ -2,13 +2,13 @@
 
 ## Description
 
-This Ansible role deploys [BigBlueButton](https://bigbluebutton.org/) using Docker Compose. It includes support for Greenlight, OIDC, LDAP, TURN/STUN, health checks, and a modular `.env` setup. This role is ideal for educational institutions and teams requiring a self-hosted video conferencing solution.
+This Ansible role deploys [BigBlueButton](https://bigbluebutton.org/) using Docker Compose. It includes support for Greenlight, OIDC, TURN/STUN, health checks, and a modular `.env` setup. This role is ideal for educational institutions and teams requiring a self-hosted video conferencing solution.
 > 🔧 **Note**: The database layer should be decoupled in a future release to improve modularity and integration.
 >
 
 ## Overview
 
-This role provides a fully automated deployment of [BigBlueButton](https://bigbluebutton.org/) using Docker Compose on Arch Linux. It manages the entire lifecycle of the deployment, from cloning the upstream Docker repository and generating the `.env` configuration to customizing `compose.yml` for volume usage, WebSocket proxying, and optional LDAP/OIDC integration.
+This role provides a fully automated deployment of [BigBlueButton](https://bigbluebutton.org/) using Docker Compose on Arch Linux. It manages the entire lifecycle of the deployment, from cloning the upstream Docker repository and generating the `.env` configuration to customizing `compose.yml` for volume usage, WebSocket proxying, and optional OIDC integration.
 The setup includes conditional Greenlight activation, WebRTC support via TURN/STUN, and various fixes for known container orchestration issues. The role is modular and integrates seamlessly with the Infinito.Nexus infrastructure, including reverse proxy configuration, domain management, and secrets templating.
 By default, BigBlueButton is deployed with best-practice hardening, modular secrets, and support for multiple authentication methods and scalable storage backends.
 
@@ -16,7 +16,8 @@ By default, BigBlueButton is deployed with best-practice hardening, modular secr
 
 - 🐳 **Docker-based** deployment via official [bigbluebutton/docker](https://github.com/bigbluebutton/docker)
 - ✅ **Greenlight** (v3) frontend support
-- 🔐 **SSO with OIDC & LDAP** (optional)
+- 🔐 **SSO with OIDC** (optional). Greenlight v3 has no LDAP login, so directory users sign in through Keycloak's LDAP federation.
+- **Administrator role:** Every deploy sets the Greenlight `Administrator` role from the `web-app-bigbluebutton` `administrator` members, matched by email, and demotes every other Greenlight administrator to `User`. The platform administrator keeps the role.
 - 🧱 Automatic `.env` templating and domain/NGINX integration
 - 🛠 Volume patching and Docker Compose customization
 - 📬 SMTP integration and Greenlight admin creation: the administrator is verified and active, and its password converges on every deploy
@@ -28,7 +29,6 @@ By default, BigBlueButton is deployed with best-practice hardening, modular secr
 - Docs: [External Authentication](https://docs.bigbluebutton.org/greenlight/v3/external-authentication/)
 - Supports:
   - ✅ OpenID Connect (OIDC)
-  - ✅ LDAP (with custom DN and filters)
   - 🧩 Custom OAuth2 flows via ENV vars
 
 ## Addons

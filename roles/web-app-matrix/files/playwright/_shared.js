@@ -20,6 +20,8 @@ const matrixServerName = decodeDotenvQuotedValue(process.env.MATRIX_SERVER_NAME)
 const adminUsername = decodeDotenvQuotedValue(process.env.ADMIN_USERNAME);
 const adminPassword = decodeDotenvQuotedValue(process.env.ADMIN_PASSWORD);
 const biberUsername = decodeDotenvQuotedValue(process.env.BIBER_USERNAME);
+const biberEmail = decodeDotenvQuotedValue(process.env.BIBER_EMAIL);
+const biberDirectoryFullName = decodeDotenvQuotedValue(process.env.BIBER_DIRECTORY_FULL_NAME);
 const biberPassword = decodeDotenvQuotedValue(process.env.BIBER_PASSWORD);
 const canonicalDomain = decodeDotenvQuotedValue(process.env.CANONICAL_DOMAIN);
 const oidcServiceEnabled = isServiceEnabled("sso");
@@ -481,6 +483,8 @@ module.exports = {
     adminPassword,
     biberUsername,
     biberPassword,
+    biberEmail,
+    biberDirectoryFullName,
     canonicalDomain,
     oidcServiceEnabled,
   },

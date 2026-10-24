@@ -1,0 +1,49 @@
+---
+- name: "👥 Resolve the administrator members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 Keep the administrator members of {{ application_id }}"
+  ansible.builtin.set_fact:
+    listmonk_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 Resolve the manager members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: manager
+
+- name: "👥 Keep the manager members of {{ application_id }}"
+  ansible.builtin.set_fact:
+    listmonk_rbac_managers: "{{ rbac_members }}"
+
+- name: "👥 Resolve the viewer members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: viewer
+
+- name: "👥 Keep the viewer members of {{ application_id }}"
+  ansible.builtin.set_fact:
+    listmonk_rbac_viewers: "{{ rbac_members }}"
+
+- name: "👑 Converge the Listmonk roles and accounts with the RBAC members"
+  ansible.builtin.shell:
+    cmd: >-
+      {{ LISTMONK_EXEC_DATABASE }}
+      -v roles={{ LISTMONK_RBAC_ROLES | to_json | quote }}
+      -v wanted={{ LISTMONK_RBAC_WANTED | to_json | quote }}
+      -v protected={{ [LISTMONK_ADMIN_USERNAME] | to_json | quote }}
+      -v admin_role=administrator
+      -v admin_role_id={{ LISTMONK_SUPER_ADMIN_ROLE_ID }}
+      -v ON_ERROR_STOP=1
+      -f -
+    stdin: "{{ lookup('file', 'sql/rbac_reconcile.sql') }}"
+  register: listmonk_rbac
+  changed_when: listmonk_rbac.stdout_lines | select('match', '^(INSERT 0|UPDATE) [1-9]') | list | length > 0
+  failed_when: >-
+    listmonk_rbac.rc != 0
+    or listmonk_rbac.stdout is search('\[FAIL\]')
+  notify: container-recreate

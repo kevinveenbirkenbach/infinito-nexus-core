@@ -1,0 +1,37 @@
+---
+- name: "⬇️ List the Mailu users and the managers of {{ MAILU_DOMAIN }}"
+  ansible.builtin.shell:
+    cmd: >-
+      container exec -i -e MAILU_API_BEARER {{ MAILU_ADMIN_CONTAINER_ADDRESS }}
+      sh -c '{{ 30 | curl }} -S --fail -H "Authorization: Bearer $MAILU_API_BEARER" "$1"'
+      _ {{ (MAILU_API_SERVICE_BASE_URL ~ item) | quote }}
+  loop:
+    - /user
+    - "/domain/{{ MAILU_DOMAIN }}/manager"
+  register: mailu_rbac_state
+  changed_when: false
+  retries: 30
+  delay: 2
+  until: mailu_rbac_state.rc == 0
+
+- name: "👑 Converge the Mailu roles with the RBAC members"
+  vars:
+    mailu_rbac_requests: >-
+      {{ mailu_rbac_state.results[0].stdout | from_json
+         | mailu_rbac_plan((mailu_rbac_state.results[1].stdout | from_json).managers,
+                           MAILU_RBAC_ADMIN_MAILBOXES, MAILU_RBAC_MANAGER_MAILBOXES, MAILU_DOMAIN) }}
+  ansible.builtin.shell:
+    cmd: >-
+      container exec -i -e MAILU_API_BEARER {{ MAILU_ADMIN_CONTAINER_ADDRESS }}
+      sh -c '{{ 30 | curl(retries=0) }} -S -o /dev/null -w "%{http_code}" -X "$1"
+      -H "Authorization: Bearer $MAILU_API_BEARER" -H "Content-Type: application/json"
+      --data-binary @- "$2"'
+      _ {{ item.method | quote }}
+      {{ (MAILU_API_SERVICE_BASE_URL ~ item.path ~ (item.email if item.path.endswith('/') else '')) | quote }}
+    stdin: "{{ (item.body | combine({'user_email': item.email}) if item.method == 'POST' else item.body) | to_json }}"
+  loop: "{{ mailu_rbac_requests }}"
+  loop_control:
+    label: "{{ item.method }} {{ item.path }} {{ item.email }}"
+  register: mailu_rbac_change
+  changed_when: true
+  failed_when: mailu_rbac_change.rc != 0 or mailu_rbac_change.stdout | trim != '200'

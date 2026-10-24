@@ -28,6 +28,7 @@ More information about this role is available in these GitHub repositories:
 - **Customizable Webmail and Administration:** Provides a modern web interface for managing emails and administrative tasks with ease.
 - **Flexible Deployment:** Easily scale and customize using Docker Compose, with configurable settings for networking, storage, and external services.
 - **OIDC Support:** Optionally integrate with OpenID Connect for centralized authentication across your services.
+- **Administrators and domain managers:** Every deploy sets `global_admin` from the `web-app-mailu` `administrator` members and the managers of the mail domain from the `domain-manager` members through the Mailu REST API. Members are promoted, every other global administrator and domain manager is demoted. The platform administrator stays a global administrator.
 
 ## Further Resources
 

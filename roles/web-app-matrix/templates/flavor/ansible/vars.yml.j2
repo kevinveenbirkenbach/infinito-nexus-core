@@ -125,10 +125,12 @@ matrix_synapse_oidc_providers:
     allow_existing_users: true
     user_mapping_provider:
       config:
-        # nocheck: oidc-claim-name-spot  the scalar is !unsafe so Synapse templates it, not Ansible; an OIDC.ATTRIBUTES reference would stay literal
-        localpart_template: !unsafe "{% raw %}{{ user.preferred_username }}{% endraw %}"
-        display_name_template: !unsafe "{% raw %}{{ user.name }}{% endraw %}"
-        email_template: !unsafe "{% raw %}{{ user.email }}{% endraw %}"
+        localpart_template: !unsafe "{% raw %}{{ user.{% endraw %}{{ OIDC.ATTRIBUTES.USERNAME }}{% raw %} }}{% endraw %}"
+        display_name_template: !unsafe "{% raw %}{{ user.{% endraw %}{{ OIDC.ATTRIBUTES.NAME }}{% raw %} }}{% endraw %}"
+        email_template: !unsafe "{% raw %}{{ user.{% endraw %}{{ OIDC.ATTRIBUTES.EMAIL }}{% raw %} }}{% endraw %}"
+matrix_synapse_configuration_extension_yaml: |
+  sso:
+    update_profile_information: true
 {% endif %}
 
 matrix_synapse_ldap_enabled: {{ MATRIX_LDAP_ENABLED | string | lower }}
@@ -139,8 +141,8 @@ matrix_synapse_ext_password_provider_ldap_base: "{{ LDAP.DN.OU.USERS }}"
 matrix_synapse_ext_password_provider_ldap_bind_dn: "{{ LDAP.DN.ADMINISTRATOR.DATA }}"
 matrix_synapse_ext_password_provider_ldap_bind_password: "{{ LDAP.BIND_CREDENTIAL }}"
 matrix_synapse_ext_password_provider_ldap_attributes_uid: "{{ LDAP.USER.ATTRIBUTES.ID }}"
-matrix_synapse_ext_password_provider_ldap_attributes_mail: mail
-matrix_synapse_ext_password_provider_ldap_attributes_name: givenName
+matrix_synapse_ext_password_provider_ldap_attributes_mail: "{{ LDAP.USER.ATTRIBUTES.MAIL }}"
+matrix_synapse_ext_password_provider_ldap_attributes_name: "{{ LDAP.USER.ATTRIBUTES.FULLNAME }}"
 {% endif %}
 
 matrix_client_element_enabled: true

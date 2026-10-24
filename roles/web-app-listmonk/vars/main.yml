@@ -32,7 +32,8 @@ LISTMONK_SETTINGS:
          "enabled": True,
          "client_id": OIDC.CLIENT.ID,
          "provider_url": OIDC.CLIENT.ISSUER_URL,
-         "client_secret": OIDC.CLIENT.SECRET
+         "client_secret": OIDC.CLIENT.SECRET,
+         "auto_create_users": False
       } | to_json }}
     condition: "{{ LISTMONK_OIDC_ENABLED | bool }}"
 
@@ -142,6 +143,45 @@ LISTMONK_SETTINGS:
   - key: "upload.s3.bucket_type"
     value: '"public"'
     condition: "{{ lookup('objstore', application_id, 'enabled') | bool }}"
+
+LISTMONK_SUPER_ADMIN_ROLE_ID: 1
+LISTMONK_RBAC_ROLES:
+  - name: manager
+    permissions:
+      - lists:get_all
+      - lists:manage_all
+      - subscribers:get
+      - subscribers:get_all
+      - subscribers:manage
+      - subscribers:import
+      - campaigns:get
+      - campaigns:get_all
+      - campaigns:get_analytics
+      - campaigns:manage
+      - campaigns:manage_all
+      - campaigns:send
+      - templates:get
+      - templates:manage
+      - media:get
+      - media:manage
+      - bounces:get
+      - bounces:manage
+  - name: viewer
+    permissions:
+      - lists:get_all
+      - subscribers:get
+      - subscribers:get_all
+      - campaigns:get
+      - campaigns:get_all
+      - campaigns:get_analytics
+      - templates:get
+      - media:get
+      - bounces:get
+LISTMONK_RBAC_WANTED: >-
+  {{ [{'username': LISTMONK_ADMIN_USERNAME, 'email': lookup('users', 'platform_administrator').email, 'role_name': 'administrator', 'rank': 0}]
+     + (listmonk_rbac_administrators | map('combine', {'role_name': 'administrator', 'rank': 0}) | list)
+     + (listmonk_rbac_managers | map('combine', {'role_name': 'manager', 'rank': 1}) | list)
+     + (listmonk_rbac_viewers | map('combine', {'role_name': 'viewer', 'rank': 2}) | list) }}
 
 LISTMONK_DESIGN: "{{ lookup('design', application_id) }}"
 LISTMONK_DESIGN_ENABLED: "{{ lookup('config', application_id, 'services.design.enabled') | bool }}"

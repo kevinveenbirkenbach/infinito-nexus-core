@@ -29,7 +29,7 @@
       - bash
       - -lc
       - "bundle exec rails runner -"
-    stdin: "{{ lookup('ansible.builtin.file', role_path ~ '/files/ruby/greenlight_ensure_admin.rb') }}"
+    stdin: "{{ lookup('ansible.builtin.file', role_path ~ '/files/ruby/greenlight/ensure_admin.rb') }}"
   environment:
     NEW_NAME: "{{ lookup('users', 'platform_administrator').username | upper }}"
     NEW_EMAIL: "{{ lookup('users', 'platform_administrator').email }}"
@@ -38,3 +38,31 @@
   changed_when: "'CHANGED' in greenlight_admin_map.stdout"
   failed_when: greenlight_admin_map.rc != 0
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "👥 Resolve the administrator members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👑 Reconcile the Greenlight Administrator role with the administrator members"
+  ansible.builtin.command:
+    argv:
+      - container
+      - exec
+      - -i
+      - -e
+      - RBAC_ADMIN_EMAILS
+      - -e
+      - RBAC_PROTECTED_EMAILS
+      - "{{ BBB_GREENLIGHT_CONTAINER_ADDRESS | quote }}" # nocheck: container-address-quote, container-address-needs-shell  compose_mode_force role, so the lookup can only yield a bare name
+      - bash
+      - -lc
+      - "bundle exec rails runner -"
+    stdin: "{{ lookup('ansible.builtin.file', role_path ~ '/files/ruby/greenlight/reconcile_roles.rb') }}"
+  environment:
+    RBAC_ADMIN_EMAILS: "{{ rbac_members | map(attribute='email') | select | list | to_json }}"
+    RBAC_PROTECTED_EMAILS: "{{ [lookup('users', 'platform_administrator').email] | to_json }}"
+  register: greenlight_role_reconcile
+  changed_when: "'CHANGED' in greenlight_role_reconcile.stdout"
+  failed_when: greenlight_role_reconcile.rc != 0

@@ -7,10 +7,15 @@
     that: stalwart_role_admin | length > 0
     fail_msg: "Stalwart built-in 'System Administrator' role not found; the mail server's administrators would sign in as ordinary users."
 
-- name: "✅ Ensure the inventory names an administrator for the mail server"
-  ansible.builtin.assert:
-    that: STALWART_ADMIN_ACCOUNT_NAMES | length > 0
-    fail_msg: "No user provisioned by Stalwart carries the 'administrator' role, so nobody would be able to administer the mail server."
+- name: "👥 Resolve the administrator members of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 Keep the administrator members of {{ application_id }}"
+  ansible.builtin.set_fact:
+    stalwart_rbac_administrators: "{{ rbac_members }}"
 
 - name: "📖 List Stalwart accounts"
   include_tasks: jmap_call.yml
@@ -19,59 +24,68 @@
       {{ {'using': ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'],
           'methodCalls': [['x:Account/get', {'ids': none}, 'c0']]} | to_json }}
 
-- name: "🔍 Resolve the accounts that must hold System Administrator"
+- name: "🔍 Resolve which accounts gain and which lose System Administrator"
   ansible.builtin.set_fact:
-    stalwart_admin_accounts: >-
+    stalwart_admin_account_ids: "{{ stalwart_admin_role_plan.grant_ids }}"
+    stalwart_admin_revoke_ids: "{{ stalwart_admin_role_plan.revoke_ids }}"
+  vars:
+    stalwart_admin_role_plan: >-
       {{ stalwart_jmap.methodResponses[0][1].list
-         | selectattr('@type', 'equalto', 'User')
-         | selectattr('domainId', 'equalto', stalwart_domain_id)
-         | selectattr('name', 'in', STALWART_ADMIN_ACCOUNT_NAMES)
-         | list }}
+         | stalwart_admin_plan(stalwart_domain_id, STALWART_ADMIN_ACCOUNT_NAMES, stalwart_role_admin) }}
 
-- name: "🔍 Name the administrators Stalwart holds no account for"
-  ansible.builtin.set_fact:
-    stalwart_admin_account_ids: "{{ stalwart_admin_accounts | map(attribute='id') | list }}"
-    stalwart_admin_accounts_missing: >-
-      {{ STALWART_ADMIN_ACCOUNT_NAMES | difference(stalwart_admin_accounts | map(attribute='name') | list) }}
-
-- name: "✅ Ensure Stalwart holds an account for every administrator"
+- name: "✅ Ensure at least one administrator account exists on the mail domain"
   ansible.builtin.assert:
-    that: stalwart_admin_accounts_missing | length == 0
-    fail_msg: "Stalwart holds no account on {{ STALWART_DOMAIN }} for {{ stalwart_admin_accounts_missing | join(', ') }}; they would sign in as ordinary users. An
-      administrator added or renamed after 'sso' was switched on gets no account, because the external directory rejects the create in 04_manage_user.yml."
+    that: stalwart_admin_account_ids | length > 0
+    fail_msg: "Stalwart holds no account on {{ STALWART_DOMAIN }} for {{ STALWART_ADMIN_ACCOUNT_NAMES | join(', ') }}, so nobody would administer the mail server
+      through SSO."
 
-- name: "🔍 Build the role set every administrator must end up with"
+- name: "🔍 Build the role sets of administrators and of demoted accounts"
   ansible.builtin.set_fact:
     stalwart_admin_role_ids: "{{ {stalwart_role_admin: true, stalwart_role_user: true} }}"
+    stalwart_demoted_role_ids: "{{ {stalwart_role_user: true} }}"
 
-- name: "👑 Grant System Administrator to the mail server's administrators"
+- name: "👑 Grant System Administrator to the administrators, strip it from the rest"
   include_tasks: jmap_call.yml
   vars:
     stalwart_jmap_body: >-
       {{ {'using': ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'],
           'methodCalls': [['x:Account/set', {'update': dict(stalwart_admin_account_ids | zip(
             [{'roles': {'@type': 'Custom', 'roleIds': stalwart_admin_role_ids}}]
-            * (stalwart_admin_account_ids | length)))}, 'c0']]} | to_json }}
+            * (stalwart_admin_account_ids | length)))
+            | combine(dict(stalwart_admin_revoke_ids | zip(
+            [{'roles': {'@type': 'Custom', 'roleIds': stalwart_demoted_role_ids}}]
+            * (stalwart_admin_revoke_ids | length))))}, 'c0']]} | to_json }}
 
-- name: "📖 Read the granted roles back"
+- name: "📖 Read the granted and revoked roles back"
   include_tasks: jmap_call.yml
   vars:
     stalwart_jmap_body: >-
       {{ {'using': ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'],
-          'methodCalls': [['x:Account/get', {'ids': stalwart_admin_account_ids}, 'c0']]} | to_json }}
+          'methodCalls': [['x:Account/get', {'ids': stalwart_admin_account_ids + stalwart_admin_revoke_ids}, 'c0']]} | to_json }}
 
-- name: "✅ Ensure every administrator account carries the granted roles"
+- name: "✅ Ensure the grants stuck and no other account kept System Administrator"
   ansible.builtin.assert:
     that:
       - stalwart_admin_accounts_read | length == stalwart_admin_account_ids | length
       - stalwart_admin_roles_ungranted | length == 0
-    fail_msg: "Stalwart accepted the grant but read back {{ stalwart_admin_accounts_read | length }} of {{ stalwart_admin_account_ids | length }} administrator accounts{{
-      ', and ' ~ (stalwart_admin_roles_ungranted | join(', ')) ~ ' came back without the granted roles' if stalwart_admin_roles_ungranted else '' }}."
+      - stalwart_admin_roles_unrevoked | length == 0
+    fail_msg: "Stalwart accepted the change but read back {{ stalwart_admin_accounts_read | length }} of {{ stalwart_admin_account_ids | length }} administrator accounts{{
+      ', ' ~ (stalwart_admin_roles_ungranted | join(', ')) ~ ' came back without the granted roles' if stalwart_admin_roles_ungranted else '' }}{{ ', ' ~ (stalwart_admin_roles_unrevoked
+      | join(', ')) ~ ' still hold System Administrator' if stalwart_admin_roles_unrevoked else '' }}."
   vars:
-    stalwart_admin_accounts_read: "{{ stalwart_jmap.methodResponses[0][1].list }}"
+    stalwart_roles_read: "{{ stalwart_jmap.methodResponses[0][1].list }}"
+    stalwart_admin_accounts_read: "{{ stalwart_roles_read | selectattr('id', 'in', stalwart_admin_account_ids) | list }}"
     stalwart_admin_roles_ungranted: >-
       {{ (stalwart_admin_accounts_read | rejectattr('roles.roleIds', 'defined')
           | map(attribute='name') | list)
          + (stalwart_admin_accounts_read | selectattr('roles.roleIds', 'defined')
             | rejectattr('roles.roleIds', 'eq', stalwart_admin_role_ids)
             | map(attribute='name') | list) }}
+    stalwart_admin_roles_unrevoked: >-
+      {%- set names = [] -%}
+      {%- for account in stalwart_roles_read
+            if account.id in stalwart_admin_revoke_ids
+            and stalwart_role_admin in ((account.get('roles') or {}).get('roleIds') or {}) -%}
+      {%- set _ = names.append(account.name) -%}
+      {%- endfor -%}
+      {{ names }}

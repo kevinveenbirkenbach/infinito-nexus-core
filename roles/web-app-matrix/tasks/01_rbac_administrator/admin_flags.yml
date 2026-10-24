@@ -1,0 +1,54 @@
+---
+- name: "📋 List the local Synapse accounts"
+  uri_retry:
+    url: "{{ MATRIX_SYNAPSE_LOOPBACK_URL }}/_synapse/admin/v2/users?guests=false&deactivated=false&limit={{ MATRIX_RBAC_USER_PAGE_SIZE }}"
+    headers: "{{ matrix_rbac_auth }}"
+    status_code: 200
+  register: matrix_rbac_users
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "✅ Assert one page holds every Synapse account"
+  ansible.builtin.assert:
+    that:
+      - matrix_rbac_users.json.next_token is not defined
+    fail_msg: >-
+      Synapse holds more than {{ MATRIX_RBAC_USER_PAGE_SIZE }} accounts; raise
+      MATRIX_RBAC_USER_PAGE_SIZE so the admin reconcile sees all of them.
+
+- name: "⬆️ Grant the Synapse admin flag to administrator members"
+  uri_retry:
+    url: "{{ MATRIX_SYNAPSE_LOOPBACK_URL }}/_synapse/admin/v2/users/{{ item | urlencode }}"
+    method: PUT
+    body_format: json
+    body:
+      admin: true
+    headers: "{{ matrix_rbac_auth }}"
+    status_code: 200
+  loop: >-
+    {{ matrix_rbac_users.json.users
+       | rejectattr('admin')
+       | selectattr('name', 'in', matrix_rbac_member_mxids)
+       | map(attribute='name') | list }}
+  loop_control:
+    label: "{{ item }}"
+  changed_when: true
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "⬇️ Revoke the Synapse admin flag from accounts outside the administrator role"
+  uri_retry:
+    url: "{{ MATRIX_SYNAPSE_LOOPBACK_URL }}/_synapse/admin/v2/users/{{ item | urlencode }}"
+    method: PUT
+    body_format: json
+    body:
+      admin: false
+    headers: "{{ matrix_rbac_auth }}"
+    status_code: 200
+  loop: >-
+    {{ matrix_rbac_users.json.users
+       | selectattr('admin')
+       | rejectattr('name', 'in', matrix_rbac_member_mxids + MATRIX_RBAC_PROTECTED_MXIDS)
+       | map(attribute='name') | list }}
+  loop_control:
+    label: "{{ item }}"
+  changed_when: true
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"

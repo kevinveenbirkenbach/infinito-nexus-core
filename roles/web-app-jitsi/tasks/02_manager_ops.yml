@@ -21,7 +21,37 @@
   notify: compose-up
 
 - name: "🎨 Converge the corporate design of {{ application_id }}"
-  ansible.builtin.include_tasks: 02_design.yml
+  ansible.builtin.include_tasks: 03_design.yml
+
+- name: "🔑 Stage the keycloak_adapter web files of {{ application_id }}"
+  stack_host_template:
+    src: "{{ item.src }}"
+    dest: "{{ [JITSI_WEB_CONFIG_HOST_PATH, item.dest] | path_join }}"
+    mode: "0644"
+  loop: "{{ JITSI_KEYCLOAK_ADAPTER_WEB_FILES }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  notify: container-recreate
+  when: JITSI_KEYCLOAK_ADAPTER_ENABLED | bool
+
+- name: "🧹 Remove the keycloak_adapter web files of {{ application_id }}"
+  ansible.builtin.file:
+    path: "{{ [JITSI_WEB_CONFIG_HOST_PATH, item.dest] | path_join }}"
+    state: absent
+  loop: "{{ JITSI_KEYCLOAK_ADAPTER_WEB_FILES }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  notify: container-recreate
+  when: not (JITSI_KEYCLOAK_ADAPTER_ENABLED | bool)
+
+- name: "🧱 Rebuild the keycloak_adapter image of {{ application_id }}"
+  ansible.builtin.debug:
+    msg: "keycloak_adapter build context staged for {{ application_id }}"
+  changed_when: true
+  notify:
+    - compose-build
+    - compose-up
+  when: JITSI_KEYCLOAK_ADAPTER_ENABLED | bool
 
 - name: "🚿 flush handlers so Jitsi containers start with rendered env"
   meta: flush_handlers
