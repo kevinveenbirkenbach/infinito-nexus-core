@@ -19,7 +19,7 @@ INSERT INTO auth_oauth_provider (
 	%(userinfo_endpoint)s,
 	%(userinfo_endpoint)s,
 	%(client_id)s,
-	'openid email profile',
+	%(scope)s,
 	'fa fa-fw fa-key',
 	'{"en_US": "Login with SSO"}',
 	10,

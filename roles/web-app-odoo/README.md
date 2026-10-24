@@ -41,6 +41,13 @@ The purpose of this role is to provide a hands-off, production-ready Odoo ERP de
 - **LDAP Authentication:**
   Enterprise directory integration via OpenLDAP for organizations using traditional directory services.
 
+- **Role-Based Sign-In:** Only members of a role group of [`meta/rbac.yml`](./meta/rbac.yml) sign in, through Keycloak (groups claim) and through the directory (`memberOf`) alike: `administrator` grants Settings, `manager` the Sales, Accounting, Inventory and Project administrator rights, `user` the internal user, `portal` the customer portal only (`ODOO_RBAC_ROLE_GROUPS` in [`vars/main.yml`](./vars/main.yml)). Every sign-in replaces these managed groups with the ones the roles grant; the platform administrator is never changed or refused. The addons [`infinito_rbac`](./files/addons/infinito_rbac/__manifest__.py), [`auth_oauth_https`](./files/addons/auth_oauth_https/__manifest__.py) and [`auth_ldap_profile`](./files/addons/auth_ldap_profile/__manifest__.py) under `files/addons/` carry the mapping.
+
+- **Profile Sync:** Every Keycloak sign-in writes name, email, phone (`phone` scope), language and time zone from the claims; every directory sign-in writes them from `cn`, `mail`, `telephoneNumber`, `preferredLanguage` and `infinitoTimezone` (the `LDAP.USER.ATTRIBUTES` names). A language that is not installed or an unknown time zone is left out.
+- **Platform Language:** Every deploy activates the platform language `HOST_LL_CC` (`ODOO_LANGUAGE`) next to `en_US` and loads its translations ([`files/python/apply/language.py`](./files/python/apply/language.py)), so the language mapping of the profile sync has a second language to select.
+
+- **Portal Self-Signup:** The signup template `_oauth_template` is a portal user, so a website self-signup never becomes an internal user. Once per database, [`files/python/apply/signup_portal.py`](./files/python/apply/signup_portal.py) moves the internal users the public user created without an identity provider link (earlier self-signups that copied Internal User) to the portal and records the run in the system parameter `infinito.rbac.signup_portal_reconciled`.
+
 - **WebSocket Support:**
   Real-time notifications and live chat capabilities through WebSocket connections.
 
@@ -137,4 +144,4 @@ docker logs odoo -f
 
 ## Persona contract opt-outs
 
-The shared `biber` and `administrator` persona helpers are declared blocked in [templates/playwright.env.j2](./templates/playwright.env.j2). Odoo renders its SSO provider link only on `/web/login` inside the `.o_login_auth` container, not on the site root the persona helper starts from, and it exposes no in-app logout control — signing out means navigating to `/web/session/logout`. The full Keycloak round trip for both users is covered by the role's own `odoo: admin sso login, verify ui, logout` and `odoo: biber sso login, verify ui, logout` scenarios in [files/playwright/playwright.spec.js](./files/playwright/playwright.spec.js).
+The shared `biber` and `administrator` persona helpers are declared blocked in [templates/playwright.env.j2](./templates/playwright.env.j2). Odoo renders its SSO provider link only on `/web/login` inside the `.o_login_auth` container, not on the site root the persona helper starts from, and it exposes no in-app logout control — signing out means navigating to `/web/session/logout`. The full Keycloak round trip for both users is covered by the role's own `odoo: admin sso login, verify ui, logout` and `odoo: biber sso login, verify ui, logout` scenarios in [files/playwright/playwright.spec.js](./files/playwright/playwright.spec.js); the second joins `biber` to the `user` role group first, because a Keycloak user without an Odoo role is refused. [files/playwright/test-rbac.js](./files/playwright/test-rbac.js) covers every role and the profile mapping.

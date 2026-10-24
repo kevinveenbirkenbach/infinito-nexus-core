@@ -6,6 +6,7 @@ const { isServiceEnabled } = require("./service-gating");
 const { onionOptions } = require("./_shared");
 
 require("./test-seaweedfs");
+const { env: rbacEnv, withBiberIn } = require("./test-rbac");
 
 test.use({
   ignoreHTTPSErrors: true,
@@ -157,13 +158,13 @@ test("odoo: admin sso login, verify ui, logout", async ({ page }) => {
     .toBe(true);
 });
 
-// Scenario II: Odoo → SSO login as biber (regular user) → verify authenticated → logout
-//
-// Similar to admin test but verifies regular (non-admin) user SSO flow works.
-// Biber is a standard user without admin privileges - this confirms OIDC works
-// for all Keycloak users, not just the administrator.
-test("odoo: biber sso login, verify ui, logout", async ({ page }) => {
+test("odoo: biber sso login, verify ui, logout", async ({ page, browser }) => {
   test.skip(!oidcEnabled, "OIDC shared service disabled");
+  test.setTimeout(resolveTimeout(240_000)); // group join, OAuth round-trip and group teardown
+  await withBiberIn(browser, rbacEnv.groups.user, () => biberSsoJourney(page));
+});
+
+async function biberSsoJourney(page) {
   const expectedOdooBaseUrl = odooBaseUrl.replace(/\/$/, "");
   const odooLoginUrl = `${expectedOdooBaseUrl}/web/login`;
 
@@ -214,7 +215,7 @@ test("odoo: biber sso login, verify ui, logout", async ({ page }) => {
       }
     )
     .toBe(true);
-});
+}
 
 // Persona scenarios.
 // Bodies live in the shared helper roles/test-e2e-playwright/files/personas.js

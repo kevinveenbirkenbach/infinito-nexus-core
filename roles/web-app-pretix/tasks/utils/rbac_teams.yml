@@ -1,0 +1,40 @@
+---
+- name: "🔍 Resolve {{ application_id }} hosting node + container id"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'roles/sys-svc-compose/tasks/utils/swarm/resolve_host_cid.yml') }}"
+  vars:
+    resolve_service_key: "pretix"
+    resolve_output_prefix: PRETIX_RBAC
+    resolve_compose_cid: "{{ PRETIX_CONTAINER }}"
+
+- name: "👥 Converge the RBAC teams and their pretix-oidc team assignment rules"
+  ansible.builtin.command:
+    argv:
+      - container
+      - exec
+      - -i
+      - -e
+      - RBAC_CLAIM
+      - -e
+      - RBAC_TEAMS
+      - -e
+      - ORGANIZER_NAME
+      - -e
+      - ORGANIZER_SLUG
+      - "{{ PRETIX_RBAC_LOCAL_CID }}" # nocheck: container-exec-resolver
+      - pretix
+      - shell_scoped
+      - --override
+    stdin: "{{ lookup('file', 'python/rbac_teams.py') }}"
+  environment:
+    RBAC_CLAIM: "{{ RBAC.GROUP.CLAIM }}"
+    RBAC_TEAMS: "{{ PRETIX_RBAC_TEAMS | to_json }}"
+    ORGANIZER_NAME: "{{ PRETIX_ORGANIZER_NAME }}"
+    ORGANIZER_SLUG: "{{ PRETIX_ORGANIZER_SLUG }}"
+  register: pretix_rbac_teams
+  retries: 10
+  delay: 6
+  until: pretix_rbac_teams.stdout is search('(?m)PRETIX_RESULT=[A-Z]+$')
+  changed_when: pretix_rbac_teams.stdout is search('(?m)PRETIX_RESULT=CHANGED$')
+  failed_when: pretix_rbac_teams.stdout is not search('(?m)PRETIX_RESULT=(UN)?CHANGED$')
+  delegate_to: "{{ PRETIX_RBAC_HOST_NODE }}"
+  run_once: true

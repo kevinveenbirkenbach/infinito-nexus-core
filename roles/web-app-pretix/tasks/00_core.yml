@@ -19,6 +19,10 @@
 - name: "👤 Converge the platform administrator of {{ application_id }}"
   ansible.builtin.include_tasks: utils/administrator.yml
 
+- name: "👥 Converge the RBAC teams of {{ application_id }}"
+  ansible.builtin.include_tasks: utils/rbac_teams.yml
+  when: PRETIX_OIDC_ENABLED | bool
+
 - name: "🎨 Converge the corporate shop colors of {{ application_id }}"
   ansible.builtin.include_tasks: utils/design.yml
 
