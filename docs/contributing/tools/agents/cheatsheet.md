@@ -44,3 +44,5 @@ from its procedure file. Run `make install-skills` to (re)install them.
 | Writing the blog article, banner image and social posts for a release | `i8-release-article` |
 | Writing a new requirement | `i8-requirement-create` |
 | Implementing an existing requirement file end to end | `i8-requirement-implement` |
+| A GitHub Actions / CI run failed and needs a grouped, root-caused fix plan | `i8-debug-ci` |
+| Reviewing the whole project for legal soundness: licences, attribution, data protection, trademarks | `i8-advocate` |

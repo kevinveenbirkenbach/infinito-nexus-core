@@ -17,7 +17,7 @@ import unittest
 from tests.lint.repository.documentation import PROJECT_ROOT
 from utils.cache.files import read_text
 
-SKILLS_DIR = PROJECT_ROOT / "skills"
+SKILLS_DIR = PROJECT_ROOT / "agents" / "skills"
 ITERATION_DIR = PROJECT_ROOT / "docs" / "agents" / "action" / "iteration"
 PREFIX = "i8-iterate-"
 
