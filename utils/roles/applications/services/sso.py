@@ -103,6 +103,13 @@ def get_sso_config(
         oauth2_pass_access_token bool — ``services.sso.oauth2.pass_access_token``,
                                 default False: the gate hands the upstream a
                                 bearer token only where the app decodes one
+        oauth2_claim_headers    list — ``services.sso.oauth2.claim_headers`` or []:
+                                ``OIDC.ATTRIBUTES`` keys whose ID token claims
+                                the gate forwards as ``X-Forwarded-<Key>``
+        oauth2_restricted_locations list — ``services.sso.oauth2.restricted_locations``
+                                or []: one ``{location, groups, auth_uri,
+                                upstream}`` per entry; the gate admits a request
+                                to ``location`` only for a member of ``groups``
 
     The compound predicates are the documented call surface — call sites
     should prefer ``is_proxy_gated`` over manually combining
@@ -130,6 +137,12 @@ def get_sso_config(
     raw_pass_access_token = _get(
         applications, application_id, "services.sso.oauth2.pass_access_token", False
     )
+    raw_claim_headers = _get(
+        applications, application_id, "services.sso.oauth2.claim_headers", []
+    )
+    raw_restricted = _get(
+        applications, application_id, "services.sso.oauth2.restricted_locations", []
+    )
 
     return {
         "enabled": enabled,
@@ -148,10 +161,57 @@ def get_sso_config(
             else []
         ),
         "oauth2_pass_access_token": _as_bool(raw_pass_access_token),
+        "oauth2_claim_headers": (
+            [str(key) for key in raw_claim_headers]
+            if isinstance(raw_claim_headers, (list, tuple))
+            else []
+        ),
+        "oauth2_restricted_locations": restricted_locations(raw_restricted),
     }
 
 
-def proxy_instances(app_domains: Any, config_file: str) -> list[dict[str, str]]:
+def restricted_locations(raw: Any) -> list[dict[str, Any]]:
+    """Return the per-location group gates of an oauth2-proxy gated application.
+
+    Args:
+        raw: ``services.sso.oauth2.restricted_locations``, a list of
+            ``{location, groups}`` mappings.
+
+    Returns:
+        One mapping per entry with the ``location``, the ``groups`` (each with
+        one leading slash, as the groups claim carries them), the internal
+        ``auth_uri`` nginx asks and the ``upstream`` path that URI proxies to.
+
+    Raises:
+        ValueError: an entry without a location or without groups.
+    """
+    if not isinstance(raw, (list, tuple)):
+        return []
+    gates = []
+    for index, entry in enumerate(raw):
+        location = str((entry or {}).get("location") or "").strip()
+        groups = [
+            "/" + str(group).lstrip("/") for group in (entry or {}).get("groups") or []
+        ]
+        if not location or not groups:
+            raise ValueError(
+                f"restricted_locations[{index}] needs a location and at least one group"
+            )
+        gates.append(
+            {
+                "location": location,
+                "groups": groups,
+                "auth_uri": f"/oauth2/auth-restricted-{index}",
+                "upstream": "/oauth2/auth?allowed_groups="
+                + ",".join(quote(group, safe="/") for group in groups),
+            }
+        )
+    return gates
+
+
+def proxy_instances(
+    app_domains: Any, config_file: str, alpha_config_file: str
+) -> list[dict[str, str]]:
     """Return the oauth2-proxy instances a gated application runs.
 
     One oauth2-proxy applies one cookie-secure flag to every host it answers,
@@ -163,13 +223,15 @@ def proxy_instances(app_domains: Any, config_file: str) -> list[dict[str, str]]:
             domain, a list of domains or a ``{key: domain}`` mapping.
         config_file: ``web-app-keycloak``'s
             ``services.sso_proxy.configuration_file``.
+        alpha_config_file: ``web-app-keycloak``'s
+            ``services.sso_proxy.alpha_configuration_file``.
 
     Returns:
         One mapping per network, in the order the domains name them, with
         ``network``, the compose ``service``, the ``port_key`` under
-        ``ports.local`` and the ``config_file`` the instance reads. The
-        canonical network keeps the unsuffixed names; each further network
-        appends its registry label.
+        ``ports.local``, the ``config_file`` and the ``alpha_config_file``
+        the instance reads. The canonical network keeps the unsuffixed names;
+        each further network appends its registry label.
     """
     return [
         {
@@ -177,6 +239,7 @@ def proxy_instances(app_domains: Any, config_file: str) -> list[dict[str, str]]:
             "service": labelled("sso-proxy", instance["label"], "-"),
             "port_key": labelled("sso", instance["label"], "_"),
             "config_file": labelled_file(config_file, instance["label"]),
+            "alpha_config_file": labelled_file(alpha_config_file, instance["label"]),
         }
         for instance in network_instances(app_domains)
     ]

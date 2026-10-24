@@ -83,7 +83,19 @@ class LookupModule(LookupBase):
                 config_path="services.sso_proxy.configuration_file",
                 strict=True,
             )
-            return [proxy_instances(domains.get(application_id), str(config_file))]
+            alpha_config_file = get(
+                applications=applications,
+                application_id="web-app-keycloak",
+                config_path="services.sso_proxy.alpha_configuration_file",
+                strict=True,
+            )
+            return [
+                proxy_instances(
+                    domains.get(application_id),
+                    str(config_file),
+                    str(alpha_config_file),
+                )
+            ]
         if want == "all":
             return [resolved]
         if want not in resolved:

@@ -4,13 +4,33 @@ import importlib.util
 import json
 import re
 import unittest
+from unittest import mock
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
+
+from utils.cache.yaml import load_yaml_any
+from utils.roles.mapping import ROLE_FILE_VARS_MAIN
 
 from . import PROJECT_ROOT
 
 ROLE_DIR = PROJECT_ROOT / "roles/web-app-keycloak"
 IMPORT_DIR = ROLE_DIR / "templates/import"
+ROLE_VARS = load_yaml_any(str(ROLE_DIR / ROLE_FILE_VARS_MAIN))
+LDAP_VARS = load_yaml_any(str(PROJECT_ROOT / "group_vars/all/12_ldap.yml"))
+LDAP_USER_ATTRIBUTES = {
+    **LDAP_VARS["LDAP"]["USER"]["ATTRIBUTES"],
+    "ID": "uid",
+}
+
+
+def profile_attributes() -> list[dict]:
+    """Render the role's profile registry against the directory attribute names."""
+    env = Environment(undefined=StrictUndefined, autoescape=select_autoescape())
+    ldap = {"USER": {"ATTRIBUTES": LDAP_USER_ATTRIBUTES}}
+    return [
+        {**entry, "ldap": env.from_string(entry["ldap"]).render(LDAP=ldap)}
+        for entry in ROLE_VARS["KEYCLOAK_PROFILE_ATTRIBUTES"]
+    ]
 
 
 def role_filters() -> dict:
@@ -51,6 +71,9 @@ CONTEXT = {
     "KEYCLOAK_LDAP_SYNC_CHANGES_PERIOD": "86400",
     "KEYCLOAK_LDAP_SYNC_FULL_PERIOD": "604800",
     "KEYCLOAK_RBAC_GROUP_NAME": "groups",
+    "KEYCLOAK_PROFILE_ATTRIBUTES": profile_attributes(),
+    "KEYCLOAK_PROFILE_GROUPS": ROLE_VARS["KEYCLOAK_PROFILE_GROUPS"],
+    "KEYCLOAK_PROFILE_MAPPER_PREFIX": ROLE_VARS["KEYCLOAK_PROFILE_MAPPER_PREFIX"],
     "LDAP_ONLY": False,
     "OIDC": {
         "CLIENT": {"SECRET": "s3cret", "ID": "example.com"},
@@ -63,18 +86,11 @@ CONTEXT = {
                 "ROLES": "ou=roles,dc=example,dc=com",
             }
         },
-        "RBAC": {"FLAVORS": ["groupOfNames"]},
-        "USER": {
-            "ATTRIBUTES": {
-                "ID": "uid",
-                "MAIL": "mail",
-                "FULLNAME": "cn",
-                "FIRSTNAME": "givenName",
-                "SURNAME": "sn",
-                "NEXTCLOUD_QUOTA": "nextcloudQuota",
-                "SSH_PUBLIC_KEY": "sshPublicKey",
-            }
+        "RBAC": {
+            "FLAVORS": ["groupOfNames"],
+            "MEMBER_ATTRIBUTE": LDAP_VARS["LDAP"]["RBAC"]["MEMBER_ATTRIBUTE"],
         },
+        "USER": {"ATTRIBUTES": LDAP_USER_ATTRIBUTES},
     },
 }
 
@@ -151,6 +167,52 @@ class TestRealmImportJson(unittest.TestCase):
         declared = {attribute["name"] for attribute in profile["attributes"]}
         self.assertIn("uidNumber", declared)
 
+    def test_every_profile_attribute_has_an_ldap_mapper(self) -> None:
+        realm = json.loads(render([]))
+        ldap = realm["components"]["org.keycloak.storage.UserStorageProvider"][0]
+        mappers = {
+            m["name"]: m["config"]
+            for m in ldap["subComponents"][
+                "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
+            ]
+        }
+        prefix = CONTEXT["KEYCLOAK_PROFILE_MAPPER_PREFIX"]
+        for attribute in CONTEXT["KEYCLOAK_PROFILE_ATTRIBUTES"]:
+            config = mappers[prefix + attribute["name"]]
+            self.assertEqual(config["ldap.attribute"], [attribute["ldap"]])
+            self.assertEqual(config["user.model.attribute"], [attribute["name"]])
+
+    def test_profile_mappers_do_not_depend_on_moodle(self) -> None:
+        context = {**CONTEXT, "KEYCLOAK_MOODLE_ENABLED": False}
+        with mock.patch.dict(CONTEXT, context):
+            realm = json.loads(render([]))
+        ldap = realm["components"]["org.keycloak.storage.UserStorageProvider"][0]
+        names = {
+            m["name"]
+            for m in ldap["subComponents"][
+                "org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
+            ]
+        }
+        self.assertIn(CONTEXT["KEYCLOAK_PROFILE_MAPPER_PREFIX"] + "country", names)
+        self.assertNotIn("moodle:country", names)
+
+    def test_contact_fields_are_user_editable_and_organization_fields_are_not(
+        self,
+    ) -> None:
+        realm = json.loads(render([]))
+        provider = realm["components"]["org.keycloak.userprofile.UserProfileProvider"]
+        profile = json.loads(provider[0]["config"]["kc.user.profile.config"][0])
+        attributes = {a["name"]: a for a in profile["attributes"]}
+        self.assertEqual(
+            attributes["phoneNumber"]["permissions"]["edit"], ["admin", "user"]
+        )
+        self.assertEqual(attributes["department"]["permissions"]["edit"], ["admin"])
+        self.assertEqual(attributes["nextcloudQuota"]["permissions"]["edit"], ["admin"])
+        self.assertEqual(
+            {g["name"] for g in profile["groups"]},
+            {"user-metadata", *CONTEXT["KEYCLOAK_PROFILE_GROUPS"]},
+        )
+
     def test_the_username_length_follows_the_platform_limit(self) -> None:
         """Registration must refuse what the tightest consumer refuses, so the
         profile carries IAM_USERNAME_MAX_LENGTH rather than Keycloak's own 255."""
@@ -178,6 +240,20 @@ class TestRealmImportJson(unittest.TestCase):
         realm = json.loads(render(["web-app-suitecrm", "web-app-other"]))
         saml = [c for c in realm["clients"] if c.get("protocol") == "saml"]
         self.assertEqual(len(saml), 2)
+
+    def test_saml_client_asserts_groups_and_every_profile_attribute(self) -> None:
+        realm = json.loads(render(["web-app-suitecrm"]))
+        client = next(c for c in realm["clients"] if c.get("protocol") == "saml")
+        mappers = {m["name"]: m for m in client["protocolMappers"]}
+        groups = mappers[CONTEXT["KEYCLOAK_RBAC_GROUP_CLAIM"]]
+        self.assertEqual(groups["protocolMapper"], "saml-group-membership-mapper")
+        self.assertEqual(groups["config"]["full.path"], "true")
+        prefix = CONTEXT["KEYCLOAK_PROFILE_MAPPER_PREFIX"]
+        for attribute in CONTEXT["KEYCLOAK_PROFILE_ATTRIBUTES"]:
+            mapper = mappers[f"{prefix}{attribute['name']}"]
+            self.assertEqual(mapper["protocolMapper"], "saml-user-attribute-mapper")
+            self.assertEqual(mapper["config"]["user.attribute"], attribute["name"])
+            self.assertEqual(mapper["config"]["attribute.name"], attribute["ldap"])
 
     def test_saml_client_omits_the_role_list_scope(self) -> None:
         realm = json.loads(render(["web-app-suitecrm"]))

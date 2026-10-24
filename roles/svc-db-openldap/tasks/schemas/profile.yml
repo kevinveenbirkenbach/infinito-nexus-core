@@ -1,9 +1,5 @@
 ---
-# Moodle custom-attribute LDAP schema. Three attributes that have
-# no equivalent in core inetOrgPerson: phonetic given/family name
-# and IANA timezone name.
-
-- name: ✅ Ensure custom LDAP schema snippet via ldapsm (moodle)
+- name: ✅ Ensure profile LDAP schema snippet via ldapsm
   vars:
     schema_name: "moodle"
     attribute_defs:
@@ -16,6 +12,9 @@
     objectclass_defs:
       - "( 1.3.6.1.4.1.99999.13 NAME 'infinitoMoodleUser' DESC 'Auxiliary class for Moodle-only user attributes' AUXILIARY MAY ( infinitoNamePhoneticGiven $ infinitoNamePhoneticFamily
         $ infinitoTimezone ) )"
+      - "( 1.3.6.1.4.1.99999.14 NAME '{{ LDAP.USER.OBJECTS.AUXILIARY.INFINITO_USER }}' DESC 'Auxiliary class for profile attributes inetOrgPerson lacks' AUXILIARY
+        MAY ( {{ LDAP.USER.ATTRIBUTES.COUNTRY }} $ {{ LDAP.USER.ATTRIBUTES.PHONETIC_GIVEN }} $ {{ LDAP.USER.ATTRIBUTES.PHONETIC_FAMILY }} $ {{ LDAP.USER.ATTRIBUTES.TIMEZONE
+        }} ) )"
   command: >
     ldapsm
       -s {{ OPENLDAP_SERVER_URI }}
@@ -28,10 +27,10 @@
       {% for oc in objectclass_defs %}
       -c "{{ oc }}"
       {% endfor %}
-  register: ldapsm_moodle_result
-  changed_when: "'Created schema entry' in ldapsm_moodle_result.stdout"
+  register: ldapsm_profile_result
+  changed_when: "'Created schema entry' in ldapsm_profile_result.stdout"
   check_mode: false
 
-- name: 👁️ Show ldapsm output (moodle)
+- name: 👁️ Show ldapsm output (profile)
   debug:
-    var: ldapsm_moodle_result.stdout_lines
+    var: ldapsm_profile_result.stdout_lines

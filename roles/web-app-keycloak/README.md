@@ -14,6 +14,8 @@ This role deploys Keycloak in a Docker environment, integrating it with a Postgr
 - **Advanced Security Options:** Benefit from multi-factor authentication, configurable password policies, and secure session management.
 - **Standards Support:** Seamlessly integrate with SAML, OpenID Connect, and OAuth2 to support various authentication flows.
 - **Scalable and Customizable:** Easily tailor settings and scale your Keycloak instance to meet growing demands.
+- **Directory Profile:** Contact, address, locale and organization attributes from OpenLDAP appear in the account and admin consoles under "Contact and locale" (user-editable) and "Organization" (administrator-only), and reach applications through the standard `profile`, `phone` and `address` claims.
+- **Admin Console Roles:** The groups `user-manager`, `auditor` and `impersonator` under `/roles/web-app-keycloak` grant user management, read-only auditing and impersonation in the application realm. `realm-admin` stays with the local bootstrap account. A user manager can change group memberships, which includes every application role group, so grant `user-manager` only to people trusted with every application role.
 
 ## Developer Notes
 

@@ -16,6 +16,8 @@ Deploy OpenLDAP in a Docker environment with support for TLS-secured communicati
 - **Dynamic Configuration:** Leverage runtime configuration overlays to adjust directory settings without downtime.
 - **Comprehensive Query Capabilities:** Utilize LDAP search tools to efficiently query and manage directory data.
 - **High Performance and Scalability:** Designed to handle large-scale deployments with rapid lookup and authentication response times.
+- **Profile Attributes:** The auxiliary class `infinitoUser` allows the country, phonetic name and time zone attributes that `inetOrgPerson` lacks, so Keycloak can write the full profile back to the directory.
+- **Directory Editor ACL:** Members of the `web-app-lam` and `web-app-phpldapadmin` administrator groups get write access to the data tree, `userPassword` included, so LAM and phpLDAPadmin can set and reset passwords; a changed ACL is applied to an existing directory as well.
 
 ## User Password Update Policy
 

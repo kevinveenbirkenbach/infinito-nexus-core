@@ -33,6 +33,9 @@ OPENLDAP_PROVISION_USERS: "{{ lookup('config', application_id, 'services.openlda
 OPENLDAP_PROVISION_GROUPS: "{{ lookup('config', application_id, 'services.openldap.provision.groups') }}"
 OPENLDAP_PROVISION_UPDATE: "{{ lookup('config', application_id, 'services.openldap.provision.update') }}"
 OPENLDAP_USERS: "{{ lookup('users_non_reserved') }}"
+OPENLDAP_DIRECTORY_EDITOR_GROUP_DNS:
+  - "cn=web-app-lam-administrator,{{ LDAP.DN.OU.ROLES }}"
+  - "cn=web-app-phpldapadmin-administrator,{{ LDAP.DN.OU.ROLES }}"
 
 OPENLDAP_PYTHON_HEADER_PACKAGE_TEMPLATES_BY_OS_FAMILY:
   Debian:

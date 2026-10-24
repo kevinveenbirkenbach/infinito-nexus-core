@@ -35,10 +35,22 @@ KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER: >-
         'config': {
           'preserve.group.inheritance':            ['false'],
           'group.name.ldap.attribute':             ['description'],
-          'groups.ldap.filter':                    [kc_app_id | kc_per_app_ldap_filter],
+          'groups.ldap.filter':                    [(lookup('applications') | kc_app_ldap_scopes(kc_app_id)).filter],
           'groups.path':                           ['/' ~ (KEYCLOAK_RBAC_GROUP_NAME | trim('/')) ~ '/' ~ kc_app_id],
           'groups.path.group':                     [kc_app_group_id],
           'drop.non.existing.groups.during.sync':  ['true'],
+        }
+      }, recursive=True)
+  }}
+KEYCLOAK_PER_TENANT_LDAP_ROLES_MAPPER: >-
+  {{
+    KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER
+    | combine({
+        'name': kc_tenant_scope.mapper,
+        'config': {
+          'groups.ldap.filter': [kc_tenant_scope.filter],
+          'groups.path':        ['/' ~ (KEYCLOAK_RBAC_GROUP_NAME | trim('/')) ~ '/' ~ kc_app_id ~ '/' ~ kc_tenant_scope.tenant],
+          'groups.path.group':  [kc_tenant_group_id],
         }
       }, recursive=True)
   }}
@@ -122,6 +134,49 @@ KEYCLOAK_LDAP_USER_OBJECT_CLASSES: >
 KEYCLOAK_USER_EMAILS_VERIFIED: "{{ lookup('config', application_id, 'services.keycloak.users.emails_verified') }}"
 
 KEYCLOAK_MOODLE_ENABLED: "{{ 'web-app-moodle' in group_names }}"
+
+KEYCLOAK_CONSOLE_ROLE_CLIENT: "realm-management"
+KEYCLOAK_CONSOLE_ROLE_GRANTS:
+  user-manager: ["view-users", "query-users", "query-groups", "manage-users"]
+  auditor: ["view-realm", "view-users", "query-users", "query-groups", "view-clients", "view-events"]
+  impersonator: ["impersonation", "view-users", "query-users"]
+
+KEYCLOAK_REALM_ROLE_GRANTS: "{{ lookup('applications') | kc_realm_role_grants(KEYCLOAK_RBAC_RUN_APP_IDS, KEYCLOAK_RBAC_GROUP_NAME) }}"
+
+KEYCLOAK_PROFILE_MAPPER_PREFIX: "profile:"
+KEYCLOAK_PROFILE_LEGACY_MAPPERS:
+  - "phone number"
+  - "locale"
+KEYCLOAK_PROFILE_LEGACY_MAPPER_PREFIX: "moodle:"
+KEYCLOAK_PROFILE_GROUPS:
+  contact:
+    header: "Contact and locale"
+    description: "Contact details and regional settings, synchronised with the directory and editable by the user."
+    edit: ["admin", "user"]
+  organization:
+    header: "Organization"
+    description: "Organizational details, synchronised with the directory and maintained by administrators."
+    edit: ["admin"]
+KEYCLOAK_PROFILE_ATTRIBUTES:
+  - { name: "middleName", ldap: "{{ LDAP.USER.ATTRIBUTES.INITIALS }}", display: "Middle name", group: "contact", max: 255 }
+  - { name: "nickname", ldap: "{{ LDAP.USER.ATTRIBUTES.DISPLAY_NAME }}", display: "Nickname", group: "contact", max: 255 }
+  - { name: "phoneNumber", ldap: "{{ LDAP.USER.ATTRIBUTES.PHONE }}", display: "Phone number", group: "contact", max: 64 }
+  - { name: "phoneNumberAlt", ldap: "{{ LDAP.USER.ATTRIBUTES.MOBILE }}", display: "Mobile", group: "contact", max: 64 }
+  - { name: "street", ldap: "{{ LDAP.USER.ATTRIBUTES.STREET }}", display: "Street", group: "contact", max: 255 }
+  - { name: "postal_code", ldap: "{{ LDAP.USER.ATTRIBUTES.POSTAL_CODE }}", display: "Postal code", group: "contact", max: 32 }
+  - { name: "locality", ldap: "{{ LDAP.USER.ATTRIBUTES.LOCALITY }}", display: "City", group: "contact", max: 128 }
+  - { name: "region", ldap: "{{ LDAP.USER.ATTRIBUTES.REGION }}", display: "Region", group: "contact", max: 128 }
+  - { name: "country", ldap: "{{ LDAP.USER.ATTRIBUTES.COUNTRY }}", display: "Country (ISO-3166-1 alpha-2)", group: "contact", max: 2 }
+  - { name: "website", ldap: "{{ LDAP.USER.ATTRIBUTES.WEBSITE }}", display: "Website", group: "contact", max: 255 }
+  - { name: "locale", ldap: "{{ LDAP.USER.ATTRIBUTES.LOCALE }}", display: "Locale", group: "contact", max: 16 }
+  - { name: "zoneinfo", ldap: "{{ LDAP.USER.ATTRIBUTES.TIMEZONE }}", display: "Time zone (IANA)", group: "contact", max: 64 }
+  - { name: "namePhoneticGiven", ldap: "{{ LDAP.USER.ATTRIBUTES.PHONETIC_GIVEN }}", display: "Phonetic given name", group: "contact", max: 255 }
+  - { name: "namePhoneticFamily", ldap: "{{ LDAP.USER.ATTRIBUTES.PHONETIC_FAMILY }}", display: "Phonetic family name", group: "contact", max: 255 }
+  - { name: "description", ldap: "{{ LDAP.USER.ATTRIBUTES.DESCRIPTION }}", display: "Description", group: "contact", max: 1024 }
+  - { name: "institution", ldap: "{{ LDAP.USER.ATTRIBUTES.ORGANIZATION }}", display: "Institution", group: "organization", max: 255 }
+  - { name: "department", ldap: "{{ LDAP.USER.ATTRIBUTES.DEPARTMENT }}", display: "Department", group: "organization", max: 255 }
+  - { name: "title", ldap: "{{ LDAP.USER.ATTRIBUTES.TITLE }}", display: "Job title", group: "organization", max: 255 }
+  - { name: "idNumber", ldap: "{{ LDAP.USER.ATTRIBUTES.EMPLOYEE_NUMBER }}", display: "ID number", group: "organization", max: 64 }
 
 KEYCLOAK_DECLARED_CLIENT_APPS: "{{ lookup('applications') | kc_declared_client_apps(lookup('deployment').groups) }}"
 KEYCLOAK_DECLARED_CLIENT_IDS: "{{ lookup('applications') | kc_declared_client_ids(lookup('deployment').groups) }}"

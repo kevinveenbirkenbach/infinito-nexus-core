@@ -55,7 +55,7 @@ class TestLdapUserEntries(unittest.TestCase):
                     "uid": "alice",
                     "givenName": "Alice",
                     "sn": "Liddell",
-                    "cn": "alice",
+                    "cn": "Alice Liddell",
                     "loginShell": "/bin/bash",
                     "homeDirectory": "/home/alice",
                     "uidNumber": "1001",
@@ -64,6 +64,20 @@ class TestLdapUserEntries(unittest.TestCase):
             },
         )
         self.assertEqual(entries[1]["attributes"]["cn"], "Bob B.")
+
+    def test_cn_falls_back_to_the_key_without_any_name(self):
+        users = {
+            "bot": {
+                **USERS["alice"],
+                "username": "bot",
+                "firstname": "",
+                "lastname": "",
+            }
+        }
+        entries = self.m.openldap_user_entries(
+            users, "uid", "ou=users,dc=x", STRUCTURAL
+        )
+        self.assertEqual(entries[0]["attributes"]["cn"], "bot")
 
     def test_mail_entries_keep_classes_and_mail(self):
         entries = self.m.openldap_user_mail_entries(

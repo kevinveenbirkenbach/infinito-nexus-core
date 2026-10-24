@@ -93,7 +93,12 @@ class SsoLookupTests(unittest.TestCase):
         applications = {
             **_apps(enabled=True, flavor="oauth2"),
             "web-app-keycloak": {
-                "services": {"sso_proxy": {"configuration_file": "proxy.cfg"}}
+                "services": {
+                    "sso_proxy": {
+                        "configuration_file": "proxy.cfg",
+                        "alpha_configuration_file": "proxy-alpha.yml",
+                    }
+                }
             },
         }
         domains = {"web-app-x": ["x.example.org", "x." + "a" * 56 + ".onion"]}
@@ -108,10 +113,18 @@ class SsoLookupTests(unittest.TestCase):
                 variables={"applications": applications},
             )
         self.assertEqual(
-            [(i["service"], i["port_key"], i["config_file"]) for i in result[0]],
             [
-                ("sso-proxy", "sso", "proxy.cfg"),
-                ("sso-proxy-onion", "sso_onion", "proxy-onion.cfg"),
+                (i["service"], i["port_key"], i["config_file"], i["alpha_config_file"])
+                for i in result[0]
+            ],
+            [
+                ("sso-proxy", "sso", "proxy.cfg", "proxy-alpha.yml"),
+                (
+                    "sso-proxy-onion",
+                    "sso_onion",
+                    "proxy-onion.cfg",
+                    "proxy-alpha-onion.yml",
+                ),
             ],
         )
 

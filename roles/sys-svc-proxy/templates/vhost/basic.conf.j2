@@ -57,6 +57,13 @@ server
       {% include 'roles/sys-svc-proxy/templates/location/html.conf.j2' %}
     {% endif %}
 
+    {% for gate in lookup('sso', application_id, 'oauth2_restricted_locations') %}
+      {% set sso_proxy_enabled = true %}
+      {% set sso_proxy_auth_uri = gate.auth_uri %}
+      {% set location = gate.location %}
+      {% include 'roles/sys-svc-proxy/templates/location/html.conf.j2' %}
+    {% endfor %}
+
   {% else %}
     {% set sso_proxy_enabled = false %}
     {% set location = "/" %}

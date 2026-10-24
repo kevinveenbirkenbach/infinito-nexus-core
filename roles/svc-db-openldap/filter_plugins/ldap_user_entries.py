@@ -1,3 +1,6 @@
+from plugins.filter.ldap.full_name import ldap_full_name
+
+
 def _user_dn(key, id_attribute, users_dn):
     return f"{id_attribute}={key},{users_dn}"
 
@@ -19,7 +22,7 @@ def openldap_user_entries(users, id_attribute, users_dn, structural):
                 "uid": user["username"],
                 "givenName": user["firstname"],
                 "sn": user["lastname"],
-                "cn": user.get("cn", key),
+                "cn": ldap_full_name(user, key),
                 "loginShell": "/bin/bash",
                 "homeDirectory": f"/home/{key}",
                 "uidNumber": str(int(user["uid"])),

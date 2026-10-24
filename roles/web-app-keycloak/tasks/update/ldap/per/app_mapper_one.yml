@@ -75,3 +75,10 @@
   until: per_app_sync_out is succeeded
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
   ignore_errors: true
+
+- name: "✅ per-app mapper [{{ kc_app_id }}]: ensure one mapper per tenant"
+  include_tasks: tenant_mapper_one.yml
+  loop: "{{ (lookup('applications') | kc_app_ldap_scopes(kc_app_id)).tenants }}"
+  loop_control:
+    loop_var: kc_tenant_scope
+    label: "{{ kc_tenant_scope.mapper }}"

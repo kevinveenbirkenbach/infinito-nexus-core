@@ -1,6 +1,6 @@
 {# The following directives enforce OAuth2 authentication: #}
 
-auth_request /oauth2/auth;
+auth_request {{ sso_proxy_auth_uri | default('/oauth2/auth') }};
 
 error_page 401 = /oauth2/start;
 
@@ -18,4 +18,14 @@ proxy_set_header X-Forwarded-Access-Token         $authrequest_accesstoken;
 {% else %}
 proxy_set_header X-Forwarded-Access-Token         "";
 {% endif %}
+{% set _declared_claim_headers = lookup('sso', application_id, 'oauth2_claim_headers') %}
+{% for header in OIDC.ATTRIBUTES | oauth2_claim_headers %}
+{% if header.key in _declared_claim_headers %}
+auth_request_set $authrequest_claim_{{ header.key | lower }} ${{ header.variable }};
+proxy_set_header {{ header.request }} $authrequest_claim_{{ header.key | lower }};
+{% else %}
+proxy_set_header {{ header.request }} "";
+{% endif %}
+proxy_set_header {{ header.response }} "";
+{% endfor %}
 {% include 'roles/sys-svc-proxy/templates/headers/untrusted_identity_strips.conf.j2' %}

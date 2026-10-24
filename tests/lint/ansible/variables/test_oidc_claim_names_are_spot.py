@@ -4,7 +4,7 @@
 
     ATTRIBUTES:
       USERNAME: "preferred_username"
-      GIVEN_NAME: "givenName"
+      GIVEN_NAME: "given_name"
 
 Every template, vars file and meta file is rendered with ``OIDC`` in scope and
 must read ``OIDC.ATTRIBUTES.<KEY>`` instead of repeating the literal. A claim
@@ -15,10 +15,10 @@ own vocabulary will not find: ``username_claim``, ``userNameField``,
 for one value.
 
 Only ``preferred_username`` is guarded. The sibling names are not distinctive
-enough to carry a rule: ``email`` and ``surname`` are ordinary words, and
-``givenName`` belongs to two constants at once, because
-``LDAP.USER.ATTRIBUTES.FIRSTNAME`` declares the same string for the directory
-attribute. A rule on it would send an LDAP template to an OIDC constant.
+enough to carry a rule: ``email``, ``name``, ``locale`` and ``website`` are
+ordinary words that also name unrelated configuration keys, and Keycloak's own
+protocol mapper templates have to spell ``given_name`` and ``family_name`` to
+define the claims in the first place.
 
 Scope: the renderable surface, where the constant is reachable. A static
 payload under ``roles/*/files/`` is deliberately out of scope: it is shipped

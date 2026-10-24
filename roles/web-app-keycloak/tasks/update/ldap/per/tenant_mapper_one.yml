@@ -1,0 +1,59 @@
+---
+- name: "✅ [{{ kc_tenant_scope.mapper }}]: ensure the tenant group"
+  ansible.builtin.script:
+    cmd: "files/shell/per_app_mapper/ensure_app_group.sh"
+    executable: /bin/bash
+  environment:
+    KC_CONTAINER: "{{ KEYCLOAK_TARGET_CONTAINER }}"
+    KC_REALM: "{{ KEYCLOAK_REALM }}"
+    APP_ID: "{{ kc_tenant_scope.tenant }}"
+    ROOT_GROUP_ID: "{{ kc_app_group_id }}"
+  register: per_tenant_group_id_out
+  changed_when: true
+  failed_when: (per_tenant_group_id_out.stdout | trim) | length == 0
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "🔧 [{{ kc_tenant_scope.mapper }}]: set the tenant group id"
+  ansible.builtin.set_fact:
+    kc_tenant_group_id: "{{ (per_tenant_group_id_out.stdout | default('')) | trim }}"
+  changed_when: false
+
+- name: "📄 [{{ kc_tenant_scope.mapper }}]: render the mapper payload"
+  ansible.builtin.copy:
+    dest: "/tmp/kc_mapper_payload_{{ kc_tenant_scope.mapper }}.json"
+    mode: "0600"
+    content: "{{ KEYCLOAK_PER_TENANT_LDAP_ROLES_MAPPER | to_nice_json }}"
+  changed_when: false
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "📝 [{{ kc_tenant_scope.mapper }}]: upsert the mapper"
+  ansible.builtin.script:
+    cmd: "files/shell/per_app_mapper/upsert_app_mapper.sh"
+    executable: /bin/bash
+  environment:
+    KC_CONTAINER: "{{ KEYCLOAK_TARGET_CONTAINER }}"
+    KC_REALM: "{{ KEYCLOAK_REALM }}"
+    LDAP_COMPONENT_ID: "{{ ldap_cmp_id | trim }}"
+    MAPPER_NAME: "{{ kc_tenant_scope.mapper }}"
+    PAYLOAD_FILE: "/tmp/kc_mapper_payload_{{ kc_tenant_scope.mapper }}.json"
+  register: per_tenant_mapper_id_out
+  changed_when: true
+  failed_when: (per_tenant_mapper_id_out.stdout | trim | length) == 0
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "🔄 [{{ kc_tenant_scope.mapper }}]: sync the mapper"
+  ansible.builtin.script:
+    cmd: "files/shell/per_app_mapper/sync_app_mapper.sh"
+    executable: /bin/bash
+  environment:
+    KC_CONTAINER: "{{ KEYCLOAK_TARGET_CONTAINER }}"
+    KC_REALM: "{{ KEYCLOAK_REALM }}"
+    LDAP_COMPONENT_ID: "{{ ldap_cmp_id | trim }}"
+    MAPPER_ID: "{{ (per_tenant_mapper_id_out.stdout | default('')) | trim }}"
+  register: per_tenant_sync_out
+  changed_when: true
+  timeout: "{{ lookup('timeout', 60) | int }}"
+  retries: 2
+  delay: 20
+  until: per_tenant_sync_out is succeeded
+  no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"

@@ -55,14 +55,37 @@ LDAP:
       AUXILIARY:
         NEXTCLOUD_USER: "nextcloudUser" # Auxiliary Classes attach optional attributes without
         SSH_PUBLIC_KEY: "ldapPublicKey" # Allows storing SSH public keys for services like Gitea.
+        INFINITO_USER: "infinitoUser"
     ATTRIBUTES:
       ID: "{{ _ldap_user_id }}"
       MAIL: "mail"
       FULLNAME: "cn"
       FIRSTNAME: "givenName"
       SURNAME: "sn"
+      DISPLAY_NAME: "displayName"
+      INITIALS: "initials"
+      PHONE: "telephoneNumber"
+      MOBILE: "mobile"
+      STREET: "street"
+      POSTAL_CODE: "postalCode"
+      LOCALITY: "l"
+      REGION: "st"
+      COUNTRY: "c"
+      ORGANIZATION: "o"
+      DEPARTMENT: "ou"
+      TITLE: "title"
+      DESCRIPTION: "description"
+      EMPLOYEE_NUMBER: "employeeNumber"
+      WEBSITE: "labeledURI"
+      LOCALE: "preferredLanguage"
+      TIMEZONE: "infinitoTimezone"
+      PHONETIC_GIVEN: "infinitoNamePhoneticGiven"
+      PHONETIC_FAMILY: "infinitoNamePhoneticFamily"
+      PHOTO: "jpegPhoto"
       SSH_PUBLIC_KEY: "sshPublicKey"
       NEXTCLOUD_QUOTA: "nextcloudQuota"
+      MEMBER_OF: "memberOf"
+      PASSWORD: "userPassword"
   FILTERS:
     USERS:
       LOGIN: "(&{{ _ldap_filters_users_all }}({{_ldap_user_id}}=%{{_ldap_user_id}}))"
@@ -70,4 +93,5 @@ LDAP:
   RBAC:
     FLAVORS:
       - groupOfNames
+    MEMBER_ATTRIBUTE: "member"
     EMPTY_MEMBER_DN: "cn=__empty__,{{ LDAP.DN.ROOT }}"

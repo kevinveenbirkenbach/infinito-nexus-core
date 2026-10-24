@@ -43,6 +43,16 @@
   register: r
   failed_when: r.rc not in [0, 68]
 
+- name: 🛂 Converge the data backend ACL (cn=config via EXTERNAL)
+  ansible.builtin.shell: >-
+    container exec -i {{ lookup('container_address', 'svc-db-openldap', 'openldap') }}
+    ldapmodify -Q -Y EXTERNAL -H {{ OPENLDAP_CONFIG_URI }}
+    -f "{{ [OPENLDAP_LDIF_PATH_DOCKER, 'configuration/07_access.ldif'] | path_join }}"
+  listen:
+    - "import-configuration-ldif-files"
+  register: r
+  changed_when: r.rc == 0
+
 - name: 📥 Import users, groups, etc. to LDAP (data tree)
   ansible.builtin.shell: >-
     container exec -i {{ lookup('container_address', 'svc-db-openldap', 'openldap') }} ldapadd -x

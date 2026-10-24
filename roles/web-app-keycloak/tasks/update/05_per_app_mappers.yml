@@ -86,7 +86,7 @@
   changed_when: false
 
 - name: "✅ per-app mappers: ensure Keycloak group and mapper per rbac app in current run"
-  include_tasks: ldap/per_app_mapper_one.yml
+  include_tasks: ldap/per/app_mapper_one.yml
   vars:
     kc_app_id: "{{ rbac_app }}"
   loop: "{{ KEYCLOAK_RBAC_RUN_APP_IDS }}"
