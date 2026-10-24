@@ -20,7 +20,10 @@ def _show(name: str) -> int:
     mermaid = getattr(module, "MERMAID", "")
     print(f"# {name}\n")
     for index, step in enumerate(steps, start=1):
-        print(f"{index}. {step}")
+        label = getattr(step, "label", step)
+        kind = getattr(step, "kind", "")
+        suffix = f"  ({kind})" if kind and kind != "deterministic" else ""
+        print(f"{index}. {label}{suffix}")
     if mermaid:
         print(f"\n```mermaid\n{mermaid}\n```")
     return 0

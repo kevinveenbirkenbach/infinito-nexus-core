@@ -21,13 +21,19 @@ from types import ModuleType
 
 __all__ = ["discover", "load"]
 
+HELPERS = {"contract"}
+
 
 def discover() -> list[str]:
-    """Return the names of every routine module in this package."""
+    """Return the names of every routine module in this package.
+
+    Helper modules (the routine contract) and private modules are not
+    routines and are left out.
+    """
     return sorted(
         info.name
         for info in pkgutil.iter_modules(__path__)
-        if not info.name.startswith("_")
+        if not info.name.startswith("_") and info.name not in HELPERS
     )
 
 
