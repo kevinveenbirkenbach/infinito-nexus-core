@@ -20,6 +20,7 @@ This matters once agents are enrolled.
 - **Native OIDC login:** The dashboard signs users in against Keycloak's discovery endpoint, without an oauth2-proxy sidecar.
 - **LDAP authorization:** LDAP group membership adds `backend_roles` to an already authenticated user and is never used to verify a password.
 - **Three-tier RBAC:** Administrator, Security Analyst, and Read-only Auditor, declared in [rbac.yml](./meta/rbac.yml) and mapped onto OpenSearch security roles.
+- **Wazuh API roles:** Security rules map the Administrator groups onto the Wazuh API `administrator` role and the Security Analyst and Read-only Auditor groups onto the API `readonly` role, so the dashboard's run_as requests carry the matching API permissions.
 - **Generated credentials:** Every service account password and the manager cluster key come from [secrets.yml](./meta/secrets.yml).
 
 ## Auth flow

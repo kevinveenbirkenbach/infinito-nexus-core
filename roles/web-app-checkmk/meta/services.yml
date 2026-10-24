@@ -12,7 +12,10 @@ sso:
     acl:
       whitelist:
         - /cmk/check_mk/api/
-# nocheck: playwright-service-flag - identity backend (LDAP connection synced into the site); login is driven through the oauth2 gate, so there is no separate LDAP Playwright surface.
+    allowed_groups:
+      - "{{ lookup('rbac_group_path', application_id='web-app-checkmk', role='administrator') }}"
+      - "{{ lookup('rbac_group_path', application_id='web-app-checkmk', role='user') }}"
+      - "{{ lookup('rbac_group_path', application_id='web-app-checkmk', role='guest') }}"
 ldap:
   bond: 1
   enabled: "{{ 'svc-db-openldap' in group_names }}"

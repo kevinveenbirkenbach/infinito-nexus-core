@@ -128,5 +128,5 @@
   delay: 5
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
 
-- name: "🔐 Map the platform administrators onto the Wazuh API administrator role"
+- name: "🔐 Map the platform role groups onto the Wazuh API roles"
   include_tasks: 02_api_administrators.yml

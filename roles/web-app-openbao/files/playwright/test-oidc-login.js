@@ -1,5 +1,6 @@
 const { test, expect } = require("@playwright/test");
 const {
+  decodeDotenvQuotedValue,
   gotoOnion,
   normalizeBaseUrl,
   performKeycloakLogin,
@@ -13,6 +14,10 @@ const canonicalDomain = requireDotenvValue(process.env.CANONICAL_DOMAIN, "CANONI
 const adminUsername = requireDotenvValue(process.env.ADMIN_USERNAME, "ADMIN_USERNAME");
 const adminPassword = requireDotenvValue(process.env.ADMIN_PASSWORD, "ADMIN_PASSWORD");
 const issuerUrl = normalizeBaseUrl(process.env.OIDC_ISSUER_URL || "");
+const adminEmail = decodeDotenvQuotedValue(process.env.ADMIN_EMAIL);
+const adminFullName = decodeDotenvQuotedValue(process.env.ADMIN_FULL_NAME);
+const emailMetadataKey = decodeDotenvQuotedValue(process.env.OIDC_CLAIM_EMAIL);
+const nameMetadataKey = decodeDotenvQuotedValue(process.env.OIDC_CLAIM_NAME);
 
 const AUTH_PATH = "/ui/vault/auth?with=oidc";
 const CALLBACK_PATH = "/ui/vault/auth/oidc/oidc/callback";
@@ -114,4 +119,29 @@ test("oidc: the administrator signs in through Keycloak and lands in the OpenBao
       message: "expected the parent page to leave the OpenBao auth surface after the OIDC exchange",
     })
     .not.toContain("/ui/vault/auth");
+
+  const meta = await page.evaluate(async () => {
+    for (const key of Object.keys(window.localStorage)) {
+      if (!key.startsWith("vault-")) continue;
+      let stored;
+      try {
+        stored = JSON.parse(window.localStorage.getItem(key));
+      } catch {
+        continue;
+      }
+      if (!stored || typeof stored.token !== "string") continue;
+      const response = await fetch("/v1/auth/token/lookup-self", { headers: { "X-Vault-Token": stored.token } });
+      if (response.ok) return (await response.json()).data.meta || {};
+    }
+    return null;
+  });
+  expect(meta, "the OpenBao UI must hold the token the OIDC login issued").not.toBeNull();
+  expect(
+    meta[emailMetadataKey],
+    `the OIDC role's claim_mappings MUST copy the email claim into the token metadata (meta: ${JSON.stringify(meta)})`,
+  ).toBe(adminEmail);
+  expect(
+    meta[nameMetadataKey],
+    `the OIDC role's claim_mappings MUST copy the name claim into the token metadata (meta: ${JSON.stringify(meta)})`,
+  ).toBe(adminFullName);
 });

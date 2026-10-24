@@ -2,6 +2,8 @@ const { test, expect } = require("@playwright/test");
 const { resolveTimeout } = require("./timeouts");
 
 const { decodeDotenvQuotedValue, gotoOnion, normalizeBaseUrl, runAdminFlow, runBiberFlow, runGuestFlow } = require("./personas");
+const { isServiceEnabled } = require("./service-gating");
+const { withBiberInGroup } = require("./_rbac");
 
 test.use({ ignoreHTTPSErrors: true });
 
@@ -24,8 +26,13 @@ test("guest: public-landing → auth chain → never authenticated", async ({ pa
   await runGuestFlow(page);
 });
 
-test("biber: app → universal logout", async ({ page }) => {
-  await runBiberFlow(page);
+test("biber: app → universal logout", async ({ page, browser }) => {
+  if (!isServiceEnabled("sso")) {
+    await runBiberFlow(page);
+    return;
+  }
+  test.setTimeout(resolveTimeout(180_000)); // Keycloak group join plus the oauth2-proxy round-trip
+  await withBiberInGroup(browser, decodeDotenvQuotedValue(process.env.RBAC_GUEST_GROUP_PATH), () => runBiberFlow(page));
 });
 
 test("administrator: app → admin surface → universal logout", async ({ page }) => {

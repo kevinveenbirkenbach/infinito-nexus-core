@@ -14,6 +14,7 @@ This role deploys OpenBao as an Infinito.Nexus application at `openbao.<domain>`
 - **LDAP fallback:** When `svc-db-openldap` is deployed, the `ldap` auth method is enabled as a second login path, mapping the same role groups to the same policies. OIDC remains the default.
 - **Local administrator:** When neither Keycloak nor `svc-db-openldap` is deployed, the `userpass` auth method carries one account, the platform administrator bound to the `administrator` policy. The role marks the mount it enables with the description `infinito-nexus-managed`. A deploy with an identity provider disables a mount that carries this mark; a `userpass` mount without it is left untouched.
 - **Group-mapped RBAC:** The Keycloak `groups` claim binds to OpenBao external identity groups carrying the `administrator`, `operator` and `reader` policies. Authenticating on its own grants only `default`.
+- **Profile metadata:** The OIDC role's `claim_mappings` copy the email and name claims into the token and entity alias metadata on every login.
 - **Automatic unsealing:** A `static` seal reads a 32-byte key from the encrypted inventory, so the node unseals itself on every container restart.
 - **Machine identity:** AppRole is configured independently of human login, so services and automation use their own identities and short-lived tokens instead of a shared administrator token.
 - **Optional internal PKI:** A service flag mounts the `pki` engine with an internal root CA and an issuing role.

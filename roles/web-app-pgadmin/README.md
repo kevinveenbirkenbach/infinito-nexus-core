@@ -26,6 +26,9 @@ This Docker Compose deployment uses Ansible automation to launch pgAdmin togethe
 ## Features
 
 - **Automated provisioning:** Configured by Ansible without manual steps.
+- **Native Keycloak OAuth2:** With SSO the login page offers pgAdmin's own OAuth2 button next to the internal login (`AUTHENTICATION_SOURCES = ['oauth2', 'internal']`). The username comes from the OIDC username claim, accounts are created on first login, and `OAUTH2_ADDITIONAL_CLAIMS` admits only members of the `administrator` and `user` role groups.
+- **Role reconcile:** Every deploy with SSO gives each `administrator` group member an OAuth2 account with the Administrator role and sets every other OAuth2 account to User. The internal default administrator stays untouched.
+- **Saved server passwords:** OAuth2 accounts keep no pgAdmin password, so pgAdmin asks them for a master password before it stores a server password (`MASTER_PASSWORD_REQUIRED`).
 
 ## Further Resources
 
@@ -35,4 +38,4 @@ This Docker Compose deployment uses Ansible automation to launch pgAdmin togethe
 
 ## Persona contract opt-outs
 
-pgAdmin's own login id is the account e-mail `PGADMIN_DEFAULT_EMAIL` ([`templates/env.j2`](./templates/env.j2), [`vars/main.yml`](./vars/main.yml)), not the Keycloak `administrator` username, so the `administrator` persona has no in-app credential once it is through the oauth2-proxy. [`meta/services.yml`](./meta/services.yml) additionally admits only the `web-app-pgadmin` administrator RBAC group to that proxy (`sso.oauth2.allowed_groups`), and `biber` carries an empty role list, so it is denied before pgAdmin is reached. [`templates/playwright.env.j2`](./templates/playwright.env.j2) therefore declares `PERSONA_BIBER_BLOCKED=true` and `PERSONA_ADMINISTRATOR_BLOCKED=true`; the `guest` persona and the baseline assertions run unconditionally.
+With SSO the administrator signs in through pgAdmin's own OAuth2 button, and [`files/playwright/test-rbac-roles.js`](./files/playwright/test-rbac-roles.js) drives that journey; without SSO pgAdmin's only login id is the internal e-mail `PGADMIN_DEFAULT_EMAIL` ([`templates/env.j2`](./templates/env.j2), [`vars/main.yml`](./vars/main.yml)), not the Keycloak username. `OAUTH2_ADDITIONAL_CLAIMS` admits only the `administrator` and `user` RBAC groups, and `biber` carries an empty role list, so pgAdmin refuses it after the Keycloak login; the same spec asserts that refusal and the admission through the `user` group. [`templates/playwright.env.j2`](./templates/playwright.env.j2) therefore declares `PERSONA_BIBER_BLOCKED=true` and `PERSONA_ADMINISTRATOR_BLOCKED=true`; the `guest` persona and the baseline assertions run unconditionally.

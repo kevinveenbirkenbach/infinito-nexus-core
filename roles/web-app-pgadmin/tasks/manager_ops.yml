@@ -26,3 +26,27 @@
     pgadmin_admin_realign.rc != 0
     or pgadmin_admin_realign.stdout is search('\[FAIL\]')
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+- name: "👥 Converge the pgAdmin roles of the OAuth2 accounts with the administrator group"
+  when: PGADMIN_OIDC_ENABLED | bool
+  block:
+    - name: "👥 Resolve the members of the administrator role"
+      include_tasks: utils/rbac/members.yml
+      vars:
+        rbac_members_application_id: "{{ application_id }}"
+        rbac_members_role: administrator
+
+    - name: "🛂 Promote the administrator members and demote every other OAuth2 account"
+      ansible.builtin.shell:
+        cmd: >-
+          container exec -i
+          -e PGADMIN_RBAC_ADMINISTRATORS
+          {{ PGADMIN_CONTAINER_ADDRESS }} /venv/bin/python3 -
+        stdin: "{{ lookup('file', 'python/reconcile_oauth2_roles.py') }}"
+      environment:
+        PGADMIN_RBAC_ADMINISTRATORS: "{{ rbac_members | to_json }}"
+      register: pgadmin_rbac_reconcile
+      changed_when: pgadmin_rbac_reconcile.stdout is search('\[CHANGED\]')
+      failed_when: >-
+        pgadmin_rbac_reconcile.rc != 0
+        or pgadmin_rbac_reconcile.stdout is search('\[FAIL\]')

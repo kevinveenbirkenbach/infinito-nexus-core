@@ -18,8 +18,6 @@ pgadmin:
   master_password_required: true
   ports:
     local:
-      sso: 16485
-      sso_onion: 16539
       http: 8016
     internal:
       http: 80
@@ -59,13 +57,7 @@ sso:
   bond: 1
   enabled: "{{ 'web-app-keycloak' in group_names }}"
   shared: "{{ 'web-app-keycloak' in group_names }}"
-  flavor: oauth2
-  oauth2:
-    origin:
-      host: pgadmin
-      port: "80"
-    allowed_groups:
-      - "{{ lookup('rbac_group_path', application_id='web-app-pgadmin', role='administrator') }}"
+  flavor: oidc
 design:
   bond: 1
   enabled: "{{ 'web-svc-design' in group_names }}"

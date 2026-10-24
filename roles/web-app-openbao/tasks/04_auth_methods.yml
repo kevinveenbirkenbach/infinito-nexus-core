@@ -35,6 +35,7 @@
         bao write $p role_type=oidc
         user_claim={{ OPENBAO_OIDC_USER_CLAIM | quote }}
         groups_claim={{ OPENBAO_OIDC_GROUPS_CLAIM | quote }}
+        {% for openbao_claim_mapping in OPENBAO_OIDC_CLAIM_MAPPINGS %}claim_mappings={{ openbao_claim_mapping | quote }} {% endfor %}
         oidc_scopes=openid,profile,email
         token_policies=default
         allowed_redirect_uris={{ OPENBAO_OIDC_REDIRECT_URIS | quote }} >/dev/null;

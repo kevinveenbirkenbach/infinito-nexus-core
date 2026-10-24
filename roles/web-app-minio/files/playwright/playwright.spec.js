@@ -161,3 +161,5 @@ test("guest: public-landing → auth chain → never authenticated", async ({ pa
 test("biber: app → universal logout", async ({ page }) => {
   await runBiberFlow(page);
 });
+
+require("./test-rbac-roles");
