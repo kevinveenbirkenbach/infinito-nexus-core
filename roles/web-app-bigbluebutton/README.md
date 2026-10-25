@@ -17,7 +17,7 @@ By default, BigBlueButton is deployed with best-practice hardening, modular secr
 - 🐳 **Docker-based** deployment via official [bigbluebutton/docker](https://github.com/bigbluebutton/docker)
 - ✅ **Greenlight** (v3) frontend support
 - 🔐 **SSO with OIDC** (optional). Greenlight v3 has no LDAP login, so directory users sign in through Keycloak's LDAP federation.
-- **Administrator role:** Every deploy sets the Greenlight `Administrator` role from the `web-app-bigbluebutton` `administrator` members, matched by email, and demotes every other Greenlight administrator to `User`. The platform administrator keeps the role.
+- **Administrator role:** [files/ruby/greenlight/reconcile_roles.rb](./files/ruby/greenlight/reconcile_roles.rb) sets the Greenlight `Administrator` role from the `web-app-bigbluebutton` `administrator` members, matched by email, and demotes every other Greenlight administrator to `User`, as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer. The platform administrator keeps the role.
 - 🧱 Automatic `.env` templating and domain/NGINX integration
 - 🛠 Volume patching and Docker Compose customization
 - 📬 SMTP integration and Greenlight admin creation: the administrator is verified and active, and its password converges on every deploy

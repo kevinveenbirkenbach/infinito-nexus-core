@@ -9,7 +9,7 @@ DOMAIN = "example.org"
 
 
 def _load():
-    path = PROJECT_ROOT / "roles/web-app-mailu/filter_plugins/mailu_rbac.py"
+    path = PROJECT_ROOT / "roles/web-app-mailu/files/python/mailu_rbac.py"
     spec = importlib.util.spec_from_file_location("mailu_rbac", str(path))
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
@@ -23,6 +23,20 @@ def _user(local, global_admin=False):
 
 def _mailbox(local):
     return f"{local}@{DOMAIN}"
+
+
+class TestMailuRbacMailboxes(unittest.TestCase):
+    def setUp(self):
+        self.mailboxes = _load().mailu_rbac_mailboxes
+
+    def test_usernames_become_lowercase_mailboxes_without_repeats(self):
+        self.assertEqual(
+            self.mailboxes(["Administrator", "alice", "administrator"], DOMAIN),
+            [_mailbox("administrator"), _mailbox("alice")],
+        )
+
+    def test_no_usernames_yield_no_mailbox(self):
+        self.assertEqual(self.mailboxes([], DOMAIN), [])
 
 
 class TestMailuRbacPlan(unittest.TestCase):

@@ -109,7 +109,7 @@ final class ReconcileAdminUsersTest extends TestCase
     }
 
     /**
-     * Feed the script on stdin to php, as tasks/04_rbac.yml does, against the stubbed Magento.
+     * Feed the script on stdin to php against the stubbed Magento.
      *
      * @param list<string> $admins usernames of the administrator group
      * @param list<string> $protected usernames the run never touches
@@ -164,7 +164,24 @@ final class ReconcileAdminUsersTest extends TestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame([['admin_user', ['is_active' => 0], [3]]], $after['updates']);
-        $this->assertSame("[CHANGED] 0 admin account(s) activated and 1 deactivated\n", $stdout);
+        $this->assertSame("CHANGED Eve deactivated\n", $stdout);
+    }
+
+    public function testEveryChangedAccountGetsItsOwnLine(): void
+    {
+        [$stdout, $stderr, $code, $after] = $this->runScript(['carol', 'dave'], ['administrator'], self::installation([
+            ['user_id' => 1, 'username' => 'administrator', 'is_active' => 1],
+            ['user_id' => 2, 'username' => 'carol', 'is_active' => 0],
+            ['user_id' => 3, 'username' => 'dave', 'is_active' => 0],
+            ['user_id' => 4, 'username' => 'eve', 'is_active' => 1],
+        ]));
+
+        $this->assertSame(0, $code, $stderr);
+        $this->assertSame(
+            [['admin_user', ['is_active' => 1], [2, 3]], ['admin_user', ['is_active' => 0], [4]]],
+            $after['updates']
+        );
+        $this->assertSame("CHANGED carol activated\nCHANGED dave activated\nCHANGED eve deactivated\n", $stdout);
     }
 
     public function testAnInactiveAccountOfAGroupMemberIsActivated(): void
@@ -176,7 +193,7 @@ final class ReconcileAdminUsersTest extends TestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame([['admin_user', ['is_active' => 1], [2]]], $after['updates']);
-        $this->assertSame("[CHANGED] 1 admin account(s) activated and 0 deactivated\n", $stdout);
+        $this->assertSame("CHANGED carol activated\n", $stdout);
     }
 
     public function testTheProtectedAdministratorStaysUntouchedWithoutAGroup(): void
@@ -188,7 +205,7 @@ final class ReconcileAdminUsersTest extends TestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame([], $after['updates']);
-        $this->assertSame("[UNCHANGED] the active admin accounts already follow the administrator group\n", $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
     }
 
     public function testAnEmptyProtectedListFailsBeforeTouchingAnAccount(): void

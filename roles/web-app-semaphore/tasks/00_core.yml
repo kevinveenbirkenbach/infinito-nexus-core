@@ -17,6 +17,5 @@
     - name: "🔑 Carry the break-glass password into Semaphore on every deploy"
       include_tasks: 02_breakglass.yml
 
-    - name: "🛂 Converge the Semaphore admin flag with the administrator role group"
-      include_tasks: 03_rbac.yml
-      when: SEMAPHORE_OIDC_ENABLED | bool or SEMAPHORE_LDAP_ENABLED | bool
+- name: "🛂 Converge the Semaphore accounts with the role groups"
+  include_tasks: 03_rbac.yml

@@ -3,14 +3,13 @@
  * Keep the Magento admin accounts of the administrator group active and deactivate every other
  * admin account, the protected accounts excepted.
  *
- * Every failure is caught and reduced to its message, so no database credential reaches stderr.
- *
  * Env, passed with `container exec -e <name>`:
  *   MAGENTO_RBAC_ROOT        Magento base directory, the one holding app/bootstrap.php
  *   MAGENTO_RBAC_ADMINS      JSON list of the usernames of the administrator group
  *   MAGENTO_RBAC_PROTECTED   JSON list of the usernames whose account stays untouched
  *
- * Exit: 0 with [CHANGED] or [UNCHANGED] on stdout, 1 with [FAIL] on stderr.
+ * Exit: 0 with one `CHANGED <username> activated|deactivated` line per changed account or
+ * `UNCHANGED` on stdout, 1 with [FAIL] on stderr.
  */
 
 declare(strict_types=1);
@@ -68,26 +67,26 @@ try {
         $member = in_array($username, $admins, true);
         $active = (int) $row['is_active'] === 1;
         if ($member && !$active) {
-            $activate[] = (int) $row['user_id'];
+            $activate[(int) $row['user_id']] = (string) $row['username'];
         } elseif (!$member && $active) {
-            $deactivate[] = (int) $row['user_id'];
+            $deactivate[(int) $row['user_id']] = (string) $row['username'];
         }
     }
 
     if ($activate !== []) {
-        $connection->update($table, ['is_active' => 1], ['user_id IN (?)' => $activate]);
+        $connection->update($table, ['is_active' => 1], ['user_id IN (?)' => array_keys($activate)]);
     }
     if ($deactivate !== []) {
-        $connection->update($table, ['is_active' => 0], ['user_id IN (?)' => $deactivate]);
+        $connection->update($table, ['is_active' => 0], ['user_id IN (?)' => array_keys($deactivate)]);
     }
 } catch (Throwable $error) {
     fwrite(STDERR, '[FAIL] ' . $error->getMessage() . "\n");
     exit(1);
 }
 
-if ($activate !== [] || $deactivate !== []) {
-    printf("[CHANGED] %d admin account(s) activated and %d deactivated\n", count($activate), count($deactivate));
-    exit(0);
-}
+$lines = [
+    ...array_map(static fn (string $name): string => "CHANGED $name activated", array_values($activate)),
+    ...array_map(static fn (string $name): string => "CHANGED $name deactivated", array_values($deactivate)),
+];
 
-echo "[UNCHANGED] the active admin accounts already follow the administrator group\n";
+echo ($lines === [] ? 'UNCHANGED' : implode("\n", $lines)) . "\n";

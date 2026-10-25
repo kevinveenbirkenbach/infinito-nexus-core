@@ -7,7 +7,7 @@ from . import PROJECT_ROOT
 
 
 def _load():
-    path = PROJECT_ROOT / "roles/web-app-mattermost/filter_plugins/mattermost_rbac.py"
+    path = PROJECT_ROOT / "roles/web-app-mattermost/files/python/mattermost_rbac.py"
     spec = importlib.util.spec_from_file_location("mattermost_rbac", str(path))
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader

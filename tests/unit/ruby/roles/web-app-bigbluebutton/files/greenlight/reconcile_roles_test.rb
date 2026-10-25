@@ -189,6 +189,13 @@ class GreenlightReconcileRolesTest < Minitest::Test
     assert_equal ["NOOP"], lines
   end
 
+  def test_a_member_without_an_email_promotes_no_account_without_one
+    lines, stderr, status = reconcile(users: [account("", USER)], admins: [""])
+
+    assert_predicate status, :success?, stderr
+    assert_equal ["NOOP"], lines
+  end
+
   def test_a_missing_administrator_role_stops_the_reconcile
     _lines, stderr, status = reconcile(
       users: [account("biber@example.org", USER)],

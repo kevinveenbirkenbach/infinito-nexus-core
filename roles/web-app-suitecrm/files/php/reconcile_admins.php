@@ -5,8 +5,6 @@
  * Give the SuiteCRM admin flag to the members of the administrator group and take it from
  * every other user, the protected accounts excepted.
  *
- * Every failure is caught and reduced to its message, so no DSN credential reaches stderr.
- *
  * Env of the container, from templates/env.j2:
  *   SUITECRM_DB_HOST, SUITECRM_DB_PORT, SUITECRM_DB_NAME, SUITECRM_DB_USER,
  *   SUITECRM_DB_PASSWORD
@@ -15,7 +13,8 @@
  *   SUITECRM_RBAC_ADMINS     JSON list of the usernames of the administrator group
  *   SUITECRM_RBAC_PROTECTED  JSON list of the usernames whose flag stays untouched
  *
- * Exit: 0 with [CHANGED] or [UNCHANGED] on stdout, 1 with [FAIL] on stderr.
+ * Exit: 0 with one `CHANGED <username> is_admin=0|1` line per changed user or `UNCHANGED` on
+ * stdout, 1 with [FAIL] on stderr.
  */
 
 declare(strict_types=1);
@@ -58,6 +57,8 @@ $dsn = sprintf(
     required('SUITECRM_DB_NAME')
 );
 
+$lines = [];
+
 try {
     $pdo = new PDO(
         $dsn,
@@ -66,30 +67,24 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    $promoted = 0;
-    if ($admins !== []) {
-        $promote = $pdo->prepare(sprintf(
-            'UPDATE users SET is_admin = 1 WHERE deleted = 0 AND is_admin = 0 AND LOWER(user_name) IN (%s)',
-            implode(', ', array_fill(0, count($admins), '?'))
-        ));
-        $promote->execute($admins);
-        $promoted = $promote->rowCount();
-    }
+    $users = $pdo->query('SELECT id, user_name, is_admin FROM users WHERE deleted = 0 ORDER BY user_name')
+        ->fetchAll(PDO::FETCH_ASSOC);
+    $update = $pdo->prepare('UPDATE users SET is_admin = ? WHERE id = ?');
 
-    $demote = $pdo->prepare(sprintf(
-        'UPDATE users SET is_admin = 0 WHERE deleted = 0 AND is_admin = 1 AND LOWER(user_name) NOT IN (%s)',
-        implode(', ', array_fill(0, count($keep), '?'))
-    ));
-    $demote->execute($keep);
-    $demoted = $demote->rowCount();
+    foreach ($users as $user) {
+        $username = strtolower((string) $user['user_name']);
+        $admin = (int) $user['is_admin'] === 1;
+        if (!$admin && in_array($username, $admins, true)) {
+            $update->execute([1, $user['id']]);
+            $lines[] = "CHANGED {$user['user_name']} is_admin=1";
+        } elseif ($admin && !in_array($username, $keep, true)) {
+            $update->execute([0, $user['id']]);
+            $lines[] = "CHANGED {$user['user_name']} is_admin=0";
+        }
+    }
 } catch (Throwable $error) {
     fwrite(STDERR, '[FAIL] ' . $error->getMessage() . "\n");
     exit(1);
 }
 
-if ($promoted + $demoted > 0) {
-    printf("[CHANGED] admin flag granted to %d and withdrawn from %d user(s)\n", $promoted, $demoted);
-    exit(0);
-}
-
-echo "[UNCHANGED] the admin flags already follow the administrator group\n";
+echo ($lines === [] ? 'UNCHANGED' : implode("\n", $lines)) . "\n";

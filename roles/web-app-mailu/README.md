@@ -28,7 +28,7 @@ More information about this role is available in these GitHub repositories:
 - **Customizable Webmail and Administration:** Provides a modern web interface for managing emails and administrative tasks with ease.
 - **Flexible Deployment:** Easily scale and customize using Docker Compose, with configurable settings for networking, storage, and external services.
 - **OIDC Support:** Optionally integrate with OpenID Connect for centralized authentication across your services.
-- **Administrators and domain managers:** Every deploy sets `global_admin` from the `web-app-mailu` `administrator` members and the managers of the mail domain from the `domain-manager` members through the Mailu REST API. Members are promoted, every other global administrator and domain manager is demoted. The platform administrator stays a global administrator.
+- **Administrators and domain managers:** [files/python/rbac_sync.py](./files/python/rbac_sync.py) sets `global_admin` from the `web-app-mailu` `administrator` members and the managers of the mail domain from the `domain-manager` members through the Mailu REST API inside the admin container. Members are promoted, every other global administrator and domain manager is demoted. The platform administrator stays a global administrator. It runs as a host hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer.
 
 ## Further Resources
 

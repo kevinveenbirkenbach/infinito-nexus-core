@@ -12,16 +12,6 @@
   ansible.builtin.set_fact:
     mailu_rbac_administrators: "{{ rbac_members }}"
 
-- name: "👥 Resolve the domain-manager members of {{ application_id }}"
-  include_tasks: utils/rbac/members.yml
-  vars:
-    rbac_members_application_id: "{{ application_id }}"
-    rbac_members_role: domain-manager
-
-- name: "👥 Keep the domain-manager members of {{ application_id }}"
-  ansible.builtin.set_fact:
-    mailu_rbac_domain_managers: "{{ rbac_members }}"
-
 - name: "📁 Create Mailu accounts"
   include_tasks: ../05_manage_user.yml
   vars:
@@ -38,13 +28,7 @@
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
 
 - name: "👑 Reconcile Mailu global administrators and domain managers"
-  include_tasks:
-    file: rbac_reconcile.yml
-    apply:
-      environment:
-        MAILU_API_BEARER: "{{ MAILU_API_TOKEN }}"
-      no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
-      timeout: "{{ lookup('timeout', 120) | int }}"
+  include_tasks: rbac_reconcile.yml
 
 - name: "📁 Create Mailu forward aliases"
   include_tasks: ../utils/manage/alias.yml

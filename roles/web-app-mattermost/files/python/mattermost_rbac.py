@@ -1,14 +1,9 @@
-from __future__ import annotations
-
 import re
-from typing import Any
 
 _SYSTEM_ADMIN = re.compile(r"(^|\s)system_admin(\s|$)")
 
 
-def mattermost_rbac_plan(
-    users: list[dict[str, Any]], members: list[dict[str, str]], keep: list[str]
-) -> dict[str, list[str]]:
+def mattermost_rbac_plan(users, members, keep):
     """Split the Mattermost accounts into those to promote and those to demote.
 
     Args:
@@ -26,8 +21,8 @@ def mattermost_rbac_plan(
         member["email"].lower() for member in members if member["email"]
     ]
     kept = [name.lower() for name in keep]
-    promote: list[str] = []
-    demote: list[str] = []
+    promote = []
+    demote = []
     for user in users:
         if "is_bot" in user:
             continue
@@ -39,8 +34,3 @@ def mattermost_rbac_plan(
         if admin and not member and username not in kept:
             demote.append(username)
     return {"promote": promote, "demote": demote}
-
-
-class FilterModule:
-    def filters(self):
-        return {"mattermost_rbac_plan": mattermost_rbac_plan}

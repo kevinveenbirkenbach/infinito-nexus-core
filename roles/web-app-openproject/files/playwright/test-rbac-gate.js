@@ -171,7 +171,7 @@ test("rbac: the administrator holds OpenProject administrator rights", async ({ 
   await withAdminSession(page, async (adminPage) => {
     const me = await currentUser(adminPage);
     expect(String(me.user.login || "").toLowerCase()).toBe(env.adminUsername.toLowerCase());
-    expect(me.user.admin, "the deploy-time reconcile must keep the bootstrap administrator an OpenProject admin").toBe(true);
+    expect(me.user.admin, "the role group reconcile must keep the bootstrap administrator an OpenProject admin").toBe(true);
     expect(
       await usersCollectionStatus(adminPage),
       "the administrator role must grant access to the administrator-only user collection",
@@ -179,7 +179,7 @@ test("rbac: the administrator holds OpenProject administrator rights", async ({ 
   });
 });
 
-test("rbac: the deploy-time reconcile keeps the GitLab bot an OpenProject admin", async ({ page }) => {
+test("rbac: the role group reconcile keeps the GitLab bot an OpenProject admin", async ({ page }) => {
   skipUnlessAddonEnabled("gitlab_integration");
   skipUnlessServiceDisabled("sso");
   await page.context().clearCookies();

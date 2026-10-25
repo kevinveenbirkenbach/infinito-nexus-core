@@ -11,13 +11,11 @@
   decide whether a captcha on the public subscription form is wanted at all.
 - Listmonk v6.2.0 maps no OIDC claim to a role (the `OIDCclaim` struct reads
   only `email`, `sub`, `name`, `preferred_username` and `picture`), so
-  [`tasks/04_rbac.yml`](tasks/04_rbac.yml) provisions and disables accounts at
-  deploy time; a Keycloak group change takes effect on the next deploy, and the
-  admission of a `manager` or `viewer` member is not covered by Playwright
-  because it needs that redeploy, nor by a unit test, because the decision
-  lives in `files/sql/rbac_reconcile.sql` and the repository has no SQL test
-  harness. Options: a claim-to-role mapping upstream in `OIDCFinish`, or a
-  scheduled run of the reconcile between deploys.
+  `files/sql/rbac_reconcile.sql` provisions and disables accounts at a deploy
+  or on the `sys-ctl-mtn-rbac-sync` timer; the admission of a `manager` or
+  `viewer` member is not covered by Playwright because a spec can trigger
+  neither, nor by a unit test, because the repository has no SQL test harness.
+  Options: a claim-to-role mapping upstream in `OIDCFinish`.
 - Add `files/playwright/test-seaweedfs.js` now that the administrator persona
   runs. The only bucket-write surface is the admin Media view; the model is
   `roles/web-app-pixelfed/files/playwright/test-seaweedfs.js`. The

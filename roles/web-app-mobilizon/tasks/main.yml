@@ -17,6 +17,5 @@
     - name: "🎨 Mobilizon administrator and corporate design"
       ansible.builtin.include_tasks: 01_design.yml
 
-    - name: "🛂 Mobilizon roles of the Keycloak accounts"
-      ansible.builtin.include_tasks: 03_rbac.yml
-      when: MOBILIZON_OIDC_ENABLED | bool
+- name: "🛂 Mobilizon roles of the Keycloak accounts"
+  ansible.builtin.include_tasks: 03_rbac.yml

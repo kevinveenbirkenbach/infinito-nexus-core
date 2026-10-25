@@ -68,10 +68,6 @@
       no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
       delegate_to: "{{ SHOPWARE_WEB_HOST_NODE }}"
 
-- name: "👥 Resolve the administrator and editor group members of {{ application_id }}"
-  ansible.builtin.include_tasks: rbac/members.yml
-  when: SHOPWARE_OIDC_ENABLED | bool
-
 - name: "🔐 Install & configure the enabled admin auth plugins"
   ansible.builtin.include_tasks:
     file: 03_setup.yml

@@ -25,14 +25,17 @@ The role deploys the single Semaphore container (with its embedded task runner) 
 - **OIDC role gate:**
   The provider's `email_claim` is a Go template rendered from `templates/oidc/email_claim.j2`. It yields the email only when the groups claim holds the `administrator` or `user` role group, so Semaphore refuses the Keycloak sign-in of every other realm account with a missing email claim and returns it to the login page.
 
+- **Role group sync:**
+  With SSO or LDAP, [files/sql/rbac/reconcile.sql](./files/sql/rbac/reconcile.sql) runs through `psql` in the database container as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer, so a group change reaches Semaphore within one timer interval. Every deploy also pre-provisions the members of the `administrator` role group as external Semaphore admins; a member added between deploys gets its account at the first sign-in and the admin flag on the next run.
+
 - **Admin flag reconcile:**
-  Every deploy with SSO or LDAP pre-provisions the members of the `administrator` role group as external Semaphore admins and converges the admin flag of every account to that group in PostgreSQL. The break-glass account and the platform administrator are never demoted.
+  The hook converges the admin flag of every account to the `administrator` role group. The break-glass account and the platform administrator are never demoted.
 
 - **Directory profile reconcile:**
-  The same deploy writes the directory email, and the full name when the member list carries one, into every external account of an `administrator` or `user` member (`files/sql/rbac/converge-profiles.sql`). An email another account already holds is left in place.
+  The hook writes the directory email, and the full name when the member list carries one, into every external account of an `administrator` or `user` member. An email another account already holds is left in place.
 
 - **Outsider sign-out:**
-  The same deploy expires the sessions and API tokens of every external account that belongs to neither role group (`files/sql/rbac/expire-outsiders.sql`). The break-glass account and the platform administrator are exempt.
+  The hook expires the sessions and API tokens of every external account that belongs to neither role group. The break-glass account and the platform administrator are exempt.
 
 - **Break-glass local admin:**
   `SEMAPHORE_ADMIN*` seeds a local admin from the `web-app-semaphore-breakglass` user in every variant, reachable through the login form only when LDAP is disabled.

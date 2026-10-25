@@ -99,7 +99,7 @@ class GitlabReconcileRbacTest < Minitest::Test
   # @param email [String] e-mail of the role group member
   # @return [Hash] one entry of an rbac_members list
   def member(username, email: "#{username}@example.org")
-    { "username" => username, "email" => email }
+    { "username" => username, "email" => email, "name" => username }
   end
 
   # @param users [Array<Hash>] accounts the stubbed User model holds
@@ -126,7 +126,7 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal "[CHANGED] biber admin=true external=false\n", stdout
+    assert_equal "CHANGED biber admin=true external=false\n", stdout
   end
 
   def test_a_member_matched_by_email_is_promoted
@@ -136,7 +136,7 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal "[CHANGED] biber admin=true external=false\n", stdout
+    assert_equal "CHANGED biber admin=true external=false\n", stdout
   end
 
   def test_a_member_without_email_and_unknown_username_matches_nobody
@@ -146,14 +146,14 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_match(/\A\[UNCHANGED\]/, stdout)
+    assert_equal "UNCHANGED\n", stdout
   end
 
   def test_an_admin_outside_the_role_is_demoted
     stdout, stderr, status = reconcile(users: [account(1, "biber", admin: true)])
 
     assert_predicate status, :success?, stderr
-    assert_equal "[CHANGED] biber admin=false external=false\n", stdout
+    assert_equal "CHANGED biber admin=false external=false\n", stdout
   end
 
   def test_a_kept_administrator_outside_the_role_stays_admin
@@ -163,14 +163,14 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_match(/\A\[UNCHANGED\]/, stdout)
+    assert_equal "UNCHANGED\n", stdout
   end
 
   def test_a_kept_administrator_without_the_flag_is_promoted
     stdout, stderr, status = reconcile(users: [account(1, "root")], keep: ["root"])
 
     assert_predicate status, :success?, stderr
-    assert_equal "[CHANGED] root admin=true external=false\n", stdout
+    assert_equal "CHANGED root admin=true external=false\n", stdout
   end
 
   def test_an_external_member_is_marked_external
@@ -180,14 +180,14 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal "[CHANGED] biber admin=false external=true\n", stdout
+    assert_equal "CHANGED biber admin=false external=true\n", stdout
   end
 
   def test_an_external_account_outside_the_role_loses_the_flag
     stdout, stderr, status = reconcile(users: [account(1, "biber", external: true)])
 
     assert_predicate status, :success?, stderr
-    assert_equal "[CHANGED] biber admin=false external=false\n", stdout
+    assert_equal "CHANGED biber admin=false external=false\n", stdout
   end
 
   def test_the_administrator_role_outranks_the_external_role
@@ -198,7 +198,17 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal "[CHANGED] biber admin=true external=false\n", stdout
+    assert_equal "CHANGED biber admin=true external=false\n", stdout
+  end
+
+  def test_every_changed_account_reports_its_own_line
+    stdout, stderr, status = reconcile(
+      users: [account(1, "biber"), account(2, "mallory", admin: true)],
+      administrators: [member("biber")]
+    )
+
+    assert_predicate status, :success?, stderr
+    assert_equal "CHANGED biber admin=true external=false\nCHANGED mallory admin=false external=false\n", stdout
   end
 
   def test_bot_accounts_are_left_alone
@@ -207,7 +217,7 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_match(/\A\[UNCHANGED\]/, stdout)
+    assert_equal "UNCHANGED\n", stdout
   end
 
   def test_converged_flags_report_unchanged
@@ -218,7 +228,7 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal "[UNCHANGED] every administrator and external flag matches the role groups\n", stdout
+    assert_equal "UNCHANGED\n", stdout
   end
 
   def test_a_rejected_save_fails_with_the_validation_errors
@@ -228,6 +238,6 @@ class GitlabReconcileRbacTest < Minitest::Test
     )
 
     refute_predicate status, :success?
-    assert_match(/\[FAIL\] could not update 'biber': Email is invalid/, stderr)
+    assert_match(/could not update 'biber': Email is invalid/, stderr)
   end
 end

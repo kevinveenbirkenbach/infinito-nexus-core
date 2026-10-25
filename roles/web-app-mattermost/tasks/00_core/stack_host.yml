@@ -9,6 +9,3 @@
 - name: "🧩 Provision the Mattermost addons"
   include_tasks: ../04_addons.yml
   when: MATTERMOST_ADDONS_ENABLED | length > 0
-
-- name: "🛂 Reconcile the Mattermost system admins with the administrator role group"
-  include_tasks: ../05_rbac.yml

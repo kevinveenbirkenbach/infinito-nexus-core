@@ -177,11 +177,7 @@ LISTMONK_RBAC_ROLES:
       - templates:get
       - media:get
       - bounces:get
-LISTMONK_RBAC_WANTED: >-
-  {{ [{'username': LISTMONK_ADMIN_USERNAME, 'email': lookup('users', 'platform_administrator').email, 'role_name': 'administrator', 'rank': 0}]
-     + (listmonk_rbac_administrators | map('combine', {'role_name': 'administrator', 'rank': 0}) | list)
-     + (listmonk_rbac_managers | map('combine', {'role_name': 'manager', 'rank': 1}) | list)
-     + (listmonk_rbac_viewers | map('combine', {'role_name': 'viewer', 'rank': 2}) | list) }}
+LISTMONK_RBAC_ADMIN_ROLE: administrator
 
 LISTMONK_DESIGN: "{{ lookup('design', application_id) }}"
 LISTMONK_DESIGN_ENABLED: "{{ lookup('config', application_id, 'services.design.enabled') | bool }}"

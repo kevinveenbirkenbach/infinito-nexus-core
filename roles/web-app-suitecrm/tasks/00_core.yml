@@ -15,3 +15,6 @@
 
     - name: "🎨 SuiteCRM corporate design (legacy theme, logo, favicon, system name)"
       include_tasks: 02_design.yml
+
+- name: "🛂 Reconcile the SuiteCRM admin flag with the administrator group"
+  include_tasks: 03_rbac.yml

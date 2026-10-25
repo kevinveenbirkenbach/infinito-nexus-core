@@ -80,31 +80,6 @@
     or suitecrm_admin_password_realign.stdout is search('\[FAIL\]')
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
 
-- name: "🛂 Reconcile the SuiteCRM admin flag with the administrator group"
-  when: (SUITECRM_SSO_ENABLED | bool) or (SUITECRM_LDAP_ENABLED | bool)
-  block:
-    - name: "👥 Resolve the administrator group members of {{ application_id }}"
-      ansible.builtin.include_tasks: utils/rbac/members.yml
-      vars:
-        rbac_members_application_id: "{{ application_id }}"
-        rbac_members_role: administrator
-
-    - name: "🛂 Make the SuiteCRM admin flag follow the administrator group"
-      ansible.builtin.shell:
-        cmd: >-
-          container exec -i --user {{ SUITECRM_WEB_USER }}
-          -e SUITECRM_RBAC_ADMINS -e SUITECRM_RBAC_PROTECTED
-          {{ SUITECRM_CONTAINER_ADDRESS }} php
-        stdin: "{{ lookup('file', 'php/reconcile_admins.php') }}"
-      environment:
-        SUITECRM_RBAC_ADMINS: "{{ rbac_members | map(attribute='username') | list | to_json }}"
-        SUITECRM_RBAC_PROTECTED: "{{ [SUITECRM_ADMIN_USERNAME] | to_json }}"
-      register: suitecrm_admin_reconcile
-      changed_when: suitecrm_admin_reconcile.stdout is search('\[CHANGED\]')
-      failed_when: >-
-        suitecrm_admin_reconcile.rc != 0
-        or suitecrm_admin_reconcile.stdout is search('\[FAIL\]')
-
 - name: "🔎 List SuiteCRM log paths the web user cannot write"
   shell: >
     container exec --user {{ SUITECRM_WEB_USER }} {{ SUITECRM_CONTAINER_ADDRESS }}

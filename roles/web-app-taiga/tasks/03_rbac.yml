@@ -1,21 +1,21 @@
 ---
-- name: "👥 Resolve the members of the Taiga administrator role"
-  include_tasks: utils/rbac/members.yml
-  vars:
-    rbac_members_application_id: "{{ application_id }}"
-    rbac_members_role: administrator
-
 - name: "🛂 Reconcile the Taiga superuser flag with the administrator role group"
-  ansible.builtin.shell: # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node
-    cmd: >
-      container exec -i
-      -e TAIGA_RBAC_ADMINISTRATORS -e TAIGA_RBAC_KEPT_SUPERUSERS
-      {{ TAIGA_MANAGER_LOCAL_CID | quote }}
-      python manage.py shell
-    stdin: "{{ lookup('file', 'python/reconcile_superusers.py') }}"
-  environment:
-    TAIGA_RBAC_ADMINISTRATORS: "{{ rbac_members | to_json }}"
-    TAIGA_RBAC_KEPT_SUPERUSERS: "{{ [TAIGA_SUPERUSER_NAME] | to_json }}"
-  register: taiga_rbac_reconcile
-  delegate_to: "{{ TAIGA_MANAGER_HOST_NODE }}"
-  changed_when: "'CHANGED=1' in taiga_rbac_reconcile.stdout"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/sync.yml') }}"
+  vars:
+    rbac_sync_application_id: "{{ application_id }}"
+    rbac_sync_enabled: true
+    rbac_sync_mode: "{{ DEPLOYMENT_MODE }}"
+    rbac_sync_skip_unchanged: true
+    rbac_sync_roles: [administrator]
+    rbac_sync_service_key: "{{ TAIGA_MANAGER_SERVICE }}"
+    rbac_sync_service_name: ""
+    rbac_sync_container: "{{ TAIGA_MANAGER_CONTAINER }}"
+    rbac_sync_kind: container
+    rbac_sync_user: ""
+    rbac_sync_argv: [python, manage.py, shell]
+    rbac_sync_script: "{{ lookup('file', role_path ~ '/files/python/reconcile_superusers.py') }}"
+    rbac_sync_modules: []
+    rbac_sync_env:
+      TAIGA_RBAC_KEPT_SUPERUSERS: "{{ [TAIGA_SUPERUSER_NAME] | to_json }}"
+    rbac_sync_members_env:
+      - { name: TAIGA_RBAC_ADMINISTRATORS, role: administrator, field: "" }

@@ -1,0 +1,90 @@
+---
+- name: "👥 PEERTUBE | Resolve the administrator members"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: administrator
+
+- name: "👥 PEERTUBE | Keep the administrator members"
+  ansible.builtin.set_fact:
+    peertube_rbac_administrators: "{{ rbac_members }}"
+
+- name: "👥 PEERTUBE | Resolve the moderator members"
+  include_tasks: utils/rbac/members.yml
+  vars:
+    rbac_members_application_id: "{{ application_id }}"
+    rbac_members_role: moderator
+
+- name: "👥 PEERTUBE | Rank every member by the highest PeerTube role it holds"
+  ansible.builtin.set_fact:
+    peertube_rbac_members: >-
+      {{
+        (peertube_rbac_administrators | selectattr('email') | map('combine', {'role': PEERTUBE_ROLE_IDS.administrator}) | list)
+        + (rbac_members | selectattr('email')
+            | rejectattr('username', 'in', peertube_rbac_administrators | map(attribute='username') | list)
+            | map('combine', {'role': PEERTUBE_ROLE_IDS.moderator}) | list)
+      }}
+
+- name: "🔎 PEERTUBE | Find the members without a PeerTube account"
+  database_query:
+    mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+    config: "{{ lookup('database', application_id) }}"
+    query: "{{ lookup('file', role_path ~ '/files/sql/rbac/select-members-without-account.sql') }}" # nocheck: database-query-raw  controller-read so the SQL travels to the remote swarm host that lacks the repo files
+    named_args:
+      members: "{{ peertube_rbac_members | to_json }}"
+    expect_rows: true
+  register: peertube_rbac_missing
+  changed_when: false
+
+- name: "➕ PEERTUBE | Pre-provision the OIDC accounts of the members"
+  when: peertube_rbac_missing.rows | length > 0
+  block:
+    - name: "🔑 PEERTUBE | Sign in as root to create the member accounts"
+      uri_retry:
+        url: "{{ PEERTUBE_INTERNAL_URL }}/api/v1/users/token"
+        method: POST
+        headers:
+          Host: "{{ PEERTUBE_HOSTNAME }}"
+        body_format: form-urlencoded
+        body:
+          client_id: "{{ peertube_admin_client.json.client_id }}"
+          client_secret: "{{ peertube_admin_client.json.client_secret }}"
+          grant_type: password
+          username: "{{ PEERTUBE_ROOT_USERNAME }}"
+          password: "{{ PEERTUBE_ROOT_PASSWORD }}"
+        status_code: [200]
+      register: peertube_rbac_root_token
+      no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+    - name: "➕ PEERTUBE | Create the member accounts"
+      uri_retry:
+        url: "{{ PEERTUBE_INTERNAL_URL }}/api/v1/users"
+        method: POST
+        headers:
+          Host: "{{ PEERTUBE_HOSTNAME }}"
+          Authorization: "Bearer {{ peertube_rbac_root_token.json.access_token }}"
+        body_format: json
+        body:
+          username: "{{ item[0] }}"
+          email: "{{ item[1] }}"
+          password: "{{ lookup('ansible.builtin.password', '/dev/null', length=48, chars=['ascii_letters', 'digits']) }}"
+          role: "{{ item[2] | int }}"
+        status_code: [200, 409]
+      loop: "{{ peertube_rbac_missing.rows }}"
+      loop_control:
+        label: "{{ item[0] }}"
+      changed_when: true
+      no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+
+    - name: "🔗 PEERTUBE | Hand the created accounts to the OIDC plugin"
+      database_query:
+        mask_values: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
+        config: "{{ lookup('database', application_id) }}"
+        query: "{{ lookup('file', role_path ~ '/files/sql/rbac/link-preprovisioned-accounts.sql') }}" # nocheck: database-query-raw  controller-read so the SQL travels to the remote swarm host that lacks the repo files
+        named_args:
+          plugin: "{{ PEERTUBE_OIDC_PLUGIN }}"
+          root_username: "{{ PEERTUBE_ROOT_USERNAME }}"
+          emails: "{{ peertube_rbac_missing.rows | map(attribute=1) | list | to_json }}"
+        expect_rows: true
+      register: peertube_rbac_linked
+      changed_when: peertube_rbac_linked.rows | length > 0

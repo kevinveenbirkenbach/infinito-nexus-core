@@ -51,7 +51,3 @@
 
 - name: "🎨 PEERTUBE | Converge the corporate logos"
   include_tasks: 04_design.yml
-
-- name: "🛂 PEERTUBE | Converge the roles of the OIDC accounts"
-  include_tasks: 05_rbac.yml
-  when: PEERTUBE_OIDC_ENABLED | bool

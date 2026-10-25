@@ -26,4 +26,3 @@
 
 - name: "👑 Reconcile the Synapse admin flag with the administrator role"
   include_tasks: 01_rbac_administrator.yml
-  when: IS_STACK_HOST | bool

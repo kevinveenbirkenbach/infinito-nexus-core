@@ -146,7 +146,7 @@ account (or the Keycloak SSO token when SSO is enabled).
 - ClamAV antivirus as an SMTP DATA-stage milter (`services.clamav.enabled: false` for spam-only)
 - DKIM signing with automatic key management; SPF / DMARC published in DNS
 - OpenID Connect SSO via Keycloak
-- **Administrators:** System Administrator follows the `web-app-stalwart` `administrator` members and is granted and revoked on every SSO deploy. The recovery administrator `stalwartadmin` and the platform administrator keep it.
+- **Administrators:** System Administrator follows the `web-app-stalwart` `administrator` members. [files/python/rbac_sync.py](./files/python/rbac_sync.py) grants and revokes it through the management JMAP API as a host hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/), at every SSO deploy and on its timer, so a member who signs in for the first time gets it on the next run. The recovery administrator `stalwartadmin` and the platform administrator keep it.
 - Roundcube webmail
 - PostgreSQL backing store
 

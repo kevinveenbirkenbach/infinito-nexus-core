@@ -1,39 +1,25 @@
 ---
-- name: "👥 MOBILIZON | Resolve the administrator members"
-  include_tasks: utils/rbac/members.yml
+- name: "🛂 MOBILIZON | Converge the roles of the Keycloak accounts on the role groups"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/sync.yml') }}"
   vars:
-    rbac_members_application_id: "{{ application_id }}"
-    rbac_members_role: administrator
-
-- name: "👥 MOBILIZON | Keep the administrator members"
-  ansible.builtin.set_fact:
-    mobilizon_rbac_administrators: "{{ rbac_members }}"
-
-- name: "👥 MOBILIZON | Resolve the moderator members"
-  include_tasks: utils/rbac/members.yml
-  vars:
-    rbac_members_application_id: "{{ application_id }}"
-    rbac_members_role: moderator
-
-- name: "🛂 MOBILIZON | Converge the roles of the Keycloak accounts to their role groups"
-  ansible.builtin.command:
-    argv:
-      - container
-      - exec
-      - -i
-      - "{{ MOBILIZON_LOCAL_CID }}" # nocheck: container-exec-resolver  MOBILIZON_LOCAL_CID resolved at delegate_to runtime
-      - /bin/mobilizon
-      - rpc
-      - "{{ lookup('file', 'elixir/rbac.exs') }}"
-    expand_argument_vars: false
-    stdin: >-
-      {{ {
-        'administrators': mobilizon_rbac_administrators | map(attribute='email') | select | list,
-        'moderators': rbac_members | map(attribute='email') | select | list,
-        'bootstrap': lookup('users', 'platform_administrator').email,
-        'provider': MOBILIZON_OIDC_PROVIDER
-      } | to_json }}
-  register: mobilizon_rbac
-  changed_when: "'MOBILIZON_RBAC=changed' in mobilizon_rbac.stdout"
-  failed_when: mobilizon_rbac.rc != 0 or 'MOBILIZON_RBAC=' not in mobilizon_rbac.stdout
-  delegate_to: "{{ MOBILIZON_HOST_NODE }}"
+    rbac_sync_application_id: "{{ application_id }}"
+    rbac_sync_enabled: "{{ MOBILIZON_OIDC_ENABLED | bool }}"
+    rbac_sync_mode: "{{ DEPLOYMENT_MODE }}"
+    rbac_sync_skip_unchanged: true
+    rbac_sync_roles: [administrator, moderator]
+    rbac_sync_service_key: mobilizon
+    rbac_sync_service_name: ""
+    rbac_sync_container: "{{ mobilizon_container }}"
+    rbac_sync_kind: host
+    rbac_sync_user: ""
+    rbac_sync_argv: []
+    rbac_sync_script: "{{ lookup('file', role_path ~ '/files/python/rbac_sync.py') }}"
+    rbac_sync_modules:
+      - { name: rbac.exs, content: "{{ lookup('file', role_path ~ '/files/elixir/rbac.exs') }}" }
+    rbac_sync_env:
+      MOBILIZON_CLI: /bin/mobilizon
+      MOBILIZON_RBAC_BOOTSTRAP: "{{ lookup('users', 'platform_administrator').email }}"
+      MOBILIZON_RBAC_PROVIDER: "{{ MOBILIZON_OIDC_PROVIDER }}"
+    rbac_sync_members_env:
+      - { name: RBAC_ADMINISTRATORS, role: administrator, field: email }
+      - { name: RBAC_MODERATORS, role: moderator, field: email }

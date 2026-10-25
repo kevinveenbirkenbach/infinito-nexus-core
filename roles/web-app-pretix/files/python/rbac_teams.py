@@ -1,13 +1,5 @@
 """Converge the RBAC teams of every Pretix organizer and their pretix-oidc assignment rules.
 
-A team needs an organizer, so a deployment without one gets the deployment
-organizer first.
-
-``shell_scoped`` feeds this to IPython, which ends an indented block at the
-first blank or dedented line, so the whole body lives in one blank-line-free
-function and the last statement is a top-level print of a marker the task
-matches on.
-
 Environment:
     RBAC_CLAIM:     ID token claim the assignment rules read.
     RBAC_TEAMS:     JSON list of {name, group, all_event_permissions,
@@ -21,6 +13,8 @@ Output:
 
 import json
 import os
+import sys
+import traceback
 
 from pretix.base.models import Organizer
 from pretix.base.models.organizer import Team
@@ -68,4 +62,15 @@ def converge():
     return "CHANGED" if changed else "UNCHANGED"
 
 
-print("PRETIX_RESULT=" + converge())
+def report():
+    try:
+        line = "PRETIX_RESULT=" + converge()
+    except Exception:
+        traceback.print_exc()
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
+    print(line, flush=True)
+
+
+report()

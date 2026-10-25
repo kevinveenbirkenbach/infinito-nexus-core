@@ -27,3 +27,6 @@
 - name: "▶️ Execute stack host routines"
   include_tasks: 01_stack_host.yml
   when: IS_STACK_HOST | bool
+
+- name: "🛂 PEERTUBE | Converge the roles of the OIDC accounts"
+  include_tasks: 05_rbac.yml

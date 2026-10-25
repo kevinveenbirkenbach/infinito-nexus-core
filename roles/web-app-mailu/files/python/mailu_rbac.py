@@ -9,6 +9,21 @@ def _request(
     return {"email": email, "method": method, "path": path, "body": body}
 
 
+def mailu_rbac_mailboxes(usernames: list[str], domain: str) -> list[str]:
+    """Return the mailboxes of the usernames in the mail domain.
+
+    Args:
+        usernames: login names, in any case, possibly repeated.
+        domain: the mail domain.
+
+    Returns:
+        One ``<lowercased username>@<domain>`` per distinct username, in first-seen order.
+    """
+    return [
+        f"{name}@{domain}" for name in dict.fromkeys(name.lower() for name in usernames)
+    ]
+
+
 def mailu_rbac_plan(
     users: list[dict[str, Any]],
     managers: list[str],
@@ -56,8 +71,3 @@ def mailu_rbac_plan(
             if mailbox not in wanted
         ]
     )
-
-
-class FilterModule:
-    def filters(self):
-        return {"mailu_rbac_plan": mailu_rbac_plan}

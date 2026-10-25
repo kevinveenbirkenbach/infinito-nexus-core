@@ -1,9 +1,10 @@
 # Env (from the container):
-#   GITLAB_RBAC_ADMINISTRATORS  JSON list of {username, email} holding the administrator role
-#   GITLAB_RBAC_EXTERNALS       JSON list of {username, email} holding the external role
+#   GITLAB_RBAC_ADMINISTRATORS  JSON list of {username, email, name} holding the administrator role
+#   GITLAB_RBAC_EXTERNALS       JSON list of {username, email, name} holding the external role
 #   GITLAB_RBAC_KEEP_ADMINS     JSON list of usernames that stay administrators outside the role group
 #
-# Exit: 0 with [CHANGED] or [UNCHANGED] on stdout, 1 with [FAIL] on stderr.
+# Exit: 0 with one "CHANGED <username> admin=<bool> external=<bool>" line per changed account,
+# else "UNCHANGED", on stdout; 1 with the validation errors on stderr.
 require 'json'
 require 'set'
 
@@ -19,7 +20,7 @@ end
 administrators = resolve_ids(JSON.parse(ENV.fetch('GITLAB_RBAC_ADMINISTRATORS')))
 externals = resolve_ids(JSON.parse(ENV.fetch('GITLAB_RBAC_EXTERNALS')))
 keep = JSON.parse(ENV.fetch('GITLAB_RBAC_KEEP_ADMINS')).map(&:downcase).to_set
-changes = []
+changed = false
 
 User.where(user_type: :human).find_each do |user|
   admin = administrators.include?(user.id) || keep.include?(user.username.downcase)
@@ -28,14 +29,10 @@ User.where(user_type: :human).find_each do |user|
 
   user.admin = admin
   user.external = external
-  abort("[FAIL] could not update '#{user.username}': #{user.errors.full_messages.join(', ')}") unless user.save
+  abort("could not update '#{user.username}': #{user.errors.full_messages.join(', ')}") unless user.save
 
-  changes << "#{user.username} admin=#{admin} external=#{external}"
+  puts "CHANGED #{user.username} admin=#{admin} external=#{external}"
+  changed = true
 end
 
-if changes.empty?
-  puts '[UNCHANGED] every administrator and external flag matches the role groups'
-  exit(0)
-end
-
-puts "[CHANGED] #{changes.join('; ')}"
+puts 'UNCHANGED' unless changed

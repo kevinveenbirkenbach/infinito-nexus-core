@@ -16,7 +16,7 @@ This role deploys Pretix using Docker, automating the installation, configuratio
 - **NGINX Reverse Proxy Integration:** Provides secure access and HTTPS termination.  
 - **OIDC Authentication:** Seamless integration with identity providers such as Keycloak.  
 - **Centralized Logout:** Unified logout across applications in the ecosystem.  
-- **RBAC teams:** With SSO on, every deploy converges an `Organizers (SSO)` team (all events, all permissions) and a `Check-in (SSO)` team (all events, check-in only) in each organizer, creating the `pretix` organizer when none exists, and binds them to the `organizer` and `checkin` role groups through pretix-oidc team assignment rules, so every sign-in adds or removes the user. Staff rights stay bound to the `administrator` role group.  
+- **RBAC teams:** With SSO on, [files/python/rbac_teams.py](./files/python/rbac_teams.py) runs as a container hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer and converges an `Organizers (SSO)` team (all events, all permissions) and a `Check-in (SSO)` team (all events, check-in only) in each organizer, creating the `pretix` organizer when none exists, and binds them to the `organizer` and `checkin` role groups through pretix-oidc team assignment rules, so every sign-in adds or removes the user. Staff rights stay bound to the `administrator` role group.  
 - **Matomo Analytics & Global CSS:** Built-in support for analytics and unified styling.  
 
 ## Addons

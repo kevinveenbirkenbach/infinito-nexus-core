@@ -231,14 +231,12 @@ class TestReconcileOauth2Roles(unittest.TestCase):
         output = self.run_main(
             backend, {"PGADMIN_RBAC_ADMINISTRATORS": json.dumps(members)}
         )
-        self.assertEqual(output, "[CHANGED] alice=Administrator, mallory=User\n")
+        self.assertEqual(output, "CHANGED alice=Administrator\nCHANGED mallory=User\n")
 
     def test_main_reports_a_converged_directory(self) -> None:
         backend = FakeBackend(users=[])
         output = self.run_main(backend, {"PGADMIN_RBAC_ADMINISTRATORS": "[]"})
-        self.assertEqual(
-            output, "[UNCHANGED] every OAuth2 account already holds its group's role\n"
-        )
+        self.assertEqual(output, "UNCHANGED\n")
 
 
 if __name__ == "__main__":

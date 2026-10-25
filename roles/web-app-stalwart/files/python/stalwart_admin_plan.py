@@ -38,8 +38,3 @@ def stalwart_admin_plan(
             and admin_role_id in ((account.get("roles") or {}).get("roleIds") or {})
         ],
     }
-
-
-class FilterModule:
-    def filters(self):
-        return {"stalwart_admin_plan": stalwart_admin_plan}

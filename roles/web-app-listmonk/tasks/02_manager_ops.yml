@@ -78,9 +78,5 @@
 - name: "🎨 Carry the corporate design in the Listmonk settings"
   ansible.builtin.include_tasks: 03_design.yml
 
-- name: "👑 Reconcile the Listmonk accounts with the RBAC members"
-  ansible.builtin.include_tasks: 04_rbac.yml
-  when: LISTMONK_OIDC_ENABLED | bool
-
 - name: "🚿 Recreate Listmonk so the settings above are loaded"
   ansible.builtin.meta: flush_handlers

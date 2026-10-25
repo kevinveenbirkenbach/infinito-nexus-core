@@ -40,7 +40,7 @@ The purpose of this role is to reduce the complexity of setting up OpenProject w
 
 - **Restricted sign-in:** Only members of the `administrator` and `user` role groups pass the oauth2-proxy gate (`sso.oauth2.allowed_groups`) and the LDAP `filter_string` of the auth source.
 
-- **Administrator reconcile:** Every deploy grants OpenProject administrator rights to the members of the `administrator` role group, provisions those that have no account yet from LDAP, and revokes the rights from every other account except the platform administrator and the GitLab bot ([reconcile_admins.rb](./files/ruby/reconcile_admins.rb)).
+- **Administrator reconcile:** [reconcile_admins.rb](./files/ruby/reconcile_admins.rb) grants OpenProject administrator rights to the members of the `administrator` role group, provisions those that have no account yet from LDAP, and revokes the rights from every other account except the platform administrator and the GitLab bot. It runs as a container hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer, so a group change in Keycloak or LDAP reaches `User.admin` within one timer interval.
 
 ## Addons
 

@@ -53,11 +53,12 @@ def member(username: str, email: str | None = None) -> dict[str, str]:
         email: directory address of the member, ``<username>@example.org`` when omitted.
 
     Returns:
-        The ``{username, email}`` mapping ``tasks/utils/rbac/members.yml`` emits.
+        The ``{username, email, name}`` mapping the RBAC hook receives per member.
     """
     return {
         "username": username,
         "email": f"{username}@example.org" if email is None else email,
+        "name": username,
     }
 
 
@@ -103,7 +104,7 @@ class TestReconcileSuperusers(unittest.TestCase):
             redirect_stdout(buf),
         ):
             runpy.run_path(str(SCRIPT_PATH), run_name="__main__")
-        return buf.getvalue().split()
+        return buf.getvalue().splitlines()
 
     def test_a_member_matched_by_username_is_promoted(self) -> None:
         biber = account("biber", email="unrelated@example.org")
@@ -112,7 +113,7 @@ class TestReconcileSuperusers(unittest.TestCase):
         self.assertTrue(biber.is_superuser)
         self.assertTrue(biber.is_staff)
         biber.save.assert_called_once_with()
-        self.assertEqual(lines, ["promoted=biber", "CHANGED=1"])
+        self.assertEqual(lines, ["CHANGED promoted biber"])
 
     def test_a_member_matched_by_email_is_promoted(self) -> None:
         biber = account("biber")
@@ -121,7 +122,7 @@ class TestReconcileSuperusers(unittest.TestCase):
         )
 
         self.assertTrue(biber.is_superuser)
-        self.assertEqual(lines, ["promoted=biber", "CHANGED=1"])
+        self.assertEqual(lines, ["CHANGED promoted biber"])
 
     def test_a_superuser_outside_the_role_group_is_demoted(self) -> None:
         mapache = account("mapache", superuser=True)
@@ -130,7 +131,7 @@ class TestReconcileSuperusers(unittest.TestCase):
         self.assertFalse(mapache.is_superuser)
         self.assertFalse(mapache.is_staff)
         mapache.save.assert_called_once_with()
-        self.assertEqual(lines, ["demoted=mapache", "CHANGED=1"])
+        self.assertEqual(lines, ["CHANGED demoted mapache"])
 
     def test_a_staff_flag_without_superuser_outside_the_role_group_is_demoted(
         self,
@@ -139,7 +140,14 @@ class TestReconcileSuperusers(unittest.TestCase):
         lines = self._run([mapache], [], [])
 
         self.assertFalse(mapache.is_staff)
-        self.assertEqual(lines, ["demoted=mapache", "CHANGED=1"])
+        self.assertEqual(lines, ["CHANGED demoted mapache"])
+
+    def test_every_changed_account_gets_its_own_line(self) -> None:
+        biber = account("biber")
+        mapache = account("mapache", superuser=True)
+        lines = self._run([biber, mapache], [member("biber")], [])
+
+        self.assertEqual(lines, ["CHANGED promoted biber", "CHANGED demoted mapache"])
 
     def test_the_bootstrap_superuser_keeps_its_flags_outside_the_role_group(
         self,
@@ -149,7 +157,7 @@ class TestReconcileSuperusers(unittest.TestCase):
 
         self.assertTrue(administrator.is_superuser)
         administrator.save.assert_not_called()
-        self.assertEqual(lines, ["CHANGED=0"])
+        self.assertEqual(lines, ["UNCHANGED"])
 
     def test_a_system_account_is_left_alone(self) -> None:
         bot = account("taiga-bot", superuser=True, system=True)
@@ -157,14 +165,14 @@ class TestReconcileSuperusers(unittest.TestCase):
 
         self.assertTrue(bot.is_superuser)
         bot.save.assert_not_called()
-        self.assertEqual(lines, ["CHANGED=0"])
+        self.assertEqual(lines, ["UNCHANGED"])
 
     def test_an_account_without_email_matches_no_member_without_email(self) -> None:
         other = account("other", email="", superuser=True)
         lines = self._run([other], [member("ghost", email="")], [])
 
         self.assertFalse(other.is_superuser)
-        self.assertEqual(lines, ["demoted=other", "CHANGED=1"])
+        self.assertEqual(lines, ["CHANGED demoted other"])
 
     def test_converged_flags_report_no_change(self) -> None:
         biber = account("biber", superuser=True)
@@ -173,7 +181,7 @@ class TestReconcileSuperusers(unittest.TestCase):
 
         biber.save.assert_not_called()
         mapache.save.assert_not_called()
-        self.assertEqual(lines, ["CHANGED=0"])
+        self.assertEqual(lines, ["UNCHANGED"])
 
     def test_a_missing_member_list_stops_the_reconcile(self) -> None:
         with (

@@ -27,7 +27,7 @@ This Docker Compose deployment uses Ansible automation to launch pgAdmin togethe
 
 - **Automated provisioning:** Configured by Ansible without manual steps.
 - **Native Keycloak OAuth2:** With SSO the login page offers pgAdmin's own OAuth2 button next to the internal login (`AUTHENTICATION_SOURCES = ['oauth2', 'internal']`). The username comes from the OIDC username claim, accounts are created on first login, and `OAUTH2_ADDITIONAL_CLAIMS` admits only members of the `administrator` and `user` role groups.
-- **Role reconcile:** Every deploy with SSO gives each `administrator` group member an OAuth2 account with the Administrator role and sets every other OAuth2 account to User. The internal default administrator stays untouched.
+- **Role reconcile:** With SSO, [files/python/reconcile_oauth2_roles.py](./files/python/reconcile_oauth2_roles.py) gives each `administrator` group member an OAuth2 account with the Administrator role and sets every other OAuth2 account to User. It runs as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer. The internal default administrator stays untouched.
 - **Saved server passwords:** OAuth2 accounts keep no pgAdmin password, so pgAdmin asks them for a master password before it stores a server password (`MASTER_PASSWORD_REQUIRED`).
 
 ## Further Resources

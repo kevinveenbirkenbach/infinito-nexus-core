@@ -161,7 +161,7 @@ class FakePretix:
 
 
 class TestRbacTeams(unittest.TestCase):
-    def run_script(self, backend: FakePretix) -> str:
+    def exec_script(self, backend: FakePretix, stdout: io.StringIO) -> None:
         env = {
             "RBAC_CLAIM": CLAIM,
             "RBAC_TEAMS": json.dumps(TEAMS),
@@ -170,13 +170,16 @@ class TestRbacTeams(unittest.TestCase):
         }
         spec = importlib.util.spec_from_file_location("rbac_teams", SCRIPT_PATH)
         module = importlib.util.module_from_spec(spec)
-        stdout = io.StringIO()
         with (
             patch.dict("os.environ", env),
             patch.dict("sys.modules", backend.modules()),
             contextlib.redirect_stdout(stdout),
         ):
             spec.loader.exec_module(module)
+
+    def run_script(self, backend: FakePretix) -> str:
+        stdout = io.StringIO()
+        self.exec_script(backend, stdout)
         return stdout.getvalue()
 
     def test_a_deployment_without_an_organizer_gets_the_deployment_organizer(
@@ -296,6 +299,25 @@ class TestRbacTeams(unittest.TestCase):
             backend.rules_of(manual), [(CLAIM, "/roles/web-app-pretix/administrator")]
         )
         self.assertEqual(manual.saves, 0)
+
+    def test_a_failure_ends_the_shell_with_a_non_zero_exit_and_no_marker(self) -> None:
+        backend = FakePretix(["acme"])
+
+        def refuse(**criteria):
+            raise RuntimeError("database is gone")
+
+        backend._team_get_or_create = refuse
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with (
+            patch("os._exit", side_effect=SystemExit) as exit_,
+            contextlib.redirect_stderr(stderr),
+            self.assertRaises(SystemExit),
+        ):
+            self.exec_script(backend, stdout)
+        exit_.assert_called_once_with(1)
+        self.assertNotIn("PRETIX_RESULT", stdout.getvalue())
+        self.assertIn("RuntimeError: database is gone", stderr.getvalue())
 
 
 if __name__ == "__main__":

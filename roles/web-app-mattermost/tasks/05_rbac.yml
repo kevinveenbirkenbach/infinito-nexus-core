@@ -1,44 +1,23 @@
 ---
-- name: "👥 Mattermost | Resolve the members of the administrator role"
-  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/members.yml') }}"
+- name: "🛂 Mattermost | Converge system_admin on the administrator role group"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/sync.yml') }}"
   vars:
-    rbac_members_application_id: "{{ application_id }}"
-    rbac_members_role: administrator
-
-- name: "📋 Mattermost | List the accounts and their system roles"
-  ansible.builtin.command:
-    argv:
-      - container
-      - exec
-      - -i
-      - "{{ MATTERMOST_LOCAL_CID }}" # nocheck: container-exec-resolver
-      - "{{ MATTERMOST_MMCTL }}"
-      - --local
-      - --json
-      - --suppress-warnings
-      - user
-      - list
-      - --all
-  register: mm_rbac_user_list
-  changed_when: false
-  delegate_to: "{{ MATTERMOST_HOST_NODE }}"
-
-- name: "🛂 Mattermost | Reconcile the system_admin role with the administrator role group"
-  vars:
-    mm_rbac_plan: "{{ mm_rbac_user_list.stdout | from_json | mattermost_rbac_plan(rbac_members, [lookup('users', 'platform_administrator').username]) }}"
-  block:
-    - name: "⬆️ Mattermost | Grant system_admin to the members of the administrator role"
-      ansible.builtin.shell: | # nocheck: container-exec-resolver  MATTERMOST_LOCAL_CID resolved at delegate_to runtime; container_address would return a manager-only subshell
-        container exec -i {{ MATTERMOST_LOCAL_CID | quote }} \
-          {{ MATTERMOST_MMCTL }} --local roles system_admin {{ mm_rbac_plan.promote | map('quote') | join(' ') }}
-      when: mm_rbac_plan.promote | length > 0
-      changed_when: true
-      delegate_to: "{{ MATTERMOST_HOST_NODE }}"
-
-    - name: "⬇️ Mattermost | Revoke system_admin from accounts outside the administrator role"
-      ansible.builtin.shell: | # nocheck: container-exec-resolver  MATTERMOST_LOCAL_CID resolved at delegate_to runtime; container_address would return a manager-only subshell
-        container exec -i {{ MATTERMOST_LOCAL_CID | quote }} \
-          {{ MATTERMOST_MMCTL }} --local roles member {{ mm_rbac_plan.demote | map('quote') | join(' ') }}
-      when: mm_rbac_plan.demote | length > 0
-      changed_when: true
-      delegate_to: "{{ MATTERMOST_HOST_NODE }}"
+    rbac_sync_application_id: "{{ application_id }}"
+    rbac_sync_enabled: true
+    rbac_sync_mode: "{{ DEPLOYMENT_MODE }}"
+    rbac_sync_skip_unchanged: true
+    rbac_sync_roles: [administrator]
+    rbac_sync_service_key: "{{ entity_name }}"
+    rbac_sync_service_name: ""
+    rbac_sync_container: "{{ MATTERMOST_CONTAINER }}"
+    rbac_sync_kind: host
+    rbac_sync_user: ""
+    rbac_sync_argv: []
+    rbac_sync_script: "{{ lookup('file', role_path ~ '/files/python/rbac_sync.py') }}"
+    rbac_sync_modules:
+      - { name: mattermost_rbac.py, content: "{{ lookup('file', role_path ~ '/files/python/mattermost_rbac.py') }}" }
+    rbac_sync_env:
+      MATTERMOST_MMCTL: "{{ MATTERMOST_MMCTL }}"
+      MATTERMOST_RBAC_KEEP: "{{ [lookup('users', 'platform_administrator').username] | to_json }}"
+    rbac_sync_members_env:
+      - { name: RBAC_ADMINISTRATORS, role: administrator, field: "" }

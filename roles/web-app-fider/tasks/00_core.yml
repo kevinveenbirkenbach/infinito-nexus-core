@@ -29,3 +29,6 @@
 
     - name: "🎨 Fider | Corporate design"
       include_tasks: 02_design.yml
+
+- name: "🛂 Fider | Map the role groups onto the user roles"
+  include_tasks: 03_rbac.yml

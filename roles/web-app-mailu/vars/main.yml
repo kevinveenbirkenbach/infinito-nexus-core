@@ -48,9 +48,6 @@ MAILU_EXTRA_HOSTS: "{{ query('mailu_extra_hosts') }}"
 MAILU_USERS: "{{ lookup('mailu_users') }}"
 MAILU_RBAC_ADMIN_USERNAMES: "{{ ([lookup('users', 'platform_administrator').username] + (mailu_rbac_administrators | map(attribute='username') | list)) | map('lower')
   | unique | list }}"
-MAILU_RBAC_ADMIN_MAILBOXES: "{{ MAILU_RBAC_ADMIN_USERNAMES | map('regex_replace', '$', '@' ~ MAILU_DOMAIN) | list }}"
-MAILU_RBAC_MANAGER_MAILBOXES: "{{ mailu_rbac_domain_managers | map(attribute='username') | map('lower') | unique | map('regex_replace', '$', '@' ~ MAILU_DOMAIN) |
-  list }}"
 MAILU_DOCKER_FLAVOR: "{{ 'ghcr.io/heviat' if MAILU_OIDC_ENABLED | bool else 'ghcr.io/mailu' }}"
 MAILU_DMARC_RUF: "{{ lookup('config', application_id, 'users.platform_administrator.email') }}"
 MAILU_DKIM_KEY_FILE: "{{ MAILU_DOMAIN }}.dkim.key"

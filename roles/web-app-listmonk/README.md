@@ -18,7 +18,7 @@ This role deploys Listmonk using Docker, ensuring a robust and scalable setup fo
 - **Advanced Analytics:** Gain insights through detailed reporting on campaign metrics and subscriber behavior.
 - **Flexible Configuration:** Easily customize settings such as database connections, admin credentials, and server configurations via a TOML file.
 - **Robust Infrastructure:** Seamlessly integrates with PostgreSQL for reliable data management and supports deployment behind a reverse proxy.
-- **Restricted SSO access:** With SSO enabled, `security.oidc.auto_create_users` stays off and every deploy provisions Listmonk accounts only for the `web-app-listmonk` `administrator` (Super Admin), `manager` and `viewer` members, matched by email. The `manager` and `viewer` user roles are created with their permission sets from `LISTMONK_RBAC_ROLES`. Every other account of type `user` is disabled, API accounts stay untouched, and the platform administrator stays Super Admin.
+- **Restricted SSO access:** With SSO enabled, `security.oidc.auto_create_users` stays off and [files/sql/rbac_reconcile.sql](./files/sql/rbac_reconcile.sql) provisions Listmonk accounts only for the `web-app-listmonk` `administrator` (Super Admin), `manager` and `viewer` members, matched by email. The `manager` and `viewer` user roles are created with their permission sets from `LISTMONK_RBAC_ROLES`. Every other account of type `user` is disabled, API accounts stay untouched, and the platform administrator stays Super Admin. The script runs through `psql` in the database container as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer, so a group change reaches Listmonk within one timer interval.
 
 ## Further Resources
 

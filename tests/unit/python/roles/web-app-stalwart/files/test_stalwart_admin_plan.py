@@ -11,7 +11,7 @@ USER_ROLE = "r-user"
 
 
 def _load():
-    path = PROJECT_ROOT / "roles/web-app-stalwart/filter_plugins/stalwart_admin_plan.py"
+    path = PROJECT_ROOT / "roles/web-app-stalwart/files/python/stalwart_admin_plan.py"
     spec = importlib.util.spec_from_file_location("stalwart_admin_plan", str(path))
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader

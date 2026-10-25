@@ -22,7 +22,7 @@ This role deploys **Magento 2** via Docker Compose. It is aligned with the Infin
 - **Optional Redis:** Toggle cache/session backend.
 - **Proxy-aware:** Exposes HTTP on localhost, picked up by front proxy role.
 - **Automation-friendly:** Admin user seeded from inventory variables.
-- **Admin Accounts from the Administrator Group:** every deploy runs [`files/php/rbac/reconcile_admin_users.php`](./files/php/rbac/reconcile_admin_users.php) through [`tasks/04_rbac.yml`](./tasks/04_rbac.yml), which activates the Magento admin accounts of the `administrator` group members and deactivates every other admin account; the platform administrator stays untouched.
+- **Admin Accounts from the Administrator Group:** [`files/php/rbac/reconcile_admin_users.php`](./files/php/rbac/reconcile_admin_users.php) activates the Magento admin accounts of the `administrator` group members and deactivates every other admin account; the platform administrator stays untouched. [`tasks/04_rbac.yml`](./tasks/04_rbac.yml) registers it as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/), which runs it in the PHP container at every deploy and on its timer.
 - **Admin Backend Gate:** with SSO the gate admits every realm user to the storefront, while `sso.oauth2.restricted_locations` in [`meta/services.yml`](./meta/services.yml) admits only members of the `administrator` group to the backend path `services.magento.backend_frontname`.
 
 ## Further Resources

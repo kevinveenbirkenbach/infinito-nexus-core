@@ -77,6 +77,9 @@ MOODLE_LDAP_ROLE_GROUP_DNS:
   coursecreator: "cn={{ application_id }}-coursecreator,{{ LDAP.DN.OU.ROLES }}"
 
 MOODLE_RBAC_ACCOUNT_AUTH: "{{ 'oidc' if MOODLE_OIDC_ENABLED | bool else 'ldap' }}"
+MOODLE_RBAC_SYSTEM_ROLES:
+  - manager
+  - coursecreator
 MOODLE_RBAC_PROTECTED_USERNAMES:
   - "{{ MOODLE_ADMIN_USERNAME }}"
   - "{{ MOODLE_MCP_ACCOUNT_USERNAME }}"

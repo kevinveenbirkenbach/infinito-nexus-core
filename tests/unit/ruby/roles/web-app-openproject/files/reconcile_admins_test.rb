@@ -99,14 +99,14 @@ class ReconcileAdminsTest < Minitest::Test
     lines, stderr, status = reconcile(users: [], members: ["biber"], spared: [], directory: ["biber"])
 
     assert_predicate status, :success?, stderr
-    assert_equal ["Provisioned biber", "Promoted biber"], lines
+    assert_equal ["CHANGED biber provisioned", "CHANGED biber admin=true"], lines
   end
 
   def test_a_member_the_directory_does_not_know_is_not_provisioned
     lines, stderr, status = reconcile(users: [], members: ["ghost"], spared: [], directory: [])
 
     assert_predicate status, :success?, stderr
-    assert_empty lines
+    assert_equal ["UNCHANGED"], lines
   end
 
   def test_a_member_is_matched_regardless_of_case
@@ -115,7 +115,7 @@ class ReconcileAdminsTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["Promoted biber"], lines
+    assert_equal ["CHANGED biber admin=true"], lines
   end
 
   def test_an_admin_outside_the_role_is_demoted
@@ -124,7 +124,7 @@ class ReconcileAdminsTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["Demoted mapache"], lines
+    assert_equal ["CHANGED mapache admin=false"], lines
   end
 
   def test_a_spared_admin_outside_the_role_stays_admin
@@ -133,7 +133,7 @@ class ReconcileAdminsTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_empty lines
+    assert_equal ["UNCHANGED"], lines
   end
 
   def test_a_spared_member_is_never_provisioned
@@ -142,7 +142,7 @@ class ReconcileAdminsTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_empty lines
+    assert_equal ["UNCHANGED"], lines
   end
 
   def test_converged_flags_report_nothing
@@ -154,6 +154,21 @@ class ReconcileAdminsTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_empty lines
+    assert_equal ["UNCHANGED"], lines
+  end
+
+  def test_a_missing_member_list_stops_the_reconcile
+    _stdout, stderr, status = Open3.capture3(
+      {
+        "USERS" => [].to_json,
+        "DIRECTORY" => [].to_json,
+        "OPENPROJECT_ADMIN_MEMBERS" => nil,
+        "OPENPROJECT_ADMIN_SPARED" => [].to_json,
+      },
+      RbConfig.ruby, "-e", "#{PRELUDE}\nload ARGV[0]", SCRIPT
+    )
+
+    refute_predicate status, :success?
+    assert_match(/OPENPROJECT_ADMIN_MEMBERS/, stderr)
   end
 end

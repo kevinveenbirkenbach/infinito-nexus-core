@@ -3,7 +3,7 @@
 require "json"
 
 provider       = "greenlight"
-admin_emails   = JSON.parse(ENV.fetch("RBAC_ADMIN_EMAILS")).map { |email| email.to_s.downcase }
+admin_emails   = JSON.parse(ENV.fetch("RBAC_ADMIN_EMAILS")).map { |email| email.to_s.downcase }.reject(&:empty?)
 keep_emails    = JSON.parse(ENV.fetch("RBAC_PROTECTED_EMAILS")).map { |email| email.to_s.downcase }
 admin_role     = Role.find_by!(name: "Administrator", provider: provider)
 user_role      = Role.find_by!(name: "User", provider: provider)

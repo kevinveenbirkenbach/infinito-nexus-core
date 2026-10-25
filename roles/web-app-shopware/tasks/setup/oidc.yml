@@ -43,34 +43,6 @@
   changed_when: false
   no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
 
-- name: "🛡️ Withdraw admin flag and Editor role from Keycloak users outside their group"
-  ansible.builtin.shell:
-    cmd: >- # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node
-      container exec -i --user {{ SHOPWARE_USER }}
-      -e KEEP_ADMINS
-      -e KEEP_EDITORS
-      -e ACL_EDITOR_ROLE_NAME={{ SHOPWARE_ACL_EDITOR_ROLE_NAME | quote }}
-      {{ SHOPWARE_WEB_LOCAL_CID | quote }}
-      php
-    stdin: "{{ lookup('ansible.builtin.file', role_path ~ '/files/php/oidc/admins.php') }}"
-  environment:
-    KEEP_ADMINS: >-
-      {{
-        ([lookup('users', 'platform_administrator').username, lookup('users', 'platform_administrator').email]
-         + (shopware_rbac_administrators | map(attribute='username') | list)
-         + (shopware_rbac_administrators | map(attribute='email') | select | list))
-        | to_json
-      }}
-    KEEP_EDITORS: >-
-      {{
-        ([lookup('users', 'platform_administrator').username, lookup('users', 'platform_administrator').email]
-         + (shopware_rbac_editors | map(attribute='username') | list)
-         + (shopware_rbac_editors | map(attribute='email') | select | list))
-        | to_json
-      }}
-  register: shopware_oidc_admin_demotion
-  changed_when: shopware_oidc_admin_demotion.stdout is search('\[CHANGED\]')
-
 - name: "♻️ Clear the cache so the provider is discovered"
   ansible.builtin.shell:
     cmd: >- # nocheck: container-exec-resolver  runtime-resolved CID, delegated to the hosting node

@@ -1,18 +1,15 @@
 """Converge the pgAdmin role of every OAuth2 account with the administrator group.
 
-Usage:
-    Piped into the ``/venv/bin/python3 -`` of the running pgAdmin container.
-
 Args:
-    PGADMIN_RBAC_ADMINISTRATORS: JSON list of ``{"username", "email"}`` members
-        of the administrator role group (container exec env).
+    PGADMIN_RBAC_ADMINISTRATORS: JSON list of ``{"username", "email", "name"}``
+        members of the administrator role group (container exec env).
 
 Every member gets an OAuth2 account with the Administrator role, created ahead
 of its first login when missing. Every other OAuth2 account is set to the User
 role. Internal accounts, among them the default administrator, are left alone.
 
-Exit: 0 with ``[CHANGED]`` or ``[UNCHANGED]`` on stdout, 1 with ``[FAIL]``
-on stderr.
+Exit: 0 with one ``CHANGED <username>=<role>`` line per written role or
+``UNCHANGED`` on stdout, 1 with ``[FAIL]`` on stderr.
 """
 
 import json
@@ -82,10 +79,7 @@ def main() -> None:
     app = create_app(config.APP_NAME + "-cli")
     with app.test_request_context():
         changes = converge(json.loads(raw))
-    if changes:
-        print(f"[CHANGED] {', '.join(changes)}")
-    else:
-        print("[UNCHANGED] every OAuth2 account already holds its group's role")
+    print("\n".join(f"CHANGED {change}" for change in changes) if changes else "UNCHANGED")
 
 
 if __name__ == "__main__":

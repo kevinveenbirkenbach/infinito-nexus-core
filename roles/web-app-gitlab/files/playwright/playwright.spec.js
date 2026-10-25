@@ -108,8 +108,8 @@ test("biber: app → no admin or external flag, provider-synced profile → univ
       const body = await response.text();
       expect(response.ok(), `GET /api/v4/user must answer for biber, got ${response.status()}: ${body.slice(0, 300)}`).toBe(true);
       const self = JSON.parse(body);
-      expect(self.is_admin === true, "the deploy-time reconcile must leave biber without GitLab admin rights").toBe(false);
-      expect(self.external, "the deploy-time reconcile must leave biber outside the external role").toBe(false);
+      expect(self.is_admin === true, "the role group reconcile must leave biber without GitLab admin rights").toBe(false);
+      expect(self.external, "the role group reconcile must leave biber outside the external role").toBe(false);
 
       await gotoOnion(interactivePage, `${appBaseUrl}/-/user_settings/profile`);
       await expect(

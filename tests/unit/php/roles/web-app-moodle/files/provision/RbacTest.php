@@ -203,7 +203,7 @@ final class RbacTest extends TestCase
     }
 
     /**
-     * Run the script against the stubbed Moodle.
+     * Run the script against the stubbed Moodle with every role group the RBAC hook passes.
      *
      * @param array<string, list<array{username: string, email: string}>> $roleMembers members per system role shortname
      * @param list<array{username: string, email: string}> $siteadmins members of the administrator role
@@ -211,6 +211,20 @@ final class RbacTest extends TestCase
      * @return array{0: string, 1: string, 2: int, 3: array<string, mixed>} stdout, stderr, exit code and the stored site
      */
     private function runScript(array $roleMembers, array $siteadmins = [], array $protected = []): array
+    {
+        return $this->runHook(array_keys($roleMembers), ['administrator' => $siteadmins] + $roleMembers, $siteadmins, $protected);
+    }
+
+    /**
+     * Run the script against the stubbed Moodle.
+     *
+     * @param list<string> $systemRoles system role shortnames the run converges
+     * @param array<string, list<array{username: string, email: string}>> $groups members per RBAC role
+     * @param list<array{username: string, email: string}> $siteadmins members of the administrator role
+     * @param list<string> $protected usernames whose assignments stay untouched
+     * @return array{0: string, 1: string, 2: int, 3: array<string, mixed>} stdout, stderr, exit code and the stored site
+     */
+    private function runHook(array $systemRoles, array $groups, array $siteadmins, array $protected): array
     {
         $script = dirname(__DIR__, 7) . '/roles/web-app-moodle/files/php/provision/rbac.php';
         $process = proc_open(
@@ -225,7 +239,8 @@ final class RbacTest extends TestCase
                 'MOODLE_RBAC_BOOTSTRAP' => 'administrator',
                 'MOODLE_RBAC_PROTECTED' => json_encode($protected),
                 'MOODLE_RBAC_SITEADMINS' => json_encode($siteadmins),
-                'MOODLE_RBAC_ROLE_MEMBERS' => json_encode((object) $roleMembers),
+                'MOODLE_RBAC_SYSTEM_ROLES' => json_encode($systemRoles),
+                'MOODLE_RBAC_MEMBERS' => json_encode((object) $groups),
                 'PATH' => (string) getenv('PATH'),
             ]
         );
@@ -264,8 +279,7 @@ final class RbacTest extends TestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame([[self::MANAGER, 3]], self::held($site));
-        $this->assertStringContainsString('[CHANGED] unassigned manager from mapache', $stdout);
-        $this->assertStringContainsString('[CHANGED] assigned manager to biber', $stdout);
+        $this->assertSame("CHANGED mapache unassigned manager\nCHANGED biber assigned manager\n", $stdout);
     }
 
     public function testACoursecreatorMemberWithoutAnAccountGetsOneWithTheConfiguredAuth(): void
@@ -280,7 +294,7 @@ final class RbacTest extends TestCase
         $this->assertSame('oidc', $created[0]['auth']);
         $this->assertSame('newbie@example.org', $created[0]['email']);
         $this->assertSame([[self::COURSECREATOR, $created[0]['id']]], self::held($site));
-        $this->assertStringContainsString('[CHANGED] created the oidc account of newbie', $stdout);
+        $this->assertSame("CHANGED newbie created with auth oidc\nCHANGED newbie assigned coursecreator\n", $stdout);
     }
 
     public function testAProtectedAccountKeepsItsAssignmentOutsideTheGroup(): void
@@ -295,7 +309,7 @@ final class RbacTest extends TestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame([[self::MANAGER, 5]], self::held($site));
-        $this->assertStringNotContainsString('[CHANGED]', $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
     }
 
     public function testTheBootstrapStaysTheFirstSiteAdministratorAndOnlyMembersFollow(): void
@@ -310,17 +324,30 @@ final class RbacTest extends TestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame('2,3', $site['siteadmins']);
-        $this->assertStringContainsString('[CHANGED] the site administrators are now the users 2,3', $stdout);
+        $this->assertSame("CHANGED siteadmins 2,3\n", $stdout);
     }
 
     public function testAMissingBootstrapAccountFails(): void
     {
         $this->seed([self::user(3, 'biber')], [], '3');
 
-        [, $stderr, $code] = $this->runScript([], [self::member('biber')]);
+        [$stdout, $stderr, $code] = $this->runScript([], [self::member('biber')]);
 
         $this->assertSame(1, $code);
+        $this->assertSame('', $stdout);
         $this->assertStringContainsString('[FAIL] the bootstrap administrator administrator has no account', $stderr);
+    }
+
+    public function testASystemRoleWithoutPassedMembersFailsAndKeepsItsAssignments(): void
+    {
+        $this->seed([self::user(2, 'administrator'), self::user(4, 'mapache')], [self::assignment(self::MANAGER, 4)], '2');
+
+        [$stdout, $stderr, $code, $site] = $this->runHook(['manager'], ['administrator' => []], [], []);
+
+        $this->assertSame(1, $code);
+        $this->assertSame('', $stdout);
+        $this->assertSame([[self::MANAGER, 4]], self::held($site));
+        $this->assertStringContainsString('[FAIL] no members were passed for the role manager', $stderr);
     }
 
     public function testAnUnknownRoleShortnameFails(): void
@@ -346,6 +373,6 @@ final class RbacTest extends TestCase
         [$stdout, $stderr, $code] = $this->runScript($members, [self::member('biber')]);
 
         $this->assertSame(0, $code, $stderr);
-        $this->assertStringNotContainsString('[CHANGED]', $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
     }
 }

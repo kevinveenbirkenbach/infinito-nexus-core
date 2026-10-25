@@ -22,7 +22,7 @@ The compose flavor is **deprecated**. New deployments should use the ansible fla
 - **Flexible Client Support:** Access Matrix services via modern web clients like Element, plus integrated Element Call and Jitsi video conferencing.
 - **One account per person:** The OIDC provider carries `allow_existing_users: true`, so the Keycloak sign-in binds to the account the role registered natively for the same localpart instead of claiming a free one with a counter appended. Keycloak is the only identity provider of the deployment and both identities are rendered from the same user declaration, which is what makes that binding safe.
 - **Profile sync:** Synapse takes the localpart, display name and email from the `OIDC.ATTRIBUTES` claims. `sso.update_profile_information` re-applies the display name on every SSO login. The email is bound as a 3PID when the account is created. LDAP sign-ins take the display name from `LDAP.USER.ATTRIBUTES.FULLNAME`.
-- **Server administrators:** Every deploy sets the Synapse admin flag from the `web-app-matrix` `administrator` role through the Synapse admin API. Members are promoted, every other admin is demoted. The platform administrator and the role's bot accounts keep the flag.
+- **Server administrators:** [files/python/rbac_sync.py](./files/python/rbac_sync.py) sets the Synapse admin flag from the `web-app-matrix` `administrator` role through the Synapse admin API, as a host hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer. Members are promoted, every other admin is demoted. The platform administrator and the role's bot accounts keep the flag.
 
 ## Flavors
 
