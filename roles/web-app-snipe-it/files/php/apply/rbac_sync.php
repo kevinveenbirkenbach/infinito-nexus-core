@@ -2,14 +2,16 @@
 /**
  * Converge Snipe-IT accounts to the RBAC role groups of the deployment.
  *
- * Env (from the container):
- *   SNIPE_IT_RBAC_ADMINISTRATORS    JSON list of {username, email} holding the administrator role
- *   SNIPE_IT_RBAC_USERS             JSON list of {username, email} holding the user role
+ * Env (from the hook):
+ *   SNIPE_IT_RBAC_ADMINISTRATORS    JSON list of {username, email, name} holding the administrator role
+ *   SNIPE_IT_RBAC_USERS             JSON list of {username, email, name} holding the user role
+ *   SNIPE_IT_RBAC_LDAP_SYNC         JSON boolean; true runs snipeit:ldap-sync first, which imports the
+ *                                   directory members and refreshes their profile fields
  *   SNIPE_IT_RBAC_PROTECTED         JSON list of usernames this script never changes
  *   SNIPE_IT_RBAC_USER_GROUP        name of the permission group every member joins
  *   SNIPE_IT_RBAC_USER_PERMISSIONS  JSON object of the permissions that group grants
  *
- * Exit: 0 with [CHANGED] or [UNCHANGED] on the last stdout line, 1 with [FAIL] on stderr.
+ * Exit: 0 with one "CHANGED <what> <name>" line per change or "UNCHANGED", 1 with [FAIL] on stderr.
  */
 function fail(string $message): void
 {
@@ -29,6 +31,10 @@ function required_json(string $name): array
 $administrators = array_column(required_json('SNIPE_IT_RBAC_ADMINISTRATORS'), null, 'username');
 $users = array_column(required_json('SNIPE_IT_RBAC_USERS'), null, 'username');
 $protected = required_json('SNIPE_IT_RBAC_PROTECTED');
+$ldapSync = json_decode((string) getenv('SNIPE_IT_RBAC_LDAP_SYNC'), true);
+if (!is_bool($ldapSync)) {
+    fail('SNIPE_IT_RBAC_LDAP_SYNC is not a JSON boolean');
+}
 $groupName = (string) getenv('SNIPE_IT_RBAC_USER_GROUP');
 if ($groupName === '') {
     fail('SNIPE_IT_RBAC_USER_GROUP is empty');
@@ -39,7 +45,19 @@ $members = $administrators + $users;
 try {
     require 'vendor/autoload.php';
     $app = require 'bootstrap/app.php';
-    $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+    $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+    $kernel->bootstrap();
+
+    if ($ldapSync) {
+        $status = $kernel->call('snipeit:ldap-sync', ['--summary' => true]);
+        $summary = trim($kernel->output());
+        if ($summary !== '') {
+            echo "$summary\n";
+        }
+        if ($status !== 0) {
+            fail("snipeit:ldap-sync exited with $status");
+        }
+    }
 
     $changed = false;
 
@@ -53,7 +71,7 @@ try {
         if (!$group->save()) {
             fail("permission group '$groupName' was rejected: " . $group->getErrors());
         }
-        echo "[GROUP] $groupName\n";
+        echo "CHANGED group $groupName\n";
         $changed = true;
     }
 
@@ -61,7 +79,7 @@ try {
     if ((string) $settings->ldap_default_group !== (string) $group->id) {
         $settings->ldap_default_group = $group->id;
         $settings->save();
-        echo "[DEFAULT GROUP] $groupName\n";
+        echo "CHANGED default-group $groupName\n";
         $changed = true;
     }
 
@@ -81,7 +99,7 @@ try {
         if (!$user->save()) {
             fail("account '$username' was rejected: " . $user->getErrors());
         }
-        echo "[CREATED] $username\n";
+        echo "CHANGED created $username\n";
         $changed = true;
     }
 
@@ -102,23 +120,25 @@ try {
         if ($permissions !== $before) {
             $user->permissions = json_encode((object) $permissions);
             $user->saveQuietly();
-            echo ($isAdministrator ? '[PROMOTED] ' : '[DEMOTED] ') . $user->username . "\n";
+            echo ($isAdministrator ? 'CHANGED promoted ' : 'CHANGED demoted ') . $user->username . "\n";
             $changed = true;
         }
 
         $inGroup = $user->groups()->where('group_id', $group->id)->exists();
         if (isset($members[$user->username]) && !$inGroup) {
             $user->groups()->attach($group->id);
-            echo "[JOINED] {$user->username}\n";
+            echo "CHANGED joined {$user->username}\n";
             $changed = true;
         } elseif (!isset($members[$user->username]) && $inGroup) {
             $user->groups()->detach($group->id);
-            echo "[LEFT] {$user->username}\n";
+            echo "CHANGED left {$user->username}\n";
             $changed = true;
         }
     }
 
-    echo $changed ? "[CHANGED]\n" : "[UNCHANGED]\n";
+    if (!$changed) {
+        echo "UNCHANGED\n";
+    }
 } catch (Throwable $error) {
     fail($error->getMessage());
 }

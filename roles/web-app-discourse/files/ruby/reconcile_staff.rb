@@ -19,25 +19,25 @@ User.real.find_each do |user|
     unless user.admin
       user.grant_admin!
       changed = true
-      puts "granted_admin=#{user.username}"
+      puts "CHANGED granted_admin=#{user.username}"
     end
   elsif user.admin
     user.revoke_admin!
     changed = true
-    puts "revoked_admin=#{user.username}"
+    puts "CHANGED revoked_admin=#{user.username}"
   end
 
   if moderators.call(user)
     unless user.moderator
       user.grant_moderation!
       changed = true
-      puts "granted_moderator=#{user.username}"
+      puts "CHANGED granted_moderator=#{user.username}"
     end
   elsif user.moderator
     user.revoke_moderation!
     changed = true
-    puts "revoked_moderator=#{user.username}"
+    puts "CHANGED revoked_moderator=#{user.username}"
   end
 end
 
-puts "changed=#{changed}"
+puts "UNCHANGED" unless changed

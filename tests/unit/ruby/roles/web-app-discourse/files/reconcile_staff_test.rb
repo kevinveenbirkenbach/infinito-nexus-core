@@ -103,7 +103,7 @@ class DiscourseReconcileStaffTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["granted_admin=biber", "changed=true"], lines
+    assert_equal ["CHANGED granted_admin=biber"], lines
   end
 
   def test_a_member_matched_by_email_is_granted_admin
@@ -113,14 +113,14 @@ class DiscourseReconcileStaffTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["granted_admin=biber", "changed=true"], lines
+    assert_equal ["CHANGED granted_admin=biber"], lines
   end
 
   def test_an_admin_outside_the_role_is_revoked
     lines, stderr, status = reconcile(users: [account("biber", admin: true)])
 
     assert_predicate status, :success?, stderr
-    assert_equal ["revoked_admin=biber", "changed=true"], lines
+    assert_equal ["CHANGED revoked_admin=biber"], lines
   end
 
   def test_a_kept_administrator_outside_the_role_stays_admin
@@ -130,7 +130,7 @@ class DiscourseReconcileStaffTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["changed=false"], lines
+    assert_equal ["UNCHANGED"], lines
   end
 
   def test_a_moderator_member_is_granted_moderation
@@ -140,14 +140,14 @@ class DiscourseReconcileStaffTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["granted_moderator=biber", "changed=true"], lines
+    assert_equal ["CHANGED granted_moderator=biber"], lines
   end
 
   def test_a_moderator_outside_the_role_is_revoked
     lines, stderr, status = reconcile(users: [account("biber", moderator: true)])
 
     assert_predicate status, :success?, stderr
-    assert_equal ["revoked_moderator=biber", "changed=true"], lines
+    assert_equal ["CHANGED revoked_moderator=biber"], lines
   end
 
   def test_admin_and_moderator_flags_follow_their_own_role
@@ -157,7 +157,7 @@ class DiscourseReconcileStaffTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["granted_admin=biber", "revoked_moderator=biber", "changed=true"], lines
+    assert_equal ["CHANGED granted_admin=biber", "CHANGED revoked_moderator=biber"], lines
   end
 
   def test_a_member_without_email_matches_no_account_without_email
@@ -167,7 +167,7 @@ class DiscourseReconcileStaffTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["revoked_admin=other", "changed=true"], lines
+    assert_equal ["CHANGED revoked_admin=other"], lines
   end
 
   def test_converged_flags_report_no_change
@@ -178,7 +178,7 @@ class DiscourseReconcileStaffTest < Minitest::Test
     )
 
     assert_predicate status, :success?, stderr
-    assert_equal ["changed=false"], lines
+    assert_equal ["UNCHANGED"], lines
   end
 
   def test_a_missing_role_list_stops_the_reconcile

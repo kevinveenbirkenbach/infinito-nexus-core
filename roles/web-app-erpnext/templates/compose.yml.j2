@@ -4,6 +4,11 @@
 
   {% set service_name = 'backend' %}
   {{ service_name }}:
+    {{ lookup('template', 'roles/sys-svc-container/templates/build.yml.j2') | indent(4) }}
+      args:
+        ERPNEXT_IMAGE: "{{ ERPNEXT_IMAGE }}"
+        ERPNEXT_VERSION: "{{ ERPNEXT_VERSION }}"
+        ERPNEXT_LOGIN_RBAC_APP: "{{ ERPNEXT_LOGIN_RBAC_APP }}"
     {{ lookup('container_image', application_id, 'erpnext') }}
     {{ lookup('compose_only', 'container_name', ERPNEXT_BACKEND_CONTAINER) }}
     {% include 'roles/sys-svc-container/templates/base.yml.j2' %}

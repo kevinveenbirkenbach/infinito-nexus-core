@@ -111,7 +111,3 @@
     file: addons/rebeloidc.yml
     apply:
       delegate_to: "{{ MATOMO_HOST_NODE }}"
-
-- name: "👥 Converge the accounts of {{ application_id }} on its RBAC roles"
-  include_tasks: 10_rbac.yml
-  when: MATOMO_OIDC_ENABLED | bool

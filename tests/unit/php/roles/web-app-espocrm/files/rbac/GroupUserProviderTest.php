@@ -2,41 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Espo\Entities {
-    class User
-    {
-        public const TYPE_ADMIN = 'admin';
-        public const TYPE_REGULAR = 'regular';
-        public const TYPE_PORTAL = 'portal';
-
-        public function __construct(public string $userName, private string $type)
-        {
-        }
-
-        public function get(string $name): mixed
-        {
-            return $name === 'type' ? $this->type : null;
-        }
-
-        public function set(string $name, mixed $value): void
-        {
-            if ($name === 'type') {
-                $this->type = $value;
-            }
-        }
-
-        public function isAdmin(): bool
-        {
-            return $this->type === self::TYPE_ADMIN;
-        }
-
-        public function isRegular(): bool
-        {
-            return $this->type === self::TYPE_REGULAR;
-        }
-    }
-}
-
 namespace Espo\Core\Authentication\Oidc\UserProvider {
     use Espo\Entities\User;
 
@@ -106,44 +71,6 @@ namespace Espo\Core\Authentication\Oidc {
     }
 }
 
-namespace Espo\Core\Utils {
-    class Config
-    {
-        public function __construct(private array $values)
-        {
-        }
-
-        public function get(string $name): mixed
-        {
-            return $this->values[$name] ?? null;
-        }
-    }
-
-    class Log
-    {
-        public array $messages = [];
-
-        public function info(string $message): void
-        {
-            $this->messages[] = $message;
-        }
-    }
-}
-
-namespace Espo\Core\Acl\Cache {
-    use Espo\Entities\User;
-
-    class Clearer
-    {
-        public array $cleared = [];
-
-        public function clearForUser(User $user): void
-        {
-            $this->cleared[] = $user->userName;
-        }
-    }
-}
-
 namespace {
 
     use Espo\Core\Acl\Cache\Clearer;
@@ -157,6 +84,7 @@ namespace {
     use Espo\Modules\InfinitoRbac\Classes\Oidc\GroupUserProvider;
     use PHPUnit\Framework\TestCase;
 
+    require_once __DIR__ . '/espo_stubs.php';
     require_once dirname(__DIR__, 7) . '/roles/web-app-espocrm/files/php/rbac/group_user_provider.php';
 
     final class GroupUserProviderTest extends TestCase

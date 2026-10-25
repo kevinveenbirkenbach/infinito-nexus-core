@@ -1,39 +1,22 @@
 ---
-- name: "👥 Resolve the members of the administrator role"
-  include_tasks: utils/rbac/members.yml
-  vars:
-    rbac_members_application_id: "{{ application_id }}"
-    rbac_members_role: administrator
-
-- name: "👥 Keep the administrator members apart from the next lookup"
-  ansible.builtin.set_fact:
-    discourse_rbac_administrators: "{{ rbac_members }}"
-
-- name: "👥 Resolve the members of the moderator role"
-  include_tasks: utils/rbac/members.yml
-  vars:
-    rbac_members_application_id: "{{ application_id }}"
-    rbac_members_role: moderator
-
 - name: "🛂 Reconcile the admin and moderator flags with the role groups"
-  ansible.builtin.command:
-    argv:
-      - container
-      - exec
-      - -i
-      - -e
-      - DISCOURSE_RBAC_ADMINISTRATORS
-      - -e
-      - DISCOURSE_RBAC_MODERATORS
-      - -e
-      - DISCOURSE_RBAC_KEPT_ADMINISTRATORS
-      - "{{ DISCOURSE_CONTAINER }}" # nocheck: container-exec-resolver  the launcher names the container itself, so the bare name resolves in both modes
-      - rails
-      - r
-      - "{{ lookup('file', 'ruby/reconcile_staff.rb') }}"
-  environment:
-    DISCOURSE_RBAC_ADMINISTRATORS: "{{ discourse_rbac_administrators | to_json }}"
-    DISCOURSE_RBAC_MODERATORS: "{{ rbac_members | to_json }}"
-    DISCOURSE_RBAC_KEPT_ADMINISTRATORS: "{{ [lookup('users', 'platform_administrator').username] | to_json }}"
-  register: discourse_rbac_reconcile
-  changed_when: "'changed=true' in discourse_rbac_reconcile.stdout_lines"
+  ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/sync.yml') }}"
+  vars:
+    rbac_sync_application_id: "{{ application_id }}"
+    rbac_sync_enabled: true
+    rbac_sync_mode: compose
+    rbac_sync_skip_unchanged: true
+    rbac_sync_roles: [administrator, moderator]
+    rbac_sync_service_key: "{{ entity_name }}"
+    rbac_sync_service_name: ""
+    rbac_sync_container: "{{ DISCOURSE_CONTAINER }}"
+    rbac_sync_kind: container
+    rbac_sync_user: ""
+    rbac_sync_argv: [rails, r, "-"]
+    rbac_sync_script: "{{ lookup('file', role_path ~ '/files/ruby/reconcile_staff.rb') }}"
+    rbac_sync_modules: []
+    rbac_sync_env:
+      DISCOURSE_RBAC_KEPT_ADMINISTRATORS: "{{ [lookup('users', 'platform_administrator').username] | to_json }}"
+    rbac_sync_members_env:
+      - { name: DISCOURSE_RBAC_ADMINISTRATORS, role: administrator, field: "" }
+      - { name: DISCOURSE_RBAC_MODERATORS, role: moderator, field: "" }

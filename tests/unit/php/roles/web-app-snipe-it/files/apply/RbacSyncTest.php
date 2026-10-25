@@ -213,6 +213,20 @@ final class RbacSyncTest extends TestCase
                     public function bootstrap(): void
                     {
                     }
+
+                    public function call(string $command, array $parameters): int
+                    {
+                        $GLOBALS['STUB']['artisan'][] = [$command, $parameters];
+                        foreach ($GLOBALS['STUB']['ldap_import'] as $row) {
+                            $GLOBALS['STUB']['users'][] = $row;
+                        }
+                        return $GLOBALS['STUB']['artisan_status'];
+                    }
+
+                    public function output(): string
+                    {
+                        return $GLOBALS['STUB']['artisan_output'];
+                    }
                 };
             }
         };
@@ -264,14 +278,14 @@ final class RbacSyncTest extends TestCase
     }
 
     /**
-     * Build one entry of an rbac_members list.
+     * Build one member as the RBAC hook receives it.
      *
      * @param string $username directory login of the member
-     * @return array{username: string, email: string}
+     * @return array{username: string, email: string, name: string}
      */
     private static function member(string $username): array
     {
-        return ['username' => $username, 'email' => "$username@example.org"];
+        return ['username' => $username, 'email' => "$username@example.org", 'name' => $username];
     }
 
     /**
@@ -291,19 +305,40 @@ final class RbacSyncTest extends TestCase
             'groups' => $groups,
             'settings' => [['id' => 1, 'ldap_default_group' => $groupExists ? self::GROUP_ID : null]],
             'users_groups' => $memberships,
+            'artisan' => [],
+            'artisan_status' => 0,
+            'artisan_output' => '',
+            'ldap_import' => [],
         ]));
+    }
+
+    /**
+     * Describe what the stubbed snipeit:ldap-sync does when the script calls it.
+     *
+     * @param int $status exit code the command returns
+     * @param string $output what the command prints
+     * @param list<array<string, mixed>> $imported accounts the command creates
+     */
+    private function stubLdapSync(int $status, string $output, array $imported): void
+    {
+        $state = json_decode((string) file_get_contents($this->state), true);
+        $state['artisan_status'] = $status;
+        $state['artisan_output'] = $output;
+        $state['ldap_import'] = $imported;
+        file_put_contents($this->state, json_encode($state));
     }
 
     /**
      * Run the script against the stubbed Snipe-IT.
      *
-     * @param list<array{username: string, email: string}> $administrators members of the administrator role
-     * @param list<array{username: string, email: string}> $users members of the user role
+     * @param list<array{username: string, email: string, name: string}> $administrators members of the administrator role
+     * @param list<array{username: string, email: string, name: string}> $users members of the user role
      * @param list<string> $protected usernames the script never changes
      * @param string $group name of the permission group
+     * @param string $ldapSync the SNIPE_IT_RBAC_LDAP_SYNC value
      * @return array{0: string, 1: string, 2: int, 3: array<string, mixed>} stdout, stderr, exit code and the stored site
      */
-    private function runScript(array $administrators, array $users, array $protected, string $group): array
+    private function runScript(array $administrators, array $users, array $protected, string $group, string $ldapSync): array
     {
         $script = dirname(__DIR__, 7) . '/roles/web-app-snipe-it/files/php/apply/rbac_sync.php';
         $process = proc_open(
@@ -316,6 +351,7 @@ final class RbacSyncTest extends TestCase
                 'SNIPE_IT_RBAC_ADMINISTRATORS' => json_encode($administrators),
                 'SNIPE_IT_RBAC_USERS' => json_encode($users),
                 'SNIPE_IT_RBAC_PROTECTED' => json_encode($protected),
+                'SNIPE_IT_RBAC_LDAP_SYNC' => $ldapSync,
                 'SNIPE_IT_RBAC_USER_GROUP' => $group,
                 'SNIPE_IT_RBAC_USER_PERMISSIONS' => json_encode((object) self::PERMISSIONS),
                 'PATH' => (string) getenv('PATH'),
@@ -349,13 +385,11 @@ final class RbacSyncTest extends TestCase
     {
         $this->seed([self::user(2, 'biber', []), self::user(3, 'mapache', [])], [[3, self::GROUP_ID]], true);
 
-        [$stdout, $stderr, $code, $site] = $this->runScript([], [self::member('biber')], [], self::GROUP);
+        [$stdout, $stderr, $code, $site] = $this->runScript([], [self::member('biber')], [], self::GROUP, 'false');
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame([[2, self::GROUP_ID]], $site['users_groups']);
-        $this->assertStringContainsString('[JOINED] biber', $stdout);
-        $this->assertStringContainsString('[LEFT] mapache', $stdout);
-        $this->assertStringEndsWith("[CHANGED]\n", $stdout);
+        $this->assertSame("CHANGED joined biber\nCHANGED left mapache\n", $stdout);
     }
 
     public function testAnAdministratorMemberIsPromotedAndAnOutsiderLosesSuperuserAndAdmin(): void
@@ -366,54 +400,53 @@ final class RbacSyncTest extends TestCase
             true
         );
 
-        [$stdout, $stderr, $code, $site] = $this->runScript([self::member('biber')], [], [], self::GROUP);
+        [$stdout, $stderr, $code, $site] = $this->runScript([self::member('biber')], [], [], self::GROUP, 'false');
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame(['superuser' => '1'], self::permissionsOf($site, 'biber'));
         $this->assertSame(['assets.view' => '1'], self::permissionsOf($site, 'mapache'));
-        $this->assertStringContainsString('[PROMOTED] biber', $stdout);
-        $this->assertStringContainsString('[DEMOTED] mapache', $stdout);
+        $this->assertStringContainsString("CHANGED promoted biber\n", $stdout);
+        $this->assertStringContainsString("CHANGED demoted mapache\n", $stdout);
     }
 
     public function testAMemberWithoutAnAccountIsCreatedAndJoinsTheGroup(): void
     {
         $this->seed([], [], true);
 
-        [$stdout, $stderr, $code, $site] = $this->runScript([], [self::member('newbie')], [], self::GROUP);
+        [$stdout, $stderr, $code, $site] = $this->runScript([], [self::member('newbie')], [], self::GROUP, 'false');
 
         $this->assertSame(0, $code, $stderr);
         $this->assertCount(1, $site['users']);
         $this->assertSame('newbie', $site['users'][0]['username']);
         $this->assertSame('newbie@example.org', $site['users'][0]['email']);
         $this->assertSame([[$site['users'][0]['id'], self::GROUP_ID]], $site['users_groups']);
-        $this->assertStringContainsString('[CREATED] newbie', $stdout);
+        $this->assertSame("CHANGED created newbie\nCHANGED joined newbie\n", $stdout);
     }
 
     public function testAProtectedAccountKeepsItsRightsAndGroups(): void
     {
         $this->seed([self::user(1, 'administrator', ['superuser' => '1'])], [[1, self::GROUP_ID]], true);
 
-        [$stdout, $stderr, $code, $site] = $this->runScript([], [], ['administrator'], self::GROUP);
+        [$stdout, $stderr, $code, $site] = $this->runScript([], [], ['administrator'], self::GROUP, 'false');
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame(['superuser' => '1'], self::permissionsOf($site, 'administrator'));
         $this->assertSame([[1, self::GROUP_ID]], $site['users_groups']);
-        $this->assertSame("[UNCHANGED]\n", $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
     }
 
     public function testAMissingPermissionGroupIsCreatedAndBecomesTheLdapDefaultGroup(): void
     {
         $this->seed([], [], false);
 
-        [$stdout, $stderr, $code, $site] = $this->runScript([], [], [], self::GROUP);
+        [$stdout, $stderr, $code, $site] = $this->runScript([], [], [], self::GROUP, 'false');
 
         $this->assertSame(0, $code, $stderr);
         $this->assertCount(1, $site['groups']);
         $this->assertSame(self::GROUP, $site['groups'][0]['name']);
         $this->assertSame(json_encode((object) self::PERMISSIONS), $site['groups'][0]['permissions']);
         $this->assertSame($site['groups'][0]['id'], $site['settings'][0]['ldap_default_group']);
-        $this->assertStringContainsString('[GROUP] ' . self::GROUP, $stdout);
-        $this->assertStringContainsString('[DEFAULT GROUP] ' . self::GROUP, $stdout);
+        $this->assertSame('CHANGED group ' . self::GROUP . "\nCHANGED default-group " . self::GROUP . "\n", $stdout);
     }
 
     public function testASecondRunReportsUnchanged(): void
@@ -422,20 +455,68 @@ final class RbacSyncTest extends TestCase
         $administrators = [self::member('biber')];
         $users = [self::member('newbie')];
 
-        $this->runScript($administrators, $users, [], self::GROUP);
-        [$stdout, $stderr, $code] = $this->runScript($administrators, $users, [], self::GROUP);
+        $this->runScript($administrators, $users, [], self::GROUP, 'false');
+        [$stdout, $stderr, $code] = $this->runScript($administrators, $users, [], self::GROUP, 'false');
 
         $this->assertSame(0, $code, $stderr);
-        $this->assertSame("[UNCHANGED]\n", $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
     }
 
     public function testAnEmptyGroupNameFails(): void
     {
         $this->seed([], [], true);
 
-        [, $stderr, $code] = $this->runScript([], [], [], '');
+        [, $stderr, $code] = $this->runScript([], [], [], '', 'false');
 
         $this->assertSame(1, $code);
         $this->assertStringContainsString('[FAIL] SNIPE_IT_RBAC_USER_GROUP is empty', $stderr);
+    }
+
+    public function testWithoutLdapTheDirectorySyncIsNotCalled(): void
+    {
+        $this->seed([], [], true);
+
+        [, $stderr, $code, $site] = $this->runScript([], [], [], self::GROUP, 'false');
+
+        $this->assertSame(0, $code, $stderr);
+        $this->assertSame([], $site['artisan']);
+    }
+
+    public function testTheDirectorySyncImportsTheMembersBeforeTheReconcile(): void
+    {
+        $this->seed([], [], true);
+        $this->stubLdapSync(0, "User biber (username:  biber) was CREATED.\n", [self::user(4, 'biber', [])]);
+
+        [$stdout, $stderr, $code, $site] = $this->runScript([], [self::member('biber')], [], self::GROUP, 'true');
+
+        $this->assertSame(0, $code, $stderr);
+        $this->assertSame([['snipeit:ldap-sync', ['--summary' => true]]], $site['artisan']);
+        $this->assertCount(1, $site['users']);
+        $this->assertSame([[4, self::GROUP_ID]], $site['users_groups']);
+        $this->assertSame("User biber (username:  biber) was CREATED.\nCHANGED joined biber\n", $stdout);
+    }
+
+    public function testAFailedDirectorySyncFailsBeforeAnyChange(): void
+    {
+        $this->seed([self::user(3, 'mapache', ['superuser' => '1'])], [], true);
+        $this->stubLdapSync(1, '', []);
+
+        [$stdout, $stderr, $code, $site] = $this->runScript([], [], [], self::GROUP, 'true');
+
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('[FAIL] snipeit:ldap-sync exited with 1', $stderr);
+        $this->assertSame(['superuser' => '1'], self::permissionsOf($site, 'mapache'));
+        $this->assertSame('', $stdout);
+    }
+
+    public function testALdapSyncFlagThatIsNoJsonBooleanFails(): void
+    {
+        $this->seed([], [], true);
+
+        [, $stderr, $code, $site] = $this->runScript([], [], [], self::GROUP, '');
+
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('[FAIL] SNIPE_IT_RBAC_LDAP_SYNC is not a JSON boolean', $stderr);
+        $this->assertSame([], $site['artisan']);
     }
 }

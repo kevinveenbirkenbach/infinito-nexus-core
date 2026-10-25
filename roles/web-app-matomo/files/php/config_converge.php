@@ -1,8 +1,7 @@
 <?php
 
 /**
- * Converge keys of Matomo's config.ini.php. Runs inside the matomo container via stdin as the
- * web user.
+ * Converge keys of Matomo's config.ini.php.
  *
  * Env:
  *   MATOMO_CONFIG_SECTIONS  JSON object of section name to {key: value}; each section is

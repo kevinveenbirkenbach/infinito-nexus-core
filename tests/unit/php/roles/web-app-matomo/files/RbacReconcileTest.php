@@ -170,29 +170,39 @@ final class RbacReconcileTest extends TestCase
         PHP;
 
     /**
-     * Build a role member as utils/rbac/members.yml resolves it.
+     * Build a role member as the RBAC hook receives it.
      *
      * @param string $login the Keycloak username
-     * @return array{username: string, email: string}
+     * @return array{username: string, email: string, name: string}
      */
     private static function member(string $login): array
     {
-        return ['username' => $login, 'email' => "$login@example.org"];
+        return ['username' => $login, 'email' => "$login@example.org", 'name' => $login];
     }
 
     /**
-     * Encode the plan tasks/10_rbac.yml hands the script.
+     * Encode the member map the RBAC hook hands the script.
      *
-     * @param list<string> $protected logins the run never touches
-     * @param array<string, list<array{username: string, email: string}>> $roles members per role;
-     *        a role left out has no members
-     * @return string the MATOMO_RBAC_PLAN value
+     * @param array<string, list<array{username: string, email: string, name: string}>> $roles members
+     *        per role; a role left out has no members
+     * @return string the RBAC_MEMBERS value
      */
-    private static function plan(array $protected, array $roles): string
+    private static function members(array $roles): string
     {
         $empty = ['administrator' => [], 'admin' => [], 'write' => [], 'view' => []];
 
-        return json_encode(['protected' => $protected] + $roles + $empty);
+        return json_encode($roles + $empty);
+    }
+
+    /**
+     * Encode the logins tasks/10_rbac.yml protects.
+     *
+     * @param list<string> $logins logins the run never touches
+     * @return string the MATOMO_RBAC_PROTECTED value
+     */
+    private static function protectedLogins(array $logins): string
+    {
+        return json_encode($logins);
     }
 
     /**
@@ -209,14 +219,15 @@ final class RbacReconcileTest extends TestCase
     }
 
     /**
-     * Feed the script on stdin to php, as tasks/10_rbac.yml does, against the stubbed Matomo.
+     * Feed the script on stdin to php against the stubbed Matomo.
      *
-     * @param string $plan the MATOMO_RBAC_PLAN value
+     * @param string $protected the MATOMO_RBAC_PROTECTED value
+     * @param string $members the RBAC_MEMBERS value
      * @param array<string, mixed> $installation the state the stub starts from
      * @return array{0: string, 1: string, 2: int, 3: array<string, mixed>}
      *         stdout, stderr, exit code and the stub state afterwards
      */
-    private function runScript(string $plan, array $installation): array
+    private function runScript(string $protected, string $members, array $installation): array
     {
         $root = sys_get_temp_dir() . '/matomo-rbac-' . bin2hex(random_bytes(8));
         mkdir($root);
@@ -238,7 +249,8 @@ final class RbacReconcileTest extends TestCase
             $pipes,
             null,
             [
-                'MATOMO_RBAC_PLAN' => $plan,
+                'MATOMO_RBAC_PROTECTED' => $protected,
+                'RBAC_MEMBERS' => $members,
                 'STUB_STATE' => "$root/state.json",
                 'PATH' => (string) getenv('PATH'),
             ]
@@ -262,7 +274,8 @@ final class RbacReconcileTest extends TestCase
     public function testAMemberWithoutAnAccountGetsOneWithItsRoleOnEverySite(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['view' => [self::member('carol')]]),
             self::installation([], [], [])
         );
 
@@ -275,7 +288,8 @@ final class RbacReconcileTest extends TestCase
     public function testAnAdministratorMemberGetsSuperuserAccess(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['administrator' => [self::member('dave')]]),
+            self::protectedLogins([]),
+            self::members(['administrator' => [self::member('dave')]]),
             self::installation(['dave' => ['email' => 'dave@example.org', 'superuser_access' => 0]], [], [])
         );
 
@@ -287,7 +301,8 @@ final class RbacReconcileTest extends TestCase
     public function testAnAccountOutsideEveryRoleLosesSuperuserAccess(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], []),
+            self::protectedLogins([]),
+            self::members([]),
             self::installation(['eve' => ['email' => 'eve@example.org', 'superuser_access' => 1]], [], [])
         );
 
@@ -299,7 +314,8 @@ final class RbacReconcileTest extends TestCase
     public function testAnAccountOutsideEveryRoleLosesItsSiteAccess(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], []),
+            self::protectedLogins([]),
+            self::members([]),
             self::installation(
                 ['frank' => ['email' => 'frank@example.org', 'superuser_access' => 0]],
                 ['frank' => [1 => 'admin']],
@@ -320,10 +336,10 @@ final class RbacReconcileTest extends TestCase
             []
         );
 
-        [$stdout, $stderr, $code, $after] = $this->runScript(self::plan(['root'], []), $installation);
+        [$stdout, $stderr, $code, $after] = $this->runScript(self::protectedLogins(['root']), self::members([]), $installation);
 
         $this->assertSame(0, $code, $stderr);
-        $this->assertSame('', $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
         $this->assertSame($installation, $after);
     }
 
@@ -336,19 +352,21 @@ final class RbacReconcileTest extends TestCase
         );
 
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['view' => [self::member('carol')]]),
             $installation
         );
 
         $this->assertSame(0, $code, $stderr);
-        $this->assertSame('', $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
         $this->assertSame($installation, $after);
     }
 
     public function testAChangedDirectoryEmailReachesTheAccount(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['view' => [self::member('carol')]]),
             self::installation(
                 ['carol' => ['email' => 'old@example.org', 'superuser_access' => 0]],
                 ['carol' => [1 => 'view', 2 => 'view']],
@@ -364,7 +382,8 @@ final class RbacReconcileTest extends TestCase
     public function testAMemberWithoutEmailKeepsTheStoredEmail(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [['username' => 'carol', 'email' => '']]]),
+            self::protectedLogins([]),
+            self::members(['view' => [['username' => 'carol', 'email' => '', 'name' => 'carol']]]),
             self::installation(
                 ['carol' => ['email' => 'kept@example.org', 'superuser_access' => 0]],
                 ['carol' => [1 => 'view', 2 => 'view']],
@@ -374,13 +393,14 @@ final class RbacReconcileTest extends TestCase
 
         $this->assertSame(0, $code, $stderr);
         $this->assertSame('kept@example.org', $after['users']['carol']['email']);
-        $this->assertSame('', $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
     }
 
     public function testAnEmailHeldByAnotherAccountFailsTheMember(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['view' => [self::member('carol')]]),
             self::installation(['other' => ['email' => 'carol@example.org', 'superuser_access' => 0]], [], [])
         );
 
@@ -402,19 +422,21 @@ final class RbacReconcileTest extends TestCase
         );
 
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan(['root'], ['administrator' => [self::member('carol')]]),
+            self::protectedLogins(['root']),
+            self::members(['administrator' => [self::member('carol')]]),
             $installation
         );
 
         $this->assertSame(0, $code, $stderr);
-        $this->assertSame('', $stdout);
+        $this->assertSame("UNCHANGED\n", $stdout);
         $this->assertSame($installation, $after);
     }
 
     public function testARoleChangeReplacesTheSiteAccess(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['write' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['write' => [self::member('carol')]]),
             self::installation(
                 ['carol' => ['email' => 'carol@example.org', 'superuser_access' => 0]],
                 ['carol' => [1 => 'view']],
@@ -430,7 +452,8 @@ final class RbacReconcileTest extends TestCase
     public function testTheHighestSiteRoleWinsForAMemberOfSeveral(): void
     {
         [, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [self::member('carol')], 'admin' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['view' => [self::member('carol')], 'admin' => [self::member('carol')]]),
             self::installation(['carol' => ['email' => 'carol@example.org', 'superuser_access' => 0]], [], [])
         );
 
@@ -441,7 +464,8 @@ final class RbacReconcileTest extends TestCase
     public function testTheAdministratorRoleOutranksEverySiteRole(): void
     {
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [self::member('carol')], 'administrator' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['view' => [self::member('carol')], 'administrator' => [self::member('carol')]]),
             self::installation(['carol' => ['email' => 'carol@example.org', 'superuser_access' => 0]], [], [])
         );
 
@@ -451,33 +475,47 @@ final class RbacReconcileTest extends TestCase
         $this->assertSame("CHANGED granted superuser carol\n", $stdout);
     }
 
-    public function testAPlanWithoutARoleListFailsBeforeAnyChange(): void
+    public function testAMemberMapWithoutARoleListFailsBeforeAnyChange(): void
     {
         $installation = self::installation(['eve' => ['email' => 'eve@example.org', 'superuser_access' => 1]], [], []);
 
         [$stdout, $stderr, $code, $after] = $this->runScript(
-            json_encode(['protected' => [], 'administrator' => [], 'admin' => [], 'view' => []]),
+            self::protectedLogins([]),
+            json_encode(['administrator' => [], 'admin' => [], 'view' => []]),
             $installation
         );
 
         $this->assertSame(1, $code);
-        $this->assertStringContainsString("[FAIL] MATOMO_RBAC_PLAN carries no list 'write'", $stderr);
+        $this->assertStringContainsString("[FAIL] RBAC_MEMBERS carries no list 'write'", $stderr);
         $this->assertSame('', $stdout);
         $this->assertSame($installation, $after);
     }
 
-    public function testAnEmptyPlanFails(): void
+    public function testAnEmptyMemberMapFails(): void
     {
-        [, $stderr, $code] = $this->runScript('', self::installation([], [], []));
+        [, $stderr, $code] = $this->runScript(self::protectedLogins([]), '', self::installation([], [], []));
 
         $this->assertSame(1, $code);
-        $this->assertStringContainsString('[FAIL] MATOMO_RBAC_PLAN is empty', $stderr);
+        $this->assertStringContainsString('[FAIL] RBAC_MEMBERS is empty', $stderr);
+    }
+
+    public function testAMissingProtectedListFailsBeforeAnyChange(): void
+    {
+        $installation = self::installation(['root' => ['email' => 'root@example.org', 'superuser_access' => 1]], [], []);
+
+        [$stdout, $stderr, $code, $after] = $this->runScript('', self::members([]), $installation);
+
+        $this->assertSame(1, $code);
+        $this->assertStringContainsString('[FAIL] MATOMO_RBAC_PROTECTED is empty', $stderr);
+        $this->assertSame('', $stdout);
+        $this->assertSame($installation, $after);
     }
 
     public function testAnUnreadableAccountFailsTheRunWhileTheOthersConverge(): void
     {
         [, $stderr, $code, $after] = $this->runScript(
-            self::plan([], ['view' => [self::member('carol')]]),
+            self::protectedLogins([]),
+            self::members(['view' => [self::member('carol')]]),
             self::installation(['broken' => ['email' => 'broken@example.org', 'superuser_access' => 1]], [], ['broken'])
         );
 

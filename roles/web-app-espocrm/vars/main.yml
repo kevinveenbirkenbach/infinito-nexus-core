@@ -37,24 +37,37 @@ ESPOCRM_LDAP_ENABLED: "{{ lookup('config', application_id, 'services.ldap.enable
 ESPOCRM_LDAP_AUTOCREATE: "{{ lookup('config', application_id, 'services.ldap.autocreate') }}"
 ESPOCRM_LDAP_MEMBER_OF_ATTRIBUTE: "{{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}"
 ESPOCRM_LDAP_USER_LOGIN_FILTER: >-
-  (|{% for espocrm_rbac_role in ['administrator'] + (ESPOCRM_RBAC_TIERS | list) %}({{ ESPOCRM_LDAP_MEMBER_OF_ATTRIBUTE }}=cn={{ application_id }}-{{ espocrm_rbac_role
-  }},{{ LDAP.DN.OU.ROLES }}){% endfor %})
+  (|{% for espocrm_rbac_dn in [ESPOCRM_RBAC_ADMIN_DN] + (ESPOCRM_RBAC_TIERS | dict2items | map(attribute='value.dn') | list)
+  %}({{ ESPOCRM_LDAP_MEMBER_OF_ATTRIBUTE }}={{ espocrm_rbac_dn }}){% endfor %})
 ESPOCRM_RBAC_TIERS:
   manager:
     team: "Managers"
     role: "Manager"
     access: "manage"
+    path: "/{{ lookup('rbac_group_path', application_id=application_id, role='manager') }}"
+    dn: "cn={{ application_id }}-manager,{{ LDAP.DN.OU.ROLES }}"
   user:
     team: "Users"
     role: "User"
     access: "use"
+    path: "/{{ lookup('rbac_group_path', application_id=application_id, role='user') }}"
+    dn: "cn={{ application_id }}-user,{{ LDAP.DN.OU.ROLES }}"
+ESPOCRM_RBAC_ADMIN_GROUP: "/{{ lookup('rbac_group_path', application_id=application_id, role='administrator') }}"
+ESPOCRM_RBAC_ADMIN_DN: "cn={{ application_id }}-administrator,{{ LDAP.DN.OU.ROLES }}"
 ESPOCRM_RBAC_MODULE_PATH: "custom/Espo/Modules/InfinitoRbac"
+ESPOCRM_RBAC_LDAP_HOOK_CLASS: 'Espo\Modules\InfinitoRbac\Classes\Authentication\LdapRoleGroups'
 ESPOCRM_RBAC_MODULE_CONFIG_PARAMS:
   infinitoOidcAllowedGroups:
     level: system
   infinitoOidcAdministratorGroups:
     level: system
   infinitoOidcProtectedUsers:
+    level: system
+  infinitoLdapMemberOfAttribute:
+    level: system
+  infinitoLdapTeamGroups:
+    level: system
+  infinitoLdapAdministratorGroups:
     level: system
 ESPOCRM_USER: "www-data"
 

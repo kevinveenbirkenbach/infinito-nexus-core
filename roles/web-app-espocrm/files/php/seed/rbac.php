@@ -1,21 +1,22 @@
 <?php
-// nocheck: mirrored-unit-test - requires /var/www/html/bootstrap.php at the top level
-// and writes roles, teams, users and config through EspoCRM's own container
 /**
  * Reconcile the RBAC roles of the deployment with EspoCRM.
  *
- * Env (from the calling task):
- *   ESPOCRM_RBAC_TIERS      JSON {tier: {"path": groups claim value, "team": team name,
- *                           "role": role name, "access": "manage"|"use", "members": [username, ...]}}
+ * Env:
+ *   ESPOCRM_RBAC_ROOT         EspoCRM directory, the one holding bootstrap.php
+ *   ESPOCRM_RBAC_TIERS        JSON {tier: {"path": groups claim value, "dn": role group DN,
+ *                             "team": team name, "role": role name, "access": "manage"|"use"}}
  *   ESPOCRM_RBAC_ADMINS       JSON list of the usernames that hold the administrator role
+ *   ESPOCRM_RBAC_MEMBERS      JSON {role: [{username, email, name}]} with an entry for every tier
  *   ESPOCRM_RBAC_ADMIN_GROUP  groups claim value of the administrator role
+ *   ESPOCRM_RBAC_ADMIN_DN     role group DN of the administrator role
+ *   ESPOCRM_RBAC_MEMBER_OF    directory attribute that lists the group DNs of an account
  *   ESPOCRM_RBAC_PROTECTED    JSON list of the usernames whose type and teams stay untouched
- *   ESPOCRM_RBAC_CLAIM      name of the groups claim
+ *   ESPOCRM_RBAC_CLAIM        name of the groups claim
  *
- * Exit: 0 with [CHANGED] or [UNCHANGED] on stdout, 1 with [FAIL] on stderr.
+ * Exit: 0 with one CHANGED line per changed role, team, setting or user, or UNCHANGED, on
+ * stdout; 1 with [FAIL] on stderr.
  */
-
-require "/var/www/html/bootstrap.php";
 
 const READ_ONLY_SCOPES = ['User', 'Team'];
 
@@ -84,7 +85,7 @@ function record_permissions($acl, string $access): array
     return $permissions;
 }
 
-function env_json(string $key): array
+function env_string(string $key): string
 {
     $raw = getenv($key);
 
@@ -93,7 +94,12 @@ function env_json(string $key): array
         exit(1);
     }
 
-    $value = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+    return $raw;
+}
+
+function env_json(string $key): array
+{
+    $value = json_decode(env_string($key), true, 512, JSON_THROW_ON_ERROR);
 
     if (!is_array($value)) {
         fwrite(STDERR, "[FAIL] {$key} is not a JSON list or object\n");
@@ -156,21 +162,25 @@ function upsert_named(\Espo\ORM\EntityManager $entityManager, string $entityType
     return [$entity, true];
 }
 
+$root = env_string('ESPOCRM_RBAC_ROOT');
 $tiers = env_json('ESPOCRM_RBAC_TIERS');
 $admins = array_map('strtolower', env_json('ESPOCRM_RBAC_ADMINS'));
+$members = env_json('ESPOCRM_RBAC_MEMBERS');
 $protected = array_map('strtolower', env_json('ESPOCRM_RBAC_PROTECTED'));
-$claim = getenv('ESPOCRM_RBAC_CLAIM');
-$adminGroup = getenv('ESPOCRM_RBAC_ADMIN_GROUP');
+$claim = env_string('ESPOCRM_RBAC_CLAIM');
+$adminGroup = env_string('ESPOCRM_RBAC_ADMIN_GROUP');
+$adminDn = env_string('ESPOCRM_RBAC_ADMIN_DN');
+$memberOf = env_string('ESPOCRM_RBAC_MEMBER_OF');
 
-if ($claim === false || $claim === '') {
-    fwrite(STDERR, "[FAIL] ESPOCRM_RBAC_CLAIM is empty\n");
-    exit(1);
+foreach (array_keys($tiers) as $tier) {
+    if (!array_key_exists($tier, $members)) {
+        fwrite(STDERR, "[FAIL] ESPOCRM_RBAC_MEMBERS has no entry for the tier {$tier}\n");
+        exit(1);
+    }
 }
 
-if ($adminGroup === false || $adminGroup === '') {
-    fwrite(STDERR, "[FAIL] ESPOCRM_RBAC_ADMIN_GROUP is empty\n");
-    exit(1);
-}
+chdir($root);
+require $root . '/bootstrap.php';
 
 $app = new \Espo\Core\Application();
 $app->setupSystemUser();
@@ -182,9 +192,11 @@ $writer = $container->get('injectableFactory')->create('\Espo\Core\Utils\Config\
 $aclCacheClearer = $container->get('injectableFactory')->create('\Espo\Core\Acl\Cache\Clearer');
 $scopes = $container->get('metadata')->get(['scopes']) ?? [];
 
-$changed = false;
+$lines = [];
 $teamIds = [];
+$teamNames = [];
 $teamColumns = new \stdClass();
+$teamGroups = new \stdClass();
 $wantedTeams = [];
 $allowedGroups = [$adminGroup];
 
@@ -196,14 +208,23 @@ foreach ($tiers as $tier => $definition) {
     [$team, $teamChanged] = upsert_named($entityManager, 'Team', $definition['team'], [
         'rolesIds' => [$role->getId()],
     ]);
-    $changed = $changed || $roleChanged || $teamChanged;
+
+    if ($roleChanged) {
+        $lines[] = "CHANGED role {$definition['role']}";
+    }
+
+    if ($teamChanged) {
+        $lines[] = "CHANGED team {$definition['team']}";
+    }
 
     $teamIds[] = $team->getId();
+    $teamNames[$team->getId()] = $definition['team'];
     $teamColumns->{$team->getId()} = (object) ['group' => $definition['path']];
+    $teamGroups->{$team->getId()} = $definition['dn'];
     $allowedGroups[] = $definition['path'];
 
-    foreach ($definition['members'] as $member) {
-        $wantedTeams[strtolower($member)][] = $team->getId();
+    foreach ($members[$tier] as $member) {
+        $wantedTeams[strtolower($member['username'])][] = $team->getId();
     }
 }
 
@@ -216,6 +237,9 @@ $settings = [
     'infinitoOidcAllowedGroups' => $allowedGroups,
     'infinitoOidcAdministratorGroups' => [$adminGroup],
     'infinitoOidcProtectedUsers' => $protected,
+    'infinitoLdapMemberOfAttribute' => $memberOf,
+    'infinitoLdapTeamGroups' => $teamGroups,
+    'infinitoLdapAdministratorGroups' => [$adminDn],
 ];
 
 $settingsChanged = false;
@@ -224,12 +248,12 @@ foreach ($settings as $key => $value) {
     if (json_encode($config->get($key)) !== json_encode($value)) {
         $writer->set($key, $value);
         $settingsChanged = true;
+        $lines[] = "CHANGED config {$key}";
     }
 }
 
 if ($settingsChanged) {
     $writer->save();
-    $changed = true;
 }
 
 $users = $entityManager->getRDBRepository('User')
@@ -243,9 +267,15 @@ foreach ($users as $user) {
         continue;
     }
 
-    $user->set('type', in_array($userName, $admins, true)
+    $changes = [];
+    $type = in_array($userName, $admins, true)
         ? \Espo\Entities\User::TYPE_ADMIN
-        : \Espo\Entities\User::TYPE_REGULAR);
+        : \Espo\Entities\User::TYPE_REGULAR;
+    $user->set('type', $type);
+
+    if ($user->isAttributeChanged('type')) {
+        $changes[] = "type={$type}";
+    }
 
     $user->loadLinkMultipleField('teams');
     $current = $user->getLinkMultipleIdList('teams');
@@ -258,13 +288,21 @@ foreach ($users as $user) {
 
     if ($current !== $wanted) {
         $user->set('teamsIds', $wanted);
+
+        foreach (array_diff($wanted, $current) as $teamId) {
+            $changes[] = "+{$teamNames[$teamId]}";
+        }
+
+        foreach (array_diff($current, $wanted) as $teamId) {
+            $changes[] = "-{$teamNames[$teamId]}";
+        }
     }
 
-    if ($user->isAttributeChanged('type') || $user->isAttributeChanged('teamsIds')) {
+    if ($changes !== []) {
         $entityManager->saveEntity($user);
         $aclCacheClearer->clearForUser($user);
-        $changed = true;
+        $lines[] = "CHANGED {$user->getUserName()} " . implode(' ', $changes);
     }
 }
 
-echo $changed ? "[CHANGED] RBAC roles, teams and users reconciled\n" : "[UNCHANGED] RBAC roles, teams and users already match\n";
+echo ($lines === [] ? 'UNCHANGED' : implode("\n", $lines)) . "\n";

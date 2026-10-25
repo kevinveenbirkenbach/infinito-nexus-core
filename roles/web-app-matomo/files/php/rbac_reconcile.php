@@ -1,19 +1,20 @@
 <?php
 
 /**
- * Converge the Matomo accounts on the RBAC role members the deployment resolved. Runs inside
- * the matomo container via stdin as the web user.
+ * Converge the Matomo accounts on the RBAC role members.
  *
  * Env:
- *   MATOMO_RBAC_PLAN  JSON object with the keys
- *                       protected      logins this run never touches
- *                       administrator  [{username, email}] that get an account and superuser access
- *                       admin, write, view
- *                                      [{username, email}] that get an account and that access on
- *                                      every site; every other account ends with no access
+ *   MATOMO_RBAC_PROTECTED  JSON list of logins this run never touches
+ *   RBAC_MEMBERS           JSON object with the keys
+ *                            administrator  [{username, email, name}] that get an account and
+ *                                           superuser access
+ *                            admin, write, view
+ *                                           [{username, email, name}] that get an account and that
+ *                                           access on every site; every other account ends with
+ *                                           no access
  *
- * Output: one "CHANGED <what> <login>" line per move. Exit 1 with [FAIL] lines on stderr when
- * an account could not be converged.
+ * Output: one "CHANGED <what> <login>" line per move, UNCHANGED when a clean run moved nothing.
+ * Exit 1 with [FAIL] lines on stderr when an input is missing or an account could not be converged.
  */
 
 use Piwik\Access;
@@ -34,22 +35,39 @@ const SITE_ROLES = ['view', 'write', 'admin'];
 const SUPERUSER_ROLE = 'administrator';
 const NO_ACCESS = 'noaccess';
 
-$raw = getenv('MATOMO_RBAC_PLAN');
-if ($raw === false || $raw === '') {
-    fwrite(STDERR, "[FAIL] MATOMO_RBAC_PLAN is empty\n");
-    exit(1);
+/**
+ * Decode a JSON environment variable or stop the run.
+ *
+ * @param string $name the variable
+ * @return array the decoded list or object
+ */
+function json_env(string $name): array
+{
+    $raw = getenv($name);
+    if ($raw === false || $raw === '') {
+        fwrite(STDERR, "[FAIL] $name is empty\n");
+        exit(1);
+    }
+    $value = json_decode($raw, true, 16, JSON_THROW_ON_ERROR);
+    if (!is_array($value)) {
+        fwrite(STDERR, "[FAIL] $name is not a JSON list or object\n");
+        exit(1);
+    }
+    return $value;
 }
-$plan = json_decode($raw, true, 16, JSON_THROW_ON_ERROR);
-foreach (['protected', SUPERUSER_ROLE, ...SITE_ROLES] as $key) {
-    if (!isset($plan[$key]) || !is_array($plan[$key])) {
-        fwrite(STDERR, "[FAIL] MATOMO_RBAC_PLAN carries no list '$key'\n");
+
+$protected = array_flip(json_env('MATOMO_RBAC_PROTECTED'));
+$members = json_env('RBAC_MEMBERS');
+foreach ([SUPERUSER_ROLE, ...SITE_ROLES] as $role) {
+    if (!isset($members[$role]) || !is_array($members[$role])) {
+        fwrite(STDERR, "[FAIL] RBAC_MEMBERS carries no list '$role'\n");
         exit(1);
     }
 }
 
 $desired = [];
 foreach (SITE_ROLES as $role) {
-    foreach ($plan[$role] as $member) {
+    foreach ($members[$role] as $member) {
         $desired[$member['username']] = [
             'email' => $member['email'],
             'superuser' => false,
@@ -57,14 +75,13 @@ foreach (SITE_ROLES as $role) {
         ];
     }
 }
-foreach ($plan[SUPERUSER_ROLE] as $member) {
+foreach ($members[SUPERUSER_ROLE] as $member) {
     $desired[$member['username']] = [
         'email' => $member['email'],
         'superuser' => true,
         'access' => NO_ACCESS,
     ];
 }
-$protected = array_flip($plan['protected']);
 
 $environment = new Environment(null);
 $environment->init();
@@ -146,6 +163,9 @@ FrontController::getInstance()->init();
 
 foreach ($changes as $change) {
     echo "CHANGED $change\n";
+}
+if ($changes === [] && $failures === []) {
+    echo "UNCHANGED\n";
 }
 foreach ($failures as $failure) {
     fwrite(STDERR, "[FAIL] $failure\n");

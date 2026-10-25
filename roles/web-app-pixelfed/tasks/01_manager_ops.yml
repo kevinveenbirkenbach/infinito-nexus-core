@@ -28,6 +28,3 @@
 
 - name: "🎨 Converge the Pixelfed design carriers"
   ansible.builtin.import_tasks: 05_design.yml
-
-- name: "🛂 Reconcile the Pixelfed admin flag with the RBAC role group"
-  ansible.builtin.import_tasks: 06_rbac.yml

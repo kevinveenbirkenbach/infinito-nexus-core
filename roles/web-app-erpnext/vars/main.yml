@@ -2,6 +2,9 @@
 application_id: "web-app-erpnext"
 entity_name: "{{ application_id | entity_name }}"
 
+ERPNEXT_IMAGE: "{{ lookup('config', application_id, 'services.erpnext.image') }}"
+ERPNEXT_VERSION: "{{ lookup('config', application_id, 'services.erpnext.version') }}"
+
 ERPNEXT_BACKEND_CONTAINER: "{{ lookup('config', application_id, 'services.backend.name') }}"
 ERPNEXT_FRONTEND_CONTAINER: "{{ lookup('config', application_id, 'services.frontend.name') }}"
 ERPNEXT_WEBSOCKET_CONTAINER: "{{ lookup('config', application_id, 'services.websocket.name') }}"
@@ -17,7 +20,11 @@ ERPNEXT_HOSTNAME: "{{ lookup('domain', application_id) }}"
 ERPNEXT_SITE_NAME: "{{ ERPNEXT_HOSTNAME }}"
 
 ERPNEXT_SITES_DIR: "{{ lookup('volume', application_id, 'sites').target }}"
-ERPNEXT_BENCH_PYTHON: "bash -c 'cd {{ ERPNEXT_SITES_DIR }} && {{ ERPNEXT_SITES_DIR | dirname }}/env/bin/python -'"
+ERPNEXT_BENCH_PYTHON_ARGV:
+  - bash
+  - -c
+  - "cd {{ ERPNEXT_SITES_DIR }} && {{ ERPNEXT_SITES_DIR | dirname }}/env/bin/python -"
+ERPNEXT_BENCH_PYTHON: "{{ ERPNEXT_BENCH_PYTHON_ARGV | map('quote') | join(' ') }}"
 
 ERPNEXT_INITIAL_ADMIN_PASSWORD: "{{ lookup('config', application_id, 'secrets.credentials.initial_admin_password') }}"
 ERPNEXT_API_BOT_PASSWORD: "{{ ERPNEXT_API_BOT_USER.password }}"
@@ -68,6 +75,21 @@ ERPNEXT_RBAC_PROTECTED_USERS:
   - "{{ ERPNEXT_API_BOT_USER.email }}"
   - "{{ lookup('users', 'platform_administrator').email }}"
 ERPNEXT_SSO_PROVIDER_NAME: "keycloak"
+
+ERPNEXT_LOGIN_RBAC_APP: "infinito_rbac"
+ERPNEXT_LOGIN_RBAC_BUILD_DIR: "{{ [lookup('container', application_id, 'directories.instance'), ERPNEXT_LOGIN_RBAC_APP] | path_join }}"
+ERPNEXT_LOGIN_RBAC_SETTINGS:
+  groups_claim: "{{ RBAC.GROUP.CLAIM }}"
+  username_claim: "{{ OIDC.ATTRIBUTES.USERNAME }}"
+  given_name_claim: "{{ OIDC.ATTRIBUTES.GIVEN_NAME }}"
+  family_name_claim: "{{ OIDC.ATTRIBUTES.FAMILY_NAME }}"
+  role_grants: >-
+    {{ {
+         '/' ~ lookup('rbac_group_path', application_id=application_id, role='administrator'): ERPNEXT_RBAC_ROLE_GRANTS.administrator,
+         '/' ~ lookup('rbac_group_path', application_id=application_id, role='manager'): ERPNEXT_RBAC_ROLE_GRANTS.manager,
+         '/' ~ lookup('rbac_group_path', application_id=application_id, role='customer'): ERPNEXT_RBAC_ROLE_GRANTS.customer,
+       } }}
+  protected_users: "{{ ERPNEXT_RBAC_PROTECTED_USERS }}"
 
 ERPNEXT_LDAP_MEMBER_OF_ATTRIBUTE: "{{ LDAP.USER.ATTRIBUTES.MEMBER_OF }}"
 ERPNEXT_LDAP_GROUP_MEMBER_ATTRIBUTE: "{{ LDAP.RBAC.MEMBER_ATTRIBUTE }}"

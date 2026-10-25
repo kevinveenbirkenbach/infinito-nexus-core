@@ -33,6 +33,7 @@ DISCOURSE_BOOTSTRAP_DIGEST_DEST: "{{ [ DISCOURSE_CONTAINERS_DIR, DISCOURSE_CONTA
 
 DISCOURSE_NETWORK_PLUGIN_HOST_DIR: "{{ [ lookup('container', application_id, 'directories.volumes'), 'plugins', 'infinito-network-origins' ] | path_join }}"
 DISCOURSE_NETWORK_BASE_URLS: "{{ lookup('network_urls', lookup('tls', application_id, 'url.base')) }}"
+DISCOURSE_RBAC_PLUGIN_HOST_DIR: "{{ [ lookup('container', application_id, 'directories.volumes'), 'plugins', 'infinito-rbac-login' ] | path_join }}"
 
 DISCOURSE_LDAP_ENABLED: "{{ lookup('config', application_id, 'services.ldap.enabled') }}"
 

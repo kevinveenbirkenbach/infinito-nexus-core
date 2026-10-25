@@ -66,5 +66,13 @@ MATOMO_OIDC_GENERAL:
 
 MATOMO_RBAC_ROLES: ["view", "write", "admin", "administrator"]
 MATOMO_RBAC_PROTECTED_LOGINS: ["{{ MATOMO_ADMIN_USER_NAME }}", "anonymous"]
+MATOMO_RBAC_LOGIN_PLUGIN: "InfinitoRbacLogin"
+MATOMO_RBAC_LOGIN_SETTINGS:
+  groups_claim: "{{ RBAC.GROUP.CLAIM }}"
+  superuser_group: "{{ '/' ~ lookup('rbac_group_path', application_id=application_id, role='administrator') }}"
+  admin_group: "{{ '/' ~ lookup('rbac_group_path', application_id=application_id, role='admin') }}"
+  write_group: "{{ '/' ~ lookup('rbac_group_path', application_id=application_id, role='write') }}"
+  view_group: "{{ '/' ~ lookup('rbac_group_path', application_id=application_id, role='view') }}"
+  protected_logins: "{{ MATOMO_RBAC_PROTECTED_LOGINS }}"
 
 matomo_index_php_url: "http://{{ DOCKER_REACH_HOST }}:{{ http_port }}/index.php"

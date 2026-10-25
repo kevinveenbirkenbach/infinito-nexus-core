@@ -17,7 +17,8 @@ This role deploys Discourse using Docker, automating tasks such as container orc
 - **Extensive Plugin Support:** Enhance your forum with a wide range of plugins and integrations for additional functionality.
 - **IdP-Managed Profile:** Every OIDC login overwrites the Discourse name and email with the Keycloak values, and both fields are read-only in Discourse. The username is not overwritten.
 - **Associated Groups:** The OIDC `groups` claim becomes the user's associated groups, so a Discourse group can add the members of a Keycloak role group automatically.
-- **Staff Flags From RBAC:** Every deploy grants the admin flag to the members of the `administrator` role group and the moderator flag to the members of the `moderator` role group, and revokes both from every other account. The platform administrator keeps the admin flag. A member who has never signed in gets the flag on the first deploy after the first login.
+- **Staff Flags From RBAC:** [files/ruby/reconcile_staff.rb](./files/ruby/reconcile_staff.rb) grants the admin flag to the members of the `administrator` role group and the moderator flag to the members of the `moderator` role group, and revokes both from every other account, as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer. The platform administrator keeps the admin flag.
+- **Staff Flags At Sign-In:** The role-local plugin [files/ruby/plugins/infinito-rbac-login/plugin.rb](./files/ruby/plugins/infinito-rbac-login/plugin.rb) applies the same rules to the account that signs in through OIDC, read from the `groups` claim of that sign-in, so a role-group change reaches the account at its next sign-in instead of the next timer run, and a first sign-in creates the account with its flags. A sign-in without a `groups` claim changes nothing, and the platform administrator is never touched.
 
 ## Addons
 

@@ -15,6 +15,3 @@
 
 - name: "🎨 Apply the corporate design"
   include_tasks: ../05_design.yml
-
-- name: "🛂 Converge the Snipe-IT accounts to the RBAC role groups"
-  include_tasks: ../06_rbac.yml

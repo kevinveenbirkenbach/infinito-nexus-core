@@ -26,6 +26,9 @@ PIXELFED_ADMIN_EMAIL: "{{ lookup('users', IAM_PLATFORM_ADMIN_USER_KEY).email }}"
 PIXELFED_ADMIN_PASSWORD: "{{ lookup('users', IAM_PLATFORM_ADMIN_USER_KEY).password }}"
 PIXELFED_ADMIN_NAME: "{{ (lookup('users', IAM_PLATFORM_ADMIN_USER_KEY).firstname ~ ' ' ~ lookup('users', IAM_PLATFORM_ADMIN_USER_KEY).lastname) | trim }}"
 PIXELFED_ADMIN_OIDC_ID: "{{ PIXELFED_ADMIN_USERNAME }}"
+PIXELFED_RBAC_ADMIN_GROUP: "/{{ lookup('rbac_group_path', application_id=application_id, role='administrator') }}"
+PIXELFED_RBAC_OIDC_LOGIN_HOST: "{{ [lookup('container', application_id, 'directories.config'), 'InfinitoRbacOidcLogin.php'] | path_join }}"
+PIXELFED_RBAC_USERINFO_CLIENT_HOST: "{{ [lookup('container', application_id, 'directories.config'), 'InfinitoRbacUserinfoClient.php'] | path_join }}"
 
 design_css_urls:
   landing-bg: "{{ PIXELFED_URL }}/_landing/bg.jpg"
