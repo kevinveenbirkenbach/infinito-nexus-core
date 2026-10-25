@@ -6,7 +6,7 @@
 
 ## Overview
 
-This role deploys ejabberd on Docker Compose with the project's standard role-meta wiring. It binds ejabberd's `auth_method` to `svc-db-openldap` so XMPP clients authenticate against the project's central LDAP. ejabberd has no OIDC client, so the `sso` service renders no configuration.
+This role deploys ejabberd on Docker Compose with the project's standard role-meta wiring. It binds ejabberd's `auth_method` to `svc-db-openldap` so XMPP clients authenticate against the project's central LDAP. ejabberd has no OIDC client, so the role declares no `sso` service and LDAP is its only sign-in path.
 
 ## Features
 
@@ -18,7 +18,6 @@ This role deploys ejabberd on Docker Compose with the project's standard role-me
 
 ## Watch Points
 
-- Many XMPP clients do NOT support OAuth bearer-token authentication. LDAP plus SCRAM-SHA-256 is the interoperable default. If you advertise OIDC, document the small set of XMPP clients confirmed to work (Conversations, Movim, Dino) and keep LDAP plus SCRAM as the fallback path.
 - ejabberd's `mod_admin` HTTP UI is the only Playwright-testable surface; XMPP client login itself runs over 5222/5269 and MUST be exercised by an XMPP-aware client outside the Playwright test loop.
 
 ## Further Resources

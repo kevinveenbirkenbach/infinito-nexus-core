@@ -1,9 +1,4 @@
 ---
-sso:
-  bond: 1
-  enabled: "{{ 'web-app-keycloak' in group_names }}"
-  shared: "{{ 'web-app-keycloak' in group_names }}"
-  flavor: oidc
 # nocheck: dynamic-flag  the gateway holds no browser session, so no logout surface can exist in any round
 logout:
   enabled: false

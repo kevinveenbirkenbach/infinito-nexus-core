@@ -8,11 +8,6 @@ prometheus:
   enabled: "{{ 'web-app-prometheus' in group_names }}"
   shared: "{{ 'web-app-prometheus' in group_names }}"
   ready_path: admin/
-sso:
-  bond: 1
-  enabled: "{{ 'web-app-keycloak' in group_names }}"
-  shared: "{{ 'web-app-keycloak' in group_names }}"
-  flavor: oidc
 ldap:
   bond: 1
   enabled: "{{ 'svc-db-openldap' in group_names }}"
@@ -57,7 +52,6 @@ xmpp:
   proxy:
     service_key: ejabberd
   run_after:
-    - web-app-keycloak
     - svc-db-openldap
   lifecycle: beta
   min_storage: 241MB
