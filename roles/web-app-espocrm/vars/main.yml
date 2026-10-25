@@ -55,7 +55,7 @@ ESPOCRM_RBAC_TIERS:
 ESPOCRM_RBAC_ADMIN_GROUP: "/{{ lookup('rbac_group_path', application_id=application_id, role='administrator') }}"
 ESPOCRM_RBAC_ADMIN_DN: "cn={{ application_id }}-administrator,{{ LDAP.DN.OU.ROLES }}"
 ESPOCRM_RBAC_MODULE_PATH: "custom/Espo/Modules/InfinitoRbac"
-ESPOCRM_RBAC_LDAP_HOOK_CLASS: 'Espo\Modules\InfinitoRbac\Classes\Authentication\LdapRoleGroups'
+ESPOCRM_RBAC_LDAP_HOOK_CLASS: "Espo\\Modules\\InfinitoRbac\\Classes\\Authentication\\LdapRoleGroups"
 ESPOCRM_RBAC_MODULE_CONFIG_PARAMS:
   infinitoOidcAllowedGroups:
     level: system

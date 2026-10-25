@@ -9,8 +9,24 @@ from utils.cache.files import read_text
 
 from . import PROJECT_ROOT
 
-SCRIPT = PROJECT_ROOT / "roles" / "web-app-nextcloud" / "files" / "python" / "ldap_refresh.py"
-PREFIX = ["/usr/bin/container", "exec", "-i", "--user", "www-data", "c1", "php", "/var/www/html/occ"]
+SCRIPT = (
+    PROJECT_ROOT
+    / "roles"
+    / "web-app-nextcloud"
+    / "files"
+    / "python"
+    / "ldap_refresh.py"
+)
+PREFIX = [
+    "/usr/bin/container",
+    "exec",
+    "-i",
+    "--user",
+    "www-data",
+    "c1",
+    "php",
+    "/var/www/html/occ",
+]
 
 
 def load_module():
@@ -40,7 +56,9 @@ class NextcloudLdapRefreshTests(unittest.TestCase):
             "RBAC_SYNC_CID": "c1",
             "NEXTCLOUD_USER": "www-data",
             "NEXTCLOUD_OCC": "/var/www/html/occ",
-            "RBAC_USERS": json.dumps([{"username": name, "email": "", "name": ""} for name in directory]),
+            "RBAC_USERS": json.dumps(
+                [{"username": name, "email": "", "name": ""} for name in directory]
+            ),
         }
         fake = FakeOcc(known)
         stdout = io.StringIO()
@@ -50,7 +68,8 @@ class NextcloudLdapRefreshTests(unittest.TestCase):
 
     def test_only_accounts_nextcloud_knows_are_refreshed(self):
         calls, output = self.run_main(
-            {"alice": "Alice", "admin": "admin", "bob": "Bob"}, ["bob", "alice", "carol"]
+            {"alice": "Alice", "admin": "admin", "bob": "Bob"},
+            ["bob", "alice", "carol"],
         )
 
         self.assertEqual(
@@ -67,7 +86,9 @@ class NextcloudLdapRefreshTests(unittest.TestCase):
         def failing(argv, **kwargs):
             if "ldap:check-user" in argv:
                 raise subprocess.CalledProcessError(1, argv)
-            return subprocess.CompletedProcess(argv, 0, stdout=json.dumps({"alice": "A"}), stderr="")
+            return subprocess.CompletedProcess(
+                argv, 0, stdout=json.dumps({"alice": "A"}), stderr=""
+            )
 
         environ = {
             "RBAC_SYNC_CONTAINER_BIN": "/c",

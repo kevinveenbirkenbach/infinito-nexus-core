@@ -28,8 +28,12 @@ def payload(environ):
         environ: the process environment.
     """
     return {
-        "administrators": [email for email in json.loads(environ["RBAC_ADMINISTRATORS"]) if email],
-        "moderators": [email for email in json.loads(environ["RBAC_MODERATORS"]) if email],
+        "administrators": [
+            email for email in json.loads(environ["RBAC_ADMINISTRATORS"]) if email
+        ],
+        "moderators": [
+            email for email in json.loads(environ["RBAC_MODERATORS"]) if email
+        ],
         "bootstrap": environ["MOBILIZON_RBAC_BOOTSTRAP"],
         "provider": environ["MOBILIZON_RBAC_PROVIDER"],
     }

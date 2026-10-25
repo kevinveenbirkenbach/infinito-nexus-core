@@ -73,7 +73,9 @@ def login(environ, opener, sleep):
     }
     for attempt in range(LOGIN_ATTEMPTS):
         try:
-            return call(environ, opener, "/_matrix/client/v3/login", "POST", body, "")["access_token"]
+            return call(environ, opener, "/_matrix/client/v3/login", "POST", body, "")[
+                "access_token"
+            ]
         except urllib.error.URLError:
             if attempt == LOGIN_ATTEMPTS - 1:
                 raise
@@ -108,8 +110,12 @@ def main(environ, opener=urllib.request.urlopen, sleep=time.sleep):
         sleep: ``time.sleep`` or a stand-in.
     """
     server = environ["MATRIX_SERVER_NAME"]
-    members = {mxid(name, server) for name in json.loads(environ["RBAC_ADMINISTRATORS"])}
-    protected = {name.lower() for name in json.loads(environ["MATRIX_RBAC_PROTECTED_MXIDS"])}
+    members = {
+        mxid(name, server) for name in json.loads(environ["RBAC_ADMINISTRATORS"])
+    }
+    protected = {
+        name.lower() for name in json.loads(environ["MATRIX_RBAC_PROTECTED_MXIDS"])
+    }
     token = login(environ, opener, sleep)
     try:
         listing = call(
@@ -136,7 +142,12 @@ def main(environ, opener=urllib.request.urlopen, sleep=time.sleep):
             )
     finally:
         call(environ, opener, "/_matrix/client/v3/logout", "POST", {}, token)
-    print("\n".join(f"CHANGED {name} admin={str(admin).lower()}" for name, admin in changes) or "UNCHANGED")
+    print(
+        "\n".join(
+            f"CHANGED {name} admin={str(admin).lower()}" for name, admin in changes
+        )
+        or "UNCHANGED"
+    )
 
 
 if __name__ == "__main__":

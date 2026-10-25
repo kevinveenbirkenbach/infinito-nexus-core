@@ -12,7 +12,9 @@ from utils.cache.files import read_text
 
 from . import PROJECT_ROOT
 
-SCRIPT = PROJECT_ROOT / "roles" / "web-app-jellyfin" / "files" / "python" / "photo_sync.py"
+SCRIPT = (
+    PROJECT_ROOT / "roles" / "web-app-jellyfin" / "files" / "python" / "photo_sync.py"
+)
 LDAP_CLIENT_DIR = PROJECT_ROOT / "roles" / "svc-db-openldap" / "files" / "python"
 PHOTO = bytes([0xFF, 0xD8, 0xFF, 0xE0, 0x80, 0x00])
 LDAP = {
@@ -69,7 +71,9 @@ class FakeJellyfin:
             return FakeResponse(json.dumps({"AccessToken": "tok"}).encode())
         if request.full_url.endswith("/Users"):
             return FakeResponse(json.dumps(self.users).encode())
-        self.uploads.append((request.full_url, request.get_header("Content-type"), request.data))
+        self.uploads.append(
+            (request.full_url, request.get_header("Content-type"), request.data)
+        )
         return FakeResponse(b"")
 
 
@@ -94,11 +98,22 @@ class JellyfinPhotoSyncTests(unittest.TestCase):
         directory = FakeDirectory(entries)
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
-            self.mod.main(self.environ, opener=jellyfin, connect=lambda uri: directory, state_file=self.state)
+            self.mod.main(
+                self.environ,
+                opener=jellyfin,
+                connect=lambda uri: directory,
+                state_file=self.state,
+            )
         return stdout.getvalue().splitlines(), directory
 
     def entry(self, username, photo):
-        return (f"uid={username}", {"uid": [username], "jpegphoto": [photo.decode("utf-8", "surrogateescape")]})
+        return (
+            f"uid={username}",
+            {
+                "uid": [username],
+                "jpegphoto": [photo.decode("utf-8", "surrogateescape")],
+            },
+        )
 
     def test_a_directory_photo_is_pushed_base64_once(self):
         jellyfin = FakeJellyfin([{"Name": "biber", "Id": "u-1"}])
@@ -110,7 +125,13 @@ class JellyfinPhotoSyncTests(unittest.TestCase):
         self.assertEqual(second, ["UNCHANGED"])
         self.assertEqual(
             jellyfin.uploads,
-            [("http://127.0.0.1:8096/UserImage?userId=u-1", "image/jpeg", base64.b64encode(PHOTO))],
+            [
+                (
+                    "http://127.0.0.1:8096/UserImage?userId=u-1",
+                    "image/jpeg",
+                    base64.b64encode(PHOTO),
+                )
+            ],
         )
         self.assertTrue(directory.closed)
 
@@ -136,7 +157,9 @@ class JellyfinPhotoSyncTests(unittest.TestCase):
         self.run_main(jellyfin, [self.entry("biber", PHOTO)])
 
         for request in jellyfin.requests[1:]:
-            self.assertEqual(request.get_header("Authorization"), 'MediaBrowser Token="tok"')
+            self.assertEqual(
+                request.get_header("Authorization"), 'MediaBrowser Token="tok"'
+            )
 
 
 if __name__ == "__main__":

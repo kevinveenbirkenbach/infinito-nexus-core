@@ -141,7 +141,9 @@ class DirectoryMembersTests(unittest.TestCase):
             }
         )
 
-        members = self.mod.directory_members(directory, LDAP, "web-app-weblate", "reviewer")
+        members = self.mod.directory_members(
+            directory, LDAP, "web-app-weblate", "reviewer"
+        )
 
         self.assertEqual(
             members,
@@ -159,7 +161,9 @@ class DirectoryMembersTests(unittest.TestCase):
                 captured.append(search_filter)
                 return [("uid=carol", {"uid": ["carol"]})]
 
-        members = mod.directory_members(Directory(), LDAP, "web-app-nextcloud", "@users")
+        members = mod.directory_members(
+            Directory(), LDAP, "web-app-nextcloud", "@users"
+        )
 
         self.assertEqual(members, [{"username": "carol", "email": "", "name": ""}])
         self.assertEqual(captured, [mod.present("uid")])
@@ -194,7 +198,18 @@ class ExecTests(unittest.TestCase):
         )
         self.assertEqual(
             argv,
-            [CONTAINER_BIN, "exec", "-i", "--user", "weblate", "-e", "SECRET", "abc", "weblate", "shell"],
+            [
+                CONTAINER_BIN,
+                "exec",
+                "-i",
+                "--user",
+                "weblate",
+                "-e",
+                "SECRET",
+                "abc",
+                "weblate",
+                "shell",
+            ],
         )
         self.assertNotIn("s3cr3t", " ".join(argv))
 
@@ -209,7 +224,10 @@ class ExecTests(unittest.TestCase):
         self.assertEqual(self.mod.local_container("/c", hook(), run, False), "c1")
         self.assertEqual(self.mod.local_container("/c", swarm, run, False), "c2")
         self.assertEqual(
-            self.mod.local_container("/c", hook(container={"name": "absent"}), run, False), ""
+            self.mod.local_container(
+                "/c", hook(container={"name": "absent"}), run, False
+            ),
+            "",
         )
 
     def test_the_timer_only_runs_on_the_node_of_task_slot_one(self):
@@ -316,7 +334,13 @@ class MainTests(unittest.TestCase):
         self.assertTrue(directory.closed)
 
     def test_a_host_hook_runs_its_script_beside_its_modules_with_the_container_id(self):
-        host_hook = hook(application_id="web-app-mattermost", kind="host", argv=[], script="main.py", container={"name": "mattermost"})
+        host_hook = hook(
+            application_id="web-app-mattermost",
+            kind="host",
+            argv=[],
+            script="main.py",
+            container={"name": "mattermost"},
+        )
         workspace = Workspace([host_hook], LDAP)
         run = FakeRun({"name=^/mattermost$": "c9"})
         try:
@@ -393,7 +417,9 @@ class MainTests(unittest.TestCase):
         workspace = Workspace([hook()], None)
         run = FakeRun({"name=^/weblate$": "c1"})
         try:
-            code, stdout, _ = self.run_main(["--directory", str(workspace.path)], run, None)
+            code, stdout, _ = self.run_main(
+                ["--directory", str(workspace.path)], run, None
+            )
         finally:
             workspace.close()
 

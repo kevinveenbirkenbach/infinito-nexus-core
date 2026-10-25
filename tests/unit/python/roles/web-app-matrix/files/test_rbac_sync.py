@@ -55,7 +55,11 @@ class FakeSynapse:
         return FakeResponse({})
 
     def puts(self):
-        return [(url, json.loads(data)) for method, url, data in self.requests if method == "PUT"]
+        return [
+            (url, json.loads(data))
+            for method, url, data in self.requests
+            if method == "PUT"
+        ]
 
     def logged_out(self):
         return any(url.endswith("/logout") for _, url, _ in self.requests)
@@ -67,7 +71,9 @@ def environ(members):
         "MATRIX_SERVER_NAME": SERVER,
         "MATRIX_ADMIN_USERNAME": "platformadmin",
         "MATRIX_ADMIN_PASSWORD": "secret",
-        "MATRIX_RBAC_PROTECTED_MXIDS": json.dumps([f"@platformadmin:{SERVER}", f"@chatgptbot:{SERVER}"]),
+        "MATRIX_RBAC_PROTECTED_MXIDS": json.dumps(
+            [f"@platformadmin:{SERVER}", f"@chatgptbot:{SERVER}"]
+        ),
         "MATRIX_RBAC_PAGE_SIZE": "100000",
         "RBAC_ADMINISTRATORS": json.dumps(members),
     }
@@ -102,11 +108,23 @@ class MatrixRbacSyncTests(unittest.TestCase):
         self.assertEqual(
             synapse.puts(),
             [
-                (f"http://127.0.0.1:8008/_synapse/admin/v2/users/%40alice%3A{SERVER}", {"admin": True}),
-                (f"http://127.0.0.1:8008/_synapse/admin/v2/users/%40mallory%3A{SERVER}", {"admin": False}),
+                (
+                    f"http://127.0.0.1:8008/_synapse/admin/v2/users/%40alice%3A{SERVER}",
+                    {"admin": True},
+                ),
+                (
+                    f"http://127.0.0.1:8008/_synapse/admin/v2/users/%40mallory%3A{SERVER}",
+                    {"admin": False},
+                ),
             ],
         )
-        self.assertEqual(output, [f"CHANGED @alice:{SERVER} admin=true", f"CHANGED @mallory:{SERVER} admin=false"])
+        self.assertEqual(
+            output,
+            [
+                f"CHANGED @alice:{SERVER} admin=true",
+                f"CHANGED @mallory:{SERVER} admin=false",
+            ],
+        )
         self.assertTrue(synapse.logged_out())
 
     def test_a_converged_server_reports_unchanged(self):
@@ -126,7 +144,9 @@ class MatrixRbacSyncTests(unittest.TestCase):
     def test_the_login_is_retried_while_synapse_starts(self):
         synapse = FakeSynapse([user("alice", False)], refuse_logins=2)
 
-        self.assertEqual(self.run_main(synapse, ["alice"]), [f"CHANGED @alice:{SERVER} admin=true"])
+        self.assertEqual(
+            self.run_main(synapse, ["alice"]), [f"CHANGED @alice:{SERVER} admin=true"]
+        )
 
 
 if __name__ == "__main__":

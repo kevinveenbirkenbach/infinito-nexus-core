@@ -9,7 +9,14 @@ from utils.cache.files import read_text
 
 from . import PROJECT_ROOT
 
-SCRIPT = PROJECT_ROOT / "roles" / "web-app-litellm" / "files" / "python" / "rbac_reconcile.py"
+SCRIPT = (
+    PROJECT_ROOT
+    / "roles"
+    / "web-app-litellm"
+    / "files"
+    / "python"
+    / "rbac_reconcile.py"
+)
 
 
 def load_module():
@@ -46,7 +53,10 @@ class FakeGateway:
             start = (page - 1) * self.page_size
             total_pages = max(1, -(-len(self.users) // self.page_size))
             return FakeResponse(
-                {"users": self.users[start : start + self.page_size], "total_pages": total_pages}
+                {
+                    "users": self.users[start : start + self.page_size],
+                    "total_pages": total_pages,
+                }
             )
         return FakeResponse({"ok": True})
 
@@ -87,7 +97,9 @@ class LitellmRbacReconcileTests(unittest.TestCase):
             ]
         )
 
-        output = self.run_main(gateway, [member("alice"), member("robert", "bob@example.org")])
+        output = self.run_main(
+            gateway, [member("alice"), member("robert", "bob@example.org")]
+        )
 
         self.assertEqual(
             gateway.updates(),
@@ -99,7 +111,11 @@ class LitellmRbacReconcileTests(unittest.TestCase):
         )
         self.assertEqual(
             output,
-            ["CHANGED alice proxy_admin", "CHANGED mallory internal_user", "CHANGED bob proxy_admin"],
+            [
+                "CHANGED alice proxy_admin",
+                "CHANGED mallory internal_user",
+                "CHANGED bob proxy_admin",
+            ],
         )
 
     def test_kept_users_and_non_admin_outsiders_are_untouched(self):

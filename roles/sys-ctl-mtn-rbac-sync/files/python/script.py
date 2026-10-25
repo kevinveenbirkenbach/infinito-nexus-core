@@ -196,7 +196,9 @@ def unchanged_since(hook_dir, hook, members, now, refresh_seconds):
     if not hook["skip_unchanged"] or not state.exists():
         return False
     last = json.loads(state.read_text(encoding="utf-8"))
-    return last["digest"] == digest(hook, members) and now - last["at"] < refresh_seconds
+    return (
+        last["digest"] == digest(hook, members) and now - last["at"] < refresh_seconds
+    )
 
 
 def run_hook(config, hook_dir, hook, members, required, run, now):
@@ -215,7 +217,9 @@ def run_hook(config, hook_dir, hook, members, required, run, now):
     cid = local_container(config["container_bin"], hook, run, required)
     if not cid:
         if required:
-            print(f"[{application_id}] no running container on this node", file=sys.stderr)
+            print(
+                f"[{application_id}] no running container on this node", file=sys.stderr
+            )
             return "failed"
         print(f"[{application_id}] SKIPPED no running container on this node")
         return "skipped"
@@ -235,7 +239,9 @@ def run_hook(config, hook_dir, hook, members, required, run, now):
     if result.returncode != 0:
         for line in result.stderr.decode("utf-8", "replace").splitlines():
             print(f"[{application_id}] {line}", file=sys.stderr)
-        print(f"[{application_id}] FAILED exit code {result.returncode}", file=sys.stderr)
+        print(
+            f"[{application_id}] FAILED exit code {result.returncode}", file=sys.stderr
+        )
         return "failed"
     (hook_dir / LAST_RUN_FILE).write_text(
         json.dumps({"digest": digest(hook, members), "at": now}), encoding="utf-8"
@@ -254,7 +260,11 @@ def load_hooks(hooks_dir, only):
         (path.parent, json.loads(path.read_text(encoding="utf-8")))
         for path in sorted(hooks_dir.glob(f"*/{HOOK_FILE}"))
     ]
-    return [(path, hook) for path, hook in hooks if not only or hook["application_id"] == only]
+    return [
+        (path, hook)
+        for path, hook in hooks
+        if not only or hook["application_id"] == only
+    ]
 
 
 def main(argv, run=subprocess.run, connect=Connection, clock=time.time):
@@ -284,7 +294,11 @@ def main(argv, run=subprocess.run, connect=Connection, clock=time.time):
     if options.members_file:
         given = json.loads(Path(options.members_file).read_text(encoding="utf-8"))
         hook_dir, hook = hooks[0]
-        return 1 if run_hook(config, hook_dir, hook, given, True, run, clock()) == "failed" else 0
+        return (
+            1
+            if run_hook(config, hook_dir, hook, given, True, run, clock()) == "failed"
+            else 0
+        )
 
     ldap = config["ldap"]
     if not ldap:
@@ -300,12 +314,17 @@ def main(argv, run=subprocess.run, connect=Connection, clock=time.time):
             }
             now = clock()
             if unchanged_since(hook_dir, hook, members, now, config["refresh_seconds"]):
-                print(f"[{hook['application_id']}] SKIPPED inputs unchanged since the last run")
+                print(
+                    f"[{hook['application_id']}] SKIPPED inputs unchanged since the last run"
+                )
                 continue
             try:
                 outcome = run_hook(config, hook_dir, hook, members, False, run, now)
             except (subprocess.SubprocessError, OSError) as error:
-                print(f"[{hook['application_id']}] FAILED {type(error).__name__}: {error}", file=sys.stderr)
+                print(
+                    f"[{hook['application_id']}] FAILED {type(error).__name__}: {error}",
+                    file=sys.stderr,
+                )
                 outcome = "failed"
             if outcome == "failed":
                 failed.append(hook["application_id"])

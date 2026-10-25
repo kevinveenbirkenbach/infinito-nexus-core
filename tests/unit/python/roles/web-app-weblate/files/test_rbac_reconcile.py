@@ -9,7 +9,14 @@ from utils.cache.files import read_text
 
 from . import PROJECT_ROOT
 
-SCRIPT = PROJECT_ROOT / "roles" / "web-app-weblate" / "files" / "python" / "rbac_reconcile.py"
+SCRIPT = (
+    PROJECT_ROOT
+    / "roles"
+    / "web-app-weblate"
+    / "files"
+    / "python"
+    / "rbac_reconcile.py"
+)
 TEAMS = {"reviewer": "Reviewers", "manager": "Managers"}
 
 
@@ -81,7 +88,9 @@ class FakeWeblate:
 
         entries = {
             "django": {},
-            "django.conf": {"settings": types.SimpleNamespace(ANONYMOUS_USER_NAME="anonymous")},
+            "django.conf": {
+                "settings": types.SimpleNamespace(ANONYMOUS_USER_NAME="anonymous")
+            },
             "weblate": {},
             "weblate.auth": {},
             "weblate.auth.models": {
@@ -117,7 +126,10 @@ def run(backend, members, protected=("platformadmin",)):
         patch.dict("os.environ", env, clear=True),
         contextlib.redirect_stdout(stdout),
     ):
-        exec(compile(read_text(str(SCRIPT)), str(SCRIPT), "exec"), {"__name__": "weblate_shell"})
+        exec(
+            compile(read_text(str(SCRIPT)), str(SCRIPT), "exec"),
+            {"__name__": "weblate_shell"},
+        )
     return stdout.getvalue().splitlines()
 
 
@@ -140,14 +152,14 @@ class WeblateRbacReconcileTests(unittest.TestCase):
     def test_team_members_join_and_outsiders_leave_the_site_teams(self):
         backend = FakeWeblate([])
         bob = FakeUser("bob")
-        carol = FakeUser("carol", teams=[backend.teams["Managers"], backend.teams["Users"]])
+        carol = FakeUser(
+            "carol", teams=[backend.teams["Managers"], backend.teams["Users"]]
+        )
         backend.users.extend([bob, carol])
 
         output = run(backend, {"reviewer": [member("bob")]})
 
-        self.assertEqual(
-            output, ["CHANGED bob +Reviewers", "CHANGED carol -Managers"]
-        )
+        self.assertEqual(output, ["CHANGED bob +Reviewers", "CHANGED carol -Managers"])
         self.assertEqual([team.name for team in bob.groups.teams], ["Reviewers"])
         self.assertEqual([team.name for team in carol.groups.teams], ["Users"])
 
@@ -156,7 +168,8 @@ class WeblateRbacReconcileTests(unittest.TestCase):
         run(backend, {})
 
         self.assertEqual(
-            sorted(lookup["name"] for lookup in backend.team_lookups), ["Managers", "Reviewers"]
+            sorted(lookup["name"] for lookup in backend.team_lookups),
+            ["Managers", "Reviewers"],
         )
         for lookup in backend.team_lookups:
             self.assertTrue(lookup["internal"])
@@ -167,7 +180,9 @@ class WeblateRbacReconcileTests(unittest.TestCase):
         admin = FakeUser("platformadmin", is_superuser=True)
         bot = FakeUser("bot-translate", is_superuser=True, is_bot=True)
         anonymous = FakeUser("anonymous")
-        output = run(FakeWeblate([admin, bot, anonymous]), {"reviewer": [member("anonymous")]})
+        output = run(
+            FakeWeblate([admin, bot, anonymous]), {"reviewer": [member("anonymous")]}
+        )
 
         self.assertEqual(output, ["UNCHANGED"])
         self.assertTrue(admin.is_superuser)

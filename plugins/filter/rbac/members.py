@@ -1,8 +1,8 @@
 """Filters that resolve who holds one RBAC role on one application.
 
-    {{ lookup('users') | rbac_members('web-app-gitlab', 'administrator') }}
-    {{ ldap_search_result.results | rbac_ldap_members('uid', 'mail', 'cn') }}
-    -> [{"username": "alice", "email": "alice@example.org", "name": "Alice Liddell"}]
+{{ lookup('users') | rbac_members('web-app-gitlab', 'administrator') }}
+{{ ldap_search_result.results | rbac_ldap_members('uid', 'mail', 'cn') }}
+-> [{"username": "alice", "email": "alice@example.org", "name": "Alice Liddell"}]
 """
 
 from __future__ import annotations

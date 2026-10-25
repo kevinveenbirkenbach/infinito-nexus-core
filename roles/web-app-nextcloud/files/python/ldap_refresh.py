@@ -44,7 +44,9 @@ def main(environ, run=subprocess.run):
         environ: the process environment.
         run: ``subprocess.run`` or a stand-in.
     """
-    known = set(json.loads(occ(environ, run, "user:list", "--output=json", "--limit=0")))
+    known = set(
+        json.loads(occ(environ, run, "user:list", "--output=json", "--limit=0"))
+    )
     usernames = sorted(
         {account["username"] for account in json.loads(environ["RBAC_USERS"])} & known
     )

@@ -29,7 +29,9 @@ def site_team(group_model, name):
     )
 
 
-def converge(user_model, group_model, anonymous, members, superuser_role, teams, protected):
+def converge(
+    user_model, group_model, anonymous, members, superuser_role, teams, protected
+):
     """Return one line per account whose flag or teams changed.
 
     Args:

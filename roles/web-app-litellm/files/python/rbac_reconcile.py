@@ -28,7 +28,7 @@ def call(environ, path, payload, opener):
         payload: JSON body of a POST, or None for a GET.
         opener: ``urllib.request.urlopen`` or a stand-in.
     """
-    request = urllib.request.Request(  # noqa: S310 - the gateway's own loopback address
+    request = urllib.request.Request(
         f"http://127.0.0.1:{environ['LITELLM_PORT']}{path}",
         data=None if payload is None else json.dumps(payload).encode(),
         headers={
@@ -51,7 +51,9 @@ def users(environ, opener):
     found = []
     page = 1
     while True:
-        answer = call(environ, f"/user/list?page={page}&page_size={PAGE_SIZE}", None, opener)
+        answer = call(
+            environ, f"/user/list?page={page}&page_size={PAGE_SIZE}", None, opener
+        )
         found.extend(answer["users"])
         if page >= answer["total_pages"]:
             return found
@@ -96,7 +98,10 @@ def main(environ, opener=urllib.request.urlopen):
     )
     for user_id, role in changes:
         call(environ, "/user/update", {"user_id": user_id, "user_role": role}, opener)
-    print("\n".join(f"CHANGED {user_id} {role}" for user_id, role in changes) or "UNCHANGED")
+    print(
+        "\n".join(f"CHANGED {user_id} {role}" for user_id, role in changes)
+        or "UNCHANGED"
+    )
 
 
 if __name__ == "__main__":

@@ -158,7 +158,8 @@ class LdapClientTests(unittest.TestCase):
         mod = self.mod
         photo = bytes([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x80, 0xC3])
         attribute = mod.tlv(
-            mod.SEQUENCE, mod.text("jpegPhoto") + mod.tlv(0x31, mod.tlv(mod.OCTET_STRING, photo))
+            mod.SEQUENCE,
+            mod.text("jpegPhoto") + mod.tlv(0x31, mod.tlv(mod.OCTET_STRING, photo)),
         )
         entry = mod.text(BIBER_DN) + mod.tlv(mod.SEQUENCE, attribute)
 

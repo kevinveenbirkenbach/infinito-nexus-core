@@ -61,7 +61,14 @@ class MattermostRbacSyncTests(unittest.TestCase):
             [{"username": "alice", "email": "alice@example.org"}],
         )
 
-        prefix = ["/usr/bin/container", "exec", "-i", "c1", "/mattermost/bin/mmctl", "--local"]
+        prefix = [
+            "/usr/bin/container",
+            "exec",
+            "-i",
+            "c1",
+            "/mattermost/bin/mmctl",
+            "--local",
+        ]
         self.assertEqual(
             calls,
             [
@@ -70,7 +77,9 @@ class MattermostRbacSyncTests(unittest.TestCase):
                 [*prefix, "roles", "member", "mallory"],
             ],
         )
-        self.assertEqual(output, ["CHANGED alice system_admin", "CHANGED mallory member"])
+        self.assertEqual(
+            output, ["CHANGED alice system_admin", "CHANGED mallory member"]
+        )
 
     def test_the_kept_administrator_and_a_converged_team_change_nothing(self):
         calls, output = self.run_main(

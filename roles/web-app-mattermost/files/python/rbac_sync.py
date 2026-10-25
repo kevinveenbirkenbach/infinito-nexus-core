@@ -44,7 +44,9 @@ def main(environ, run=subprocess.run):
         environ: the process environment.
         run: ``subprocess.run`` or a stand-in.
     """
-    users = json.loads(mmctl(environ, run, "--json", "--suppress-warnings", "user", "list", "--all"))
+    users = json.loads(
+        mmctl(environ, run, "--json", "--suppress-warnings", "user", "list", "--all")
+    )
     plan = mattermost_rbac_plan(
         users,
         json.loads(environ["RBAC_ADMINISTRATORS"]),

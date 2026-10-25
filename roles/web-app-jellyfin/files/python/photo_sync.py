@@ -38,7 +38,9 @@ def directory_photos(environ, connect):
     photo = environ["LDAP_PHOTO_ATTRIBUTE"]
     connection = connect(ldap["uri"])
     try:
-        entries = connection.search(ldap["users_dn"], SCOPE_ONE_LEVEL, present(photo), [login, photo])
+        entries = connection.search(
+            ldap["users_dn"], SCOPE_ONE_LEVEL, present(photo), [login, photo]
+        )
     finally:
         connection.close()
     photos = {}
@@ -68,7 +70,9 @@ def api(environ, opener, path, method, body, headers):
         return response.read()
 
 
-def main(environ, opener=urllib.request.urlopen, connect=Connection, state_file=STATE_FILE):
+def main(
+    environ, opener=urllib.request.urlopen, connect=Connection, state_file=STATE_FILE
+):
     """Push every changed directory photo and print the result.
 
     Args:
@@ -78,8 +82,15 @@ def main(environ, opener=urllib.request.urlopen, connect=Connection, state_file=
         state_file: where the pushed digests are remembered.
     """
     photos = directory_photos(environ, connect)
-    pushed = json.loads(state_file.read_text(encoding="utf-8")) if state_file.exists() else {}
-    client = {"X-Emby-Authorization": environ["JELLYFIN_API_CLIENT"], "Content-Type": "application/json"}
+    pushed = (
+        json.loads(state_file.read_text(encoding="utf-8"))
+        if state_file.exists()
+        else {}
+    )
+    client = {
+        "X-Emby-Authorization": environ["JELLYFIN_API_CLIENT"],
+        "Content-Type": "application/json",
+    }
     session = json.loads(
         api(
             environ,
@@ -87,13 +98,21 @@ def main(environ, opener=urllib.request.urlopen, connect=Connection, state_file=
             "/Users/AuthenticateByName",
             "POST",
             json.dumps(
-                {"Username": environ["JELLYFIN_ADMIN_USERNAME"], "Pw": environ["JELLYFIN_ADMIN_PASSWORD"]}
+                {
+                    "Username": environ["JELLYFIN_ADMIN_USERNAME"],
+                    "Pw": environ["JELLYFIN_ADMIN_PASSWORD"],
+                }
             ).encode(),
             client,
         )
     )
     authorization = {"Authorization": f'MediaBrowser Token="{session["AccessToken"]}"'}
-    accounts = {user["Name"]: user["Id"] for user in json.loads(api(environ, opener, "/Users", "GET", None, authorization))}
+    accounts = {
+        user["Name"]: user["Id"]
+        for user in json.loads(
+            api(environ, opener, "/Users", "GET", None, authorization)
+        )
+    }
     lines = []
     for username, image in sorted(photos.items()):
         digest = hashlib.sha256(image).hexdigest()

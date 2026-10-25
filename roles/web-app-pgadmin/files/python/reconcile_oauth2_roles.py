@@ -79,7 +79,9 @@ def main() -> None:
     app = create_app(config.APP_NAME + "-cli")
     with app.test_request_context():
         changes = converge(json.loads(raw))
-    print("\n".join(f"CHANGED {change}" for change in changes) if changes else "UNCHANGED")
+    print(
+        "\n".join(f"CHANGED {change}" for change in changes) if changes else "UNCHANGED"
+    )
 
 
 if __name__ == "__main__":

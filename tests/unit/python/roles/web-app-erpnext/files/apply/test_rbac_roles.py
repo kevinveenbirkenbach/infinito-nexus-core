@@ -48,7 +48,9 @@ class TestRbacRoles(unittest.TestCase):
         )
 
     def _run(self, members=None):
-        printed = run_script(SCRIPT, self.frappe, _env({**NO_MEMBERS, **(members or {})}))
+        printed = run_script(
+            SCRIPT, self.frappe, _env({**NO_MEMBERS, **(members or {})})
+        )
         return printed.splitlines()
 
     def _user(self, name):
@@ -103,7 +105,9 @@ class TestRbacRoles(unittest.TestCase):
 
         output = self._run({"manager": [_member("alice", "alice@infinito.example")]})
 
-        self.assertEqual(output, ["CHANGED alice@infinito.example revoked System Manager"])
+        self.assertEqual(
+            output, ["CHANGED alice@infinito.example revoked System Manager"]
+        )
         self.assertEqual(
             self._role_names("alice@infinito.example"),
             ["Blogger", "Purchase User", "Sales User"],
@@ -192,7 +196,9 @@ class TestRbacRoles(unittest.TestCase):
         output = self._run({"customer": [_member("platformadmin", PLATFORM_ADMIN)]})
 
         self.assertEqual(output, [f"CHANGED {PLATFORM_ADMIN} granted Customer"])
-        self.assertEqual(self._role_names(PLATFORM_ADMIN), ["Customer", "System Manager"])
+        self.assertEqual(
+            self._role_names(PLATFORM_ADMIN), ["Customer", "System Manager"]
+        )
 
     def test_a_second_run_changes_nothing(self) -> None:
         self.frappe.seed(
@@ -210,7 +216,11 @@ class TestRbacRoles(unittest.TestCase):
         self.assertEqual(
             self.frappe.calls,
             [
-                ("init", "next.erp.infinito.example", "/home/frappe/frappe-bench/sites"),
+                (
+                    "init",
+                    "next.erp.infinito.example",
+                    "/home/frappe/frappe-bench/sites",
+                ),
                 ("connect",),
                 ("destroy",),
             ],

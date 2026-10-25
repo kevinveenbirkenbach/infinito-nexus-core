@@ -30,7 +30,9 @@ def wanted_roles(grants, members):
         for member in entries:
             email = member["email"].strip().lower()
             if email:
-                wanted.setdefault(email, {"username": member["username"], "roles": set()})
+                wanted.setdefault(
+                    email, {"username": member["username"], "roles": set()}
+                )
                 wanted[email]["roles"].update(grants[role])
     return wanted
 

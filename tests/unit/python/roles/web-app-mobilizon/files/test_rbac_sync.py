@@ -67,9 +67,7 @@ class MobilizonRbacSyncTests(unittest.TestCase):
             "CHANGED alice@example.org role=administrator\n"
             "MOBILIZON_RBAC=done\n"
         )
-        output = self.run_main(
-            fake, ["alice@example.org", ""], ["bob@example.org"]
-        )
+        output = self.run_main(fake, ["alice@example.org", ""], ["bob@example.org"])
 
         argv, kwargs = fake.calls[0]
         self.assertEqual(
@@ -95,7 +93,10 @@ class MobilizonRbacSyncTests(unittest.TestCase):
         )
         self.assertEqual(
             output,
-            ["CHANGED alice@example.org created", "CHANGED alice@example.org role=administrator"],
+            [
+                "CHANGED alice@example.org created",
+                "CHANGED alice@example.org role=administrator",
+            ],
         )
 
     def test_a_converged_instance_reports_unchanged(self):
@@ -105,7 +106,9 @@ class MobilizonRbacSyncTests(unittest.TestCase):
 
     def test_output_without_the_completion_marker_fails_the_hook(self):
         with self.assertRaises(SystemExit) as raised:
-            self.run_main(FakeRpc("CHANGED alice@example.org created\n"), ["alice@example.org"])
+            self.run_main(
+                FakeRpc("CHANGED alice@example.org created\n"), ["alice@example.org"]
+            )
 
         self.assertIn("MOBILIZON_RBAC=done", str(raised.exception.code))
 
