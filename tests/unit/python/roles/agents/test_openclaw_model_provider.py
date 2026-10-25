@@ -27,7 +27,7 @@ MODEL = "qwen2.5:0.5b"
 
 CONTEXT = {
     "OPENCLAW_TRUSTED_PROXY_SOURCES": ["192.168.0.0/16"],
-    "OPENCLAW_URL": "https://claw.example.org",
+    "OPENCLAW_CONTROL_UI_ORIGINS": ["https://claw.example.org"],
     "OPENCLAW_LITELLM_ENABLED": True,
     "OPENCLAW_LITELLM_PROVIDER": "litellm",
     "OPENCLAW_LITELLM_MODEL": MODEL,

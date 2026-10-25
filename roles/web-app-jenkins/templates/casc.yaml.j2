@@ -22,6 +22,7 @@ jenkins:
       emailFieldName: "{{ OIDC.ATTRIBUTES.EMAIL }}"
       groupsFieldName: "{{ RBAC.GROUP.CLAIM }}"
       logoutFromOpenidProvider: true
+      rootURLFromRequest: true
 {% elif JENKINS_LDAP_ENABLED | bool %}
   securityRealm:
     ldap:

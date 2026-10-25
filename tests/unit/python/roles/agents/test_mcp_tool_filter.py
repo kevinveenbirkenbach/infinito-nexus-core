@@ -115,7 +115,7 @@ class TestAgentToolFilter(unittest.TestCase):
                 OPENCLAW,
                 "openclaw.json.j2",
                 OPENCLAW_TRUSTED_PROXY_SOURCES=["192.168.0.0/16"],
-                OPENCLAW_URL="https://claw.example.org",
+                OPENCLAW_CONTROL_UI_ORIGINS=["https://claw.example.org"],
                 OPENCLAW_LITELLM_ENABLED=False,
                 OPENCLAW_MCP_SERVERS=SERVERS,
             )
@@ -132,7 +132,7 @@ class TestAgentToolFilter(unittest.TestCase):
                 OPENCLAW,
                 "openclaw.json.j2",
                 OPENCLAW_TRUSTED_PROXY_SOURCES=["192.168.0.0/16"],
-                OPENCLAW_URL="https://claw.example.org",
+                OPENCLAW_CONTROL_UI_ORIGINS=["https://claw.example.org"],
                 OPENCLAW_LITELLM_ENABLED=False,
                 OPENCLAW_MCP_SERVERS=SERVERS,
             )
@@ -157,7 +157,7 @@ class TestAgentToolFilter(unittest.TestCase):
                 OPENCLAW,
                 "openclaw.json.j2",
                 OPENCLAW_TRUSTED_PROXY_SOURCES=["192.168.0.0/16"],
-                OPENCLAW_URL="https://claw.example.org",
+                OPENCLAW_CONTROL_UI_ORIGINS=["https://claw.example.org"],
                 OPENCLAW_LITELLM_ENABLED=False,
                 OPENCLAW_MCP_SERVERS=SERVERS,
             )

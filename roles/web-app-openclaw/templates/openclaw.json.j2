@@ -13,7 +13,7 @@
     },
 {% endif %}
     "controlUi": {
-      "allowedOrigins": [{{ OPENCLAW_URL | to_json }}]
+      "allowedOrigins": {{ OPENCLAW_CONTROL_UI_ORIGINS | to_json }}
     }
   }{% if OPENCLAW_LITELLM_ENABLED | bool %},
   "agents": {

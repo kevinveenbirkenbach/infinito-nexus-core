@@ -1,11 +1,4 @@
-"""Per-application RBAC naming for Keycloak.
-
-Single SPOT for the Keycloak component name `ldap-roles-<application_id>`
-of a deployed application's per-app `group-ldap-mapper`. The name is
-referenced from `vars/main.yml` (`KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER`) and
-from the host-side `upsert_app_mapper.sh` script. The mapper's LDAP filter
-comes from `kc_app_ldap_scopes` in `build_realm_rbac_groups.py`.
-"""
+"""Per-application RBAC naming for Keycloak: the `ldap-roles-<application_id>` component name of a deployed application's `group-ldap-mapper`."""
 
 from __future__ import annotations
 

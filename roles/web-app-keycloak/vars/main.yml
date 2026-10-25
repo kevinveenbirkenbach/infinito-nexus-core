@@ -16,44 +16,76 @@ KEYCLOAK_RBAC_GROUP_NAME: "{{ RBAC.GROUP.NAME }}"
 KEYCLOAK_RBAC_ALL_APP_IDS: "{{ lookup('deployment').groups | rbac_app_ids }}"
 KEYCLOAK_RBAC_RUN_APP_IDS: "{{ lookup('deployment').running | rbac_app_ids }}"
 
-KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER: >-
+KEYCLOAK_RBAC_WORKERS: "{{ [RESOURCE_HOST_CPUS | int // 2, 1] | max }}"
+KEYCLOAK_RBAC_GROUP_LOGIC_DIGEST: "{{ lookup('file', lookup('path_absolute', 'roles/svc-db-openldap/filter_plugins/build_ldap_role_entries.py')) | hash('sha256')
+  }}"
+KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_PAYLOADS_FILE: "/tmp/kc_per_app_mapper_payloads.txt"
+KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_TEMPLATE: >-
   {{
-    ((KEYCLOAK_DICTIONARY_REALM.components['org.keycloak.storage.UserStorageProvider']
+    (KEYCLOAK_DICTIONARY_REALM.components['org.keycloak.storage.UserStorageProvider']
       | selectattr('name','equalto', KEYCLOAK_LDAP_CMP_NAME)
       | list | first
-     ).subComponents['org.keycloak.storage.ldap.mappers.LDAPStorageMapper']
-     | selectattr('name','equalto','ldap-roles')
-     | list | first
+    ).subComponents['org.keycloak.storage.ldap.mappers.LDAPStorageMapper']
+    | selectattr('name','equalto','ldap-roles')
+    | list | first
+  }}
+KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_BASE: >-
+  {{
+    (KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_TEMPLATE
      | dict2items
-     | rejectattr('key','in',['subComponents','id'])
+     | rejectattr('key','in',['subComponents','id','config'])
      | list | items2dict)
     | combine({
-        'name':         kc_app_id | kc_per_app_mapper_name,
         'parentId':     ldap_cmp_id | trim,
         'providerId':   'group-ldap-mapper',
         'providerType': 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper',
-        'config': {
-          'preserve.group.inheritance':            ['false'],
-          'group.name.ldap.attribute':             ['description'],
-          'groups.ldap.filter':                    [(lookup('applications') | kc_app_ldap_scopes(kc_app_id)).filter],
-          'groups.path':                           ['/' ~ (KEYCLOAK_RBAC_GROUP_NAME | trim('/')) ~ '/' ~ kc_app_id],
-          'groups.path.group':                     [kc_app_group_id],
-          'drop.non.existing.groups.during.sync':  ['true'],
-        }
-      }, recursive=True)
+        'config': (KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_TEMPLATE.config
+                   | dict2items
+                   | rejectattr('key','equalto','groups.path.group')
+                   | list | items2dict)
+                  | combine({
+                      'preserve.group.inheritance':            ['false'],
+                      'group.name.ldap.attribute':             ['description'],
+                      'drop.non.existing.groups.during.sync':  ['true'],
+                    }),
+      })
   }}
-KEYCLOAK_PER_TENANT_LDAP_ROLES_MAPPER: >-
-  {{
-    KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER
-    | combine({
-        'name': kc_tenant_scope.mapper,
+# One `<group path below the root> <mapper_name> <base64 mapper JSON> <fingerprint>` line per rbac app and per tenant of the current run.
+KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_PAYLOADS: |-
+  {% for app_id in KEYCLOAK_RBAC_RUN_APP_IDS -%}
+  {%- set app = lookup('applications')[app_id] -%}
+  {%- set scopes = lookup('applications') | kc_app_ldap_scopes(app_id) -%}
+  {%- set mapper = KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_BASE | combine({
+        'name': app_id | kc_per_app_mapper_name,
         'config': {
-          'groups.ldap.filter': [kc_tenant_scope.filter],
-          'groups.path':        ['/' ~ (KEYCLOAK_RBAC_GROUP_NAME | trim('/')) ~ '/' ~ kc_app_id ~ '/' ~ kc_tenant_scope.tenant],
-          'groups.path.group':  [kc_tenant_group_id],
+          'groups.ldap.filter': [scopes.filter],
+          'groups.path':        ['/' ~ (KEYCLOAK_RBAC_GROUP_NAME | trim('/')) ~ '/' ~ app_id],
         }
-      }, recursive=True)
-  }}
+      }, recursive=True) -%}
+  {%- set fingerprint = {
+        'mapper': mapper,
+        'rbac': app.get('rbac'),
+        'domains': app.get('domains'),
+        'logic': KEYCLOAK_RBAC_GROUP_LOGIC_DIGEST,
+      } | to_json(sort_keys=True) | hash('sha256') -%}
+  {{ app_id }} {{ mapper['name'] }} {{ mapper | to_nice_json | b64encode }} {{ fingerprint }}
+  {% for tenant in scopes.tenants -%}
+  {%- set tenant_mapper = KEYCLOAK_PER_APP_LDAP_ROLES_MAPPER_BASE | combine({
+        'name': tenant.mapper,
+        'config': {
+          'groups.ldap.filter': [tenant.filter],
+          'groups.path':        ['/' ~ (KEYCLOAK_RBAC_GROUP_NAME | trim('/')) ~ '/' ~ app_id ~ '/' ~ tenant.tenant],
+        }
+      }, recursive=True) -%}
+  {%- set tenant_fingerprint = {
+        'mapper': tenant_mapper,
+        'rbac': app.get('rbac'),
+        'domains': app.get('domains'),
+        'logic': KEYCLOAK_RBAC_GROUP_LOGIC_DIGEST,
+      } | to_json(sort_keys=True) | hash('sha256') -%}
+  {{ app_id }}/{{ tenant.tenant }} {{ tenant_mapper['name'] }} {{ tenant_mapper | to_nice_json | b64encode }} {{ tenant_fingerprint }}
+  {% endfor %}
+  {% endfor %}
 
 KEYCLOAK_HEALTH_ENABLED: true
 
