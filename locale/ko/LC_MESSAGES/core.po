@@ -1936,6 +1936,10 @@ msgctxt "role:sys-ctl-mtn-cert-deploy:description"
 msgid "Systemd service and timer for syncing Let's Encrypt certificates into Docker Compose NGINX stacks with hot-reload"
 msgstr "동기화를 위한 Systemd 서비스 및 타이머는 Docker Compose NGINX 스택으로 인증서를 암호화합니다."
 
+msgctxt "role:sys-ctl-mtn-rbac-sync:description"
+msgid "Systemd timer that reconciles each application's role mapping with the current members of its role groups"
+msgstr ""
+
 # translated-by: libretranslate
 msgctxt "role:sys-timer:description"
 msgid "Systemd timer unit for starting a service on a recurring calendar schedule for automated task execution"

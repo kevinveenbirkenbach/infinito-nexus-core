@@ -1,5 +1,6 @@
 import contextlib
 import io
+import sys
 import types
 import unittest
 
@@ -15,6 +16,7 @@ SCRIPT = (
     / "python"
     / "ldap_login.py"
 )
+LDAP_CLIENT_DIR = PROJECT_ROOT / "roles" / "svc-db-openldap" / "files" / "python"
 USERS_DN = "ou=users,dc=example,dc=org"
 ADMIN_GROUP = "cn=web-app-homeassistant-administrator,ou=roles,dc=example,dc=org"
 USER_GROUP = "cn=web-app-homeassistant-user,ou=roles,dc=example,dc=org"
@@ -40,27 +42,11 @@ ARGUMENTS = [
 
 
 def load_module():
+    if str(LDAP_CLIENT_DIR) not in sys.path:
+        sys.path.insert(0, str(LDAP_CLIENT_DIR))
     module = types.ModuleType("homeassistant_ldap_login")
     exec(compile(read_text(str(SCRIPT)), str(SCRIPT), "exec"), module.__dict__)
     return module
-
-
-class FakeSocket:
-    def __init__(self, incoming):
-        self.incoming = bytearray(incoming)
-        self.sent = bytearray()
-        self.closed = False
-
-    def recv(self, count):
-        chunk = bytes(self.incoming[: min(count, 3)])
-        del self.incoming[: len(chunk)]
-        return chunk
-
-    def sendall(self, data):
-        self.sent.extend(data)
-
-    def close(self):
-        self.closed = True
 
 
 class StubDirectory:
@@ -88,95 +74,6 @@ def entry(member_of, **attributes):
     values = {"uid": ["biber"], "memberof": member_of}
     values.update({key.lower(): value for key, value in attributes.items()})
     return [(BIBER_DN, values)]
-
-
-class LdapLoginEncodingTests(unittest.TestCase):
-    def setUp(self):
-        self.mod = load_module()
-
-    def connection(self, incoming):
-        connection = object.__new__(self.mod.Connection)
-        connection.socket = FakeSocket(incoming)
-        connection.message_id = 0
-        return connection
-
-    def response(self, message_id, operation):
-        mod = self.mod
-        return mod.tlv(mod.SEQUENCE, mod.number(mod.INTEGER, message_id) + operation)
-
-    def test_bind_request_matches_the_ldapv3_encoding(self):
-        mod = self.mod
-        result = mod.number(mod.ENUMERATED, 0) + mod.text("") + mod.text("")
-        connection = self.connection(
-            self.response(1, mod.tlv(mod.BIND_RESPONSE, result))
-        )
-
-        self.assertEqual(connection.bind("cn=a", "p"), 0)
-        self.assertEqual(
-            bytes(connection.socket.sent),
-            bytes.fromhex("30 11 02 01 01 60 0c 02 01 03 04 04 63 6e 3d 61 80 01 70"),
-        )
-
-    def test_bind_reports_invalid_credentials(self):
-        mod = self.mod
-        result = mod.number(mod.ENUMERATED, 49) + mod.text("") + mod.text("")
-        connection = self.connection(
-            self.response(1, mod.tlv(mod.BIND_RESPONSE, result))
-        )
-
-        self.assertEqual(connection.bind("cn=a", "wrong"), 49)
-
-    def test_search_collects_entries_until_done(self):
-        mod = self.mod
-        attribute = mod.tlv(
-            mod.SEQUENCE, mod.text("uid") + mod.tlv(0x31, mod.text("biber"))
-        )
-        found = mod.tlv(
-            mod.SEARCH_RESULT_ENTRY,
-            mod.text(BIBER_DN) + mod.tlv(mod.SEQUENCE, attribute),
-        )
-        done = mod.tlv(
-            mod.SEARCH_RESULT_DONE,
-            mod.number(mod.ENUMERATED, 0) + mod.text("") + mod.text(""),
-        )
-        connection = self.connection(self.response(1, found) + self.response(1, done))
-
-        entries = connection.search(
-            USERS_DN, mod.SCOPE_ONE_LEVEL, mod.equality("uid", "biber"), ["uid"]
-        )
-
-        self.assertEqual(entries, [(BIBER_DN, {"uid": ["biber"]})])
-        tag, content, _ = mod.decode(bytes(connection.socket.sent), 0)
-        self.assertEqual(tag, mod.SEQUENCE)
-        self.assertEqual(mod.children(content)[1][0], mod.SEARCH_REQUEST)
-
-    def test_search_raises_on_an_error_result(self):
-        mod = self.mod
-        done = mod.tlv(
-            mod.SEARCH_RESULT_DONE,
-            mod.number(mod.ENUMERATED, 32) + mod.text("") + mod.text(""),
-        )
-        connection = self.connection(self.response(1, done))
-
-        with self.assertRaises(mod.DirectoryError):
-            connection.search(
-                USERS_DN, mod.SCOPE_ONE_LEVEL, mod.present("objectClass"), []
-            )
-
-    def test_long_lengths_round_trip(self):
-        mod = self.mod
-        value = b"x" * 300
-        encoded = mod.tlv(mod.OCTET_STRING, value)
-
-        self.assertEqual(encoded[:4], bytes([mod.OCTET_STRING, 0x82, 0x01, 0x2C]))
-        self.assertEqual(
-            mod.decode(encoded, 0), (mod.OCTET_STRING, value, len(encoded))
-        )
-
-    def test_truncated_element_is_a_directory_error(self):
-        mod = self.mod
-        with self.assertRaises(mod.DirectoryError):
-            mod.decode(bytes([mod.OCTET_STRING, 0x05, 0x61]), 0)
 
 
 class LdapLoginDecisionTests(unittest.TestCase):

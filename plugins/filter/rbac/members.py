@@ -3,12 +3,6 @@
     {{ lookup('users') | rbac_members('web-app-gitlab', 'administrator') }}
     {{ ldap_search_result.results | rbac_ldap_members('uid', 'mail', 'cn') }}
     -> [{"username": "alice", "email": "alice@example.org", "name": "Alice Liddell"}]
-
-A deploy-time reconciler needs the members of a role group to promote and
-demote accounts in an application that cannot read the groups claim itself.
-The directory is the live source once OpenLDAP is deployed, because Keycloak
-writes group memberships changed in its admin console back to it; the
-inventory grants are the fallback for a deployment without a directory.
 """
 
 from __future__ import annotations
@@ -55,6 +49,23 @@ def rbac_members(
     return members
 
 
+def rbac_users(users: Mapping[str, Any] | None) -> list[dict[str, str]]:
+    """Return every inventory user, shaped like ``rbac_members``, sorted by username.
+
+    Args:
+        users: the merged users mapping.
+    """
+    accounts = [
+        {
+            "username": str((cfg or {}).get("username", key)),
+            "email": str((cfg or {}).get("email") or ""),
+            "name": ldap_full_name(cfg or {}, key),
+        }
+        for key, cfg in (users or {}).items()
+    ]
+    return sorted(accounts, key=lambda account: account["username"])
+
+
 def rbac_ldap_members(
     entries: Iterable[Mapping[str, Any]] | None,
     id_attribute: str,
@@ -87,5 +98,6 @@ class FilterModule:
     def filters(self):
         return {
             "rbac_members": rbac_members,
+            "rbac_users": rbac_users,
             "rbac_ldap_members": rbac_ldap_members,
         }

@@ -1,9 +1,5 @@
 """Align the hub accounts the directory sign-in created with the role groups.
 
-Home Assistant applies the group the sign-in script names only when it creates
-an account, so a later change of the directory groups reaches an existing
-account only through this alignment.
-
 Environment:
     HA_PORT: the hub's internal port.
     HA_USERNAME, HA_PASSWORD: the owner account the alignment signs in with.
@@ -13,7 +9,7 @@ Environment:
 
 Output:
     One ``CHANGED <user id> <fields>`` line per account it regrouped,
-    re-enabled or disabled.
+    re-enabled or disabled, else ``UNCHANGED``.
 """
 
 import asyncio
@@ -178,6 +174,7 @@ def main(environ):
         json.loads(environ["HA_USER_MEMBERS"]),
     )
     if not updates:
+        print("UNCHANGED")
         return
     base = "http://localhost:" + environ["HA_PORT"]
     token = owner_token(base, environ["HA_USERNAME"], environ["HA_PASSWORD"])

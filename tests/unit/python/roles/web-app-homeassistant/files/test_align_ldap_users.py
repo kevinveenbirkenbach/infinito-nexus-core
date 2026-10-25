@@ -151,25 +151,68 @@ class AlignMainTests(unittest.TestCase):
                 self.mod.read_store(missing), {"data": {"users": [], "credentials": []}}
             )
 
+    def run_main(self, auth, administrators, users):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "auth"
+            path.write_text(json.dumps(auth), encoding="utf-8")
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                self.mod.main(
+                    {
+                        "HA_PORT": "8123",
+                        "HA_USERNAME": "platformadmin",
+                        "HA_PASSWORD": "secret",
+                        "HA_AUTH_STORE": str(path),
+                        "HA_ADMIN_MEMBERS": json.dumps(administrators),
+                        "HA_USER_MEMBERS": json.dumps(users),
+                    }
+                )
+        return stdout.getvalue().splitlines()
+
     def test_nothing_to_align_signs_in_nowhere(self):
         def refuse(*arguments):
             raise AssertionError("an aligned hub must not be signed in to")
 
         self.mod.owner_token = refuse
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "auth"
-            path.write_text(json.dumps(store([], [])), encoding="utf-8")
-            stdout = io.StringIO()
-            with contextlib.redirect_stdout(stdout):
-                self.mod.main(
-                    {
-                        "HA_AUTH_STORE": str(path),
-                        "HA_ADMIN_MEMBERS": "[]",
-                        "HA_USER_MEMBERS": "[]",
-                    }
-                )
 
-        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(self.run_main(store([], []), [], []), ["UNCHANGED"])
+
+    def test_every_applied_update_is_reported(self):
+        signed_in = []
+        applied = []
+
+        def token(base, username, password):
+            signed_in.append((base, username))
+            return "token"
+
+        async def apply(base, access_token, updates):
+            applied.append((base, access_token, updates))
+
+        self.mod.owner_token = token
+        self.mod.apply = apply
+        auth = store(
+            [account("u1", "system-users"), account("u2", "system-users")],
+            [
+                credential("u1", "command_line", "alice"),
+                credential("u2", "command_line", "mallory"),
+            ],
+        )
+
+        output = self.run_main(auth, ["alice"], [])
+
+        updates = [
+            {"user_id": "u1", "group_ids": ["system-admin"]},
+            {"user_id": "u2", "is_active": False},
+        ]
+        self.assertEqual(signed_in, [("http://localhost:8123", "platformadmin")])
+        self.assertEqual(applied, [("http://localhost:8123", "token", updates)])
+        self.assertEqual(
+            output,
+            [
+                'CHANGED u1 {"group_ids": ["system-admin"]}',
+                'CHANGED u2 {"is_active": false}',
+            ],
+        )
 
 
 if __name__ == "__main__":

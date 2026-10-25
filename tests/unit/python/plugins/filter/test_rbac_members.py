@@ -5,6 +5,7 @@ import unittest
 
 _module = importlib.import_module("plugins.filter.rbac.members")
 rbac_members = _module.rbac_members
+rbac_users = _module.rbac_users
 rbac_ldap_members = _module.rbac_ldap_members
 
 APP = "web-app-gitlab"
@@ -45,6 +46,24 @@ class TestRbacMembers(unittest.TestCase):
 
     def test_no_users_yield_no_members(self):
         self.assertEqual(rbac_members(None, APP, "administrator"), [])
+
+
+class TestRbacUsers(unittest.TestCase):
+    def test_every_user_is_listed_regardless_of_roles(self):
+        users = {
+            "zed": {"username": "zed", "email": "zed@example.org", "roles": []},
+            "key": {"username": "amy", "firstname": "Amy", "lastname": "Pond"},
+        }
+        self.assertEqual(
+            rbac_users(users),
+            [
+                {"username": "amy", "email": "", "name": "Amy Pond"},
+                {"username": "zed", "email": "zed@example.org", "name": "zed"},
+            ],
+        )
+
+    def test_no_users_yield_no_accounts(self):
+        self.assertEqual(rbac_users(None), [])
 
 
 class TestRbacLdapMembers(unittest.TestCase):

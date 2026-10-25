@@ -1,0 +1,4 @@
+---
+# nocheck: required-by-coverage — pulled in by tasks/utils/rbac/sync.yml from every role that registers an RBAC hook, not by a role id or category
+rbac-sync:
+  lifecycle: beta

@@ -18,11 +18,14 @@
       - src: "configuration.yaml.j2"
         dest: "{{ HOMEASSISTANT_CONFIG_PATH_HOST }}"
 
-- name: "📋 Stage the directory sign-in script of the hub"
+- name: "📋 Stage the directory sign-in script of the hub and its LDAP client"
   stack_host_copy:
-    src: python/ldap_login.py
-    dest: "{{ HOMEASSISTANT_LDAP_LOGIN_PATH_HOST }}"
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     mode: "0444"
+  loop:
+    - { src: python/ldap_login.py, dest: "{{ HOMEASSISTANT_LDAP_LOGIN_PATH_HOST }}" }
+    - { src: "{{ lookup('path_absolute', 'roles/svc-db-openldap/files/python/ldap_client.py') }}", dest: "{{ HOMEASSISTANT_LDAP_CLIENT_PATH_HOST }}" }
   notify: compose-up
   when: HOMEASSISTANT_LDAP_ENABLED | bool
 
@@ -41,7 +44,6 @@
 
 - name: "👥 Align the directory accounts of the hub with the role groups"
   ansible.builtin.include_tasks: utils/ldap.yml
-  when: HOMEASSISTANT_LDAP_ENABLED | bool
 
 - name: "🔌 Provision the MCP server surface"
   ansible.builtin.include_tasks: utils/mcp.yml
