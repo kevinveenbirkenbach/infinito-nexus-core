@@ -50,6 +50,13 @@ PENPOT_FLAGS: >-
   {{ 'enable-login-with-oidc' if PENPOT_SSO_ENABLED | bool else '' }}
   {{ 'enable-login-with-ldap' if PENPOT_LDAP_ENABLED | bool else '' }}
 
+PENPOT_RBAC_TEAM_ID: "{{ (application_id ~ '-rbac-team') | to_uuid }}"
+PENPOT_RBAC_TEAM_NAME: "{{ ORGANIZATION }}"
+PENPOT_RBAC_TEAM_ROLES:
+  administrator: admin
+  editor: editor
+  viewer: viewer
+
 PENPOT_ADMIN_EMAIL: "{{ lookup('users', 'platform_administrator').email }}"
 PENPOT_ADMIN_PASSWORD: "{{ lookup('users', 'platform_administrator').password }}"
 PENPOT_ADMIN_FULLNAME: "{{ lookup('users', 'platform_administrator').username }}"

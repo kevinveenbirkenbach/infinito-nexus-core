@@ -21,3 +21,6 @@
   when:
     - IS_STACK_HOST | bool
     - PENPOT_NATIVE_LOGIN_ENABLED | bool
+
+- name: "👥 Map the role groups onto the shared platform team"
+  ansible.builtin.include_tasks: 02_rbac.yml

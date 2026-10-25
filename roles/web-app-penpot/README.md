@@ -36,6 +36,8 @@ handoff features.
 - Export (SVG, PDF, images) and developer handoff (CSS/code) via the exporter.
 - Real-time collaboration over WebSockets through the proxy.
 - **Identity attributes:** the OIDC e-mail and name claims and the LDAP username, e-mail, full name and user query come from the platform `OIDC.ATTRIBUTES` and `LDAP.USER.ATTRIBUTES`; every realm user may sign in.
+- **Shared platform team:** Penpot has no instance administrator, only roles per team, so the role groups map onto one team named after `ORGANIZATION` that the platform administrator owns: `administrator` members are team admins, `editor` members editors and `viewer` members viewers; a profile outside all three leaves the team the way Penpot's own leave does. [files/sql/rbac/reconcile.sql](./files/sql/rbac/reconcile.sql) runs in the database as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer; it creates the team once the administrator's profile exists and matches members by e-mail, so a member joins on the first run after their first sign-in.
+- **Directory full names:** the same hook sets the full name of every Penpot profile whose e-mail the directory holds to the directory's name, because Penpot takes the name from OIDC or LDAP only when it registers the profile.
 
 ## Identity
 

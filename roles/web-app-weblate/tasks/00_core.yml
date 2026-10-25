@@ -10,3 +10,6 @@
 - name: "🔑 Hand the gateway the token it reads the memory with"
   ansible.builtin.include_tasks: utils/token.yml
   when: IS_STACK_HOST | bool
+
+- name: "👥 Map the role groups onto superusers and site teams"
+  ansible.builtin.include_tasks: utils/rbac.yml

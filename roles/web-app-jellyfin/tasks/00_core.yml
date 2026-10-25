@@ -71,6 +71,9 @@
           delegate_to: "{{ JELLYFIN_HOST_NODE }}"
           no_log: "{{ MASK_CREDENTIALS_IN_LOGS | bool }}"
 
+- name: "🖼️ Keep the profile images of {{ application_id }} on the directory photos"
+  ansible.builtin.include_tasks: utils/photo_sync.yml
+
 - name: "🔌 Serve MCP from {{ application_id }}"
   ansible.builtin.include_tasks: utils/mcp.yml
   when: JELLYFIN_MCP_ENABLED | bool

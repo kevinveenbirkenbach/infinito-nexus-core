@@ -22,3 +22,6 @@
 - name: "🖥️ Nextcloud stack-host post-deploy (config, occ, plugins, admin)"
   include_tasks: 02_manager_ops.yml
   when: IS_STACK_HOST | bool
+
+- name: "🪪 Keep the directory profiles of the Nextcloud accounts current"
+  include_tasks: utils/ldap_refresh.yml

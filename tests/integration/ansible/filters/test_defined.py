@@ -70,6 +70,7 @@ BUILTIN_FILTERS: set[str] = {
     "dirname",
     "from_json",
     "to_json",
+    "to_uuid",
     "from_yaml",
     "to_yaml",
     "combine",

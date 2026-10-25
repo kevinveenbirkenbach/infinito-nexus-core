@@ -17,6 +17,11 @@ WEBLATE_ADMIN_BOOTSTRAP_USERNAME: admin
 WEBLATE_ADMIN_USERNAME: "{{ lookup('users', 'platform_administrator').username }}"
 WEBLATE_TOKEN_MIN_LENGTH: 40
 
+WEBLATE_RBAC_SUPERUSER_ROLE: administrator
+WEBLATE_RBAC_TEAMS:
+  reviewer: Reviewers
+  manager: Managers
+
 WEBLATE_DATABASE_NAME: "{{ lookup('database', application_id, 'name') }}"
 WEBLATE_DATABASE_USER: "{{ lookup('database', application_id, 'username') }}"
 WEBLATE_DATABASE_PASSWORD: "{{ lookup('database', application_id, 'password') }}"

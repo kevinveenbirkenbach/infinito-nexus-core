@@ -15,7 +15,7 @@ Jellyfin stores its metadata in internal SQLite under `/config` - it needs **no 
 - **Central LDAP (all clients)** - the [`jellyfin-plugin-ldapauth`](https://github.com/jellyfin/jellyfin-plugin-ldapauth) plugin authenticates web AND native apps against the platform OpenLDAP.
 - **Break-glass admin** - a local administrator seeded via the first-run wizard (`/Startup`), independent of SSO/LDAP.
 - **Administrator role from the IdP:** every realm user may sign in; members of the `administrator` RBAC group of `web-app-jellyfin` get the Jellyfin administrator flag. The SSO plugin reads it from the `groups` claim, the LDAP plugin from the `memberOf` entry of the group, and both remove the flag at the next login of a user who left the group.
-- **LDAP profile image:** an account the LDAP plugin creates takes the directory photo (`jpegPhoto`) as its avatar.
+- **LDAP profile image:** an account the LDAP plugin creates takes the directory photo (`jpegPhoto`) as its avatar, and [files/python/photo_sync.py](./files/python/photo_sync.py) pushes a changed photo to the existing account as a host hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer.
 - **No external database** - self-contained SQLite under `/config`.
 
 ## Authentication & Admin Model
