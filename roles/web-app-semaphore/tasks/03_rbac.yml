@@ -1,11 +1,5 @@
 ---
-- name: "➕ Pre-provision the administrator members as external Semaphore admins"
-  ansible.builtin.include_tasks: 03_rbac/provision.yml
-  when:
-    - IS_STACK_HOST | bool
-    - SEMAPHORE_OIDC_ENABLED | bool or SEMAPHORE_LDAP_ENABLED | bool
-
-- name: "🛂 Converge admin flag, profiles and sessions of the Semaphore accounts"
+- name: "🛂 Converge accounts, admin flag, profiles and sessions of Semaphore"
   ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/sync.yml') }}"
   vars:
     rbac_sync_application_id: "{{ application_id }}"

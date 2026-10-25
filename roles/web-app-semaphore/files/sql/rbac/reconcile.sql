@@ -1,6 +1,29 @@
 \getenv members RBAC_MEMBERS
 \getenv kept SEMAPHORE_RBAC_KEPT
 WITH administrator AS (
+  SELECT DISTINCT ON (lower(entry->>'username'))
+         entry->>'username' AS username,
+         entry->>'email' AS email,
+         COALESCE(NULLIF(entry->>'name', ''), entry->>'username') AS name
+  FROM jsonb_array_elements(:'members'::jsonb->'administrator') AS entry
+  WHERE COALESCE(entry->>'username', '') <> ''
+    AND COALESCE(entry->>'email', '') <> ''
+  ORDER BY lower(entry->>'username')
+)
+INSERT INTO public."user" (created, username, name, email, password, admin, external)
+SELECT now(), administrator.username, administrator.name, administrator.email, '', TRUE, TRUE
+FROM administrator
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public."user" AS account
+  WHERE lower(account.username) = lower(administrator.username)
+     OR lower(account.email) = lower(administrator.email)
+)
+ON CONFLICT DO NOTHING
+RETURNING 'CHANGED ' || username || ' created';
+\set created_changes :ROW_COUNT
+
+WITH administrator AS (
   SELECT lower(entry->>'username') AS username,
          lower(entry->>'email') AS email
   FROM jsonb_array_elements(:'members'::jsonb->'administrator') AS entry
@@ -36,7 +59,9 @@ WITH member AS (
          NULLIF(entry->>'name', '') AS name
   FROM jsonb_each(:'members'::jsonb) AS grp
   CROSS JOIN jsonb_array_elements(grp.value) AS entry
-  ORDER BY lower(entry->>'username')
+  ORDER BY lower(entry->>'username'),
+           COALESCE(entry->>'name', '') = '',
+           COALESCE(entry->>'email', '') = ''
 ),
 desired AS (
   SELECT account.id,
@@ -108,4 +133,4 @@ WHERE outsider.id IN (SELECT user_id FROM expired_session UNION SELECT user_id F
 ORDER BY outsider.username;
 \set expired_changes :ROW_COUNT
 
-SELECT 'UNCHANGED' WHERE :admin_changes + :profile_changes + :expired_changes = 0;
+SELECT 'UNCHANGED' WHERE :created_changes + :admin_changes + :profile_changes + :expired_changes = 0;

@@ -26,7 +26,7 @@ The role deploys the single Semaphore container (with its embedded task runner) 
   The provider's `email_claim` is a Go template rendered from `templates/oidc/email_claim.j2`. It yields the email only when the groups claim holds the `administrator` or `user` role group, so Semaphore refuses the Keycloak sign-in of every other realm account with a missing email claim and returns it to the login page.
 
 - **Role group sync:**
-  With SSO or LDAP, [files/sql/rbac/reconcile.sql](./files/sql/rbac/reconcile.sql) runs through `psql` in the database container as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer, so a group change reaches Semaphore within one timer interval. Every deploy also pre-provisions the members of the `administrator` role group as external Semaphore admins; a member added between deploys gets its account at the first sign-in and the admin flag on the next run.
+  With SSO or LDAP, [files/sql/rbac/reconcile.sql](./files/sql/rbac/reconcile.sql) runs through `psql` in the database container as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer, so a group change reaches Semaphore within one timer interval. The same run creates every member of the `administrator` role group that has an e-mail and no account yet as an external Semaphore admin, so a member added between deploys has its account within one timer interval.
 
 - **Admin flag reconcile:**
   The hook converges the admin flag of every account to the `administrator` role group. The break-glass account and the platform administrator are never demoted.
