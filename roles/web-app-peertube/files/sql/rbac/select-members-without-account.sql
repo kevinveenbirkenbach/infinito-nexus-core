@@ -1,5 +1,6 @@
-SELECT member->>'username', member->>'email', member->>'role'
-FROM jsonb_array_elements(%(members)s::jsonb) AS member
+\getenv members PEERTUBE_RBAC_RANKED
+SELECT COALESCE(jsonb_agg(member ORDER BY member->>'username'), '[]'::jsonb)
+FROM jsonb_array_elements(:'members'::jsonb) AS member
 WHERE NOT EXISTS (
   SELECT 1
   FROM public."user" AS account

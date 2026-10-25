@@ -32,7 +32,7 @@ This Docker Compose deployment sets up PeerTube with integrated support for esse
   An account created through the OpenID Connect plugin takes its display name, email and interface language from the `name`, `email` and `locale` claims.
 
 - **Role groups:**
-  Every deploy creates the OpenID Connect accounts of the `administrator` and `moderator` role group members that have none yet. [files/sql/rbac/reconcile-roles.sql](./files/sql/rbac/reconcile-roles.sql) converges the PeerTube role of every OpenID Connect account to Administrator, Moderator or User from its groups; it runs through `psql` in the database container as an RBAC hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer, so an account the plugin creates at a first sign-in gets its role on the next run. The local `root` account keeps its role.
+  [files/python/rbac_sync.py](./files/python/rbac_sync.py) runs as a host hook of [sys-ctl-mtn-rbac-sync](../sys-ctl-mtn-rbac-sync/) at every deploy and on its timer. It creates the OpenID Connect accounts of the `administrator` and `moderator` role group members that have an e-mail and no account yet through the PeerTube API as root, hands them to the OIDC plugin, and then runs [files/sql/rbac/reconcile-roles.sql](./files/sql/rbac/reconcile-roles.sql) through `psql` in the database container, which converges the PeerTube role of every OpenID Connect account to Administrator, Moderator or User from its groups. A member added between deploys therefore has its account and role within one timer interval. The local `root` account keeps its role.
 
 ## Addons
 

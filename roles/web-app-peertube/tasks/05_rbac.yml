@@ -1,11 +1,5 @@
 ---
-- name: "➕ PEERTUBE | Pre-provision the OIDC accounts of the role group members"
-  include_tasks: 05_rbac/provision.yml
-  when:
-    - IS_STACK_HOST | bool
-    - PEERTUBE_OIDC_ENABLED | bool
-
-- name: "🛂 PEERTUBE | Converge the role of every OIDC account to its role groups"
+- name: "🛂 PEERTUBE | Provision the role group members and converge their roles"
   ansible.builtin.include_tasks: "{{ lookup('path_absolute', 'tasks/utils/rbac/sync.yml') }}"
   vars:
     rbac_sync_application_id: "{{ application_id }}"
@@ -16,21 +10,22 @@
     rbac_sync_service_key: postgres
     rbac_sync_service_name: "{{ lookup('database', application_id, 'service_name') }}"
     rbac_sync_container: "{{ lookup('database', application_id, 'container') }}"
-    rbac_sync_kind: container
+    rbac_sync_kind: host
     rbac_sync_user: ""
-    rbac_sync_argv:
-      - psql
-      - -U
-      - "{{ lookup('database', application_id, 'username') }}"
-      - -d
-      - "{{ lookup('database', application_id, 'name') }}"
-      - -v
-      - ON_ERROR_STOP=1
-      - -qtA
-    rbac_sync_script: "{{ lookup('file', role_path ~ '/files/sql/rbac/reconcile-roles.sql') }}"
-    rbac_sync_modules: []
+    rbac_sync_argv: []
+    rbac_sync_script: "{{ lookup('file', role_path ~ '/files/python/rbac_sync.py') }}"
+    rbac_sync_modules:
+      - { name: select-members-without-account.sql, content: "{{ lookup('file', role_path ~ '/files/sql/rbac/select-members-without-account.sql') }}" }
+      - { name: link-preprovisioned-accounts.sql, content: "{{ lookup('file', role_path ~ '/files/sql/rbac/link-preprovisioned-accounts.sql') }}" }
+      - { name: reconcile-roles.sql, content: "{{ lookup('file', role_path ~ '/files/sql/rbac/reconcile-roles.sql') }}" }
     rbac_sync_env:
       PGPASSWORD: "{{ lookup('database', application_id, 'password') }}"
+      PEERTUBE_DB_USER: "{{ lookup('database', application_id, 'username') }}"
+      PEERTUBE_DB_NAME: "{{ lookup('database', application_id, 'name') }}"
+      PEERTUBE_URL: "{{ PEERTUBE_INTERNAL_URL }}"
+      PEERTUBE_HOSTNAME: "{{ PEERTUBE_HOSTNAME }}"
+      PEERTUBE_ROOT_USERNAME: "{{ PEERTUBE_ROOT_USERNAME }}"
+      PEERTUBE_ROOT_PASSWORD: "{{ PEERTUBE_ROOT_PASSWORD }}"
       PEERTUBE_RBAC_ROLE_IDS: "{{ PEERTUBE_ROLE_IDS | to_json }}"
       PEERTUBE_OIDC_PLUGIN: "{{ PEERTUBE_OIDC_PLUGIN }}"
     rbac_sync_members_env:
