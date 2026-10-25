@@ -29,5 +29,5 @@ again. This module:
     "installable": True,
     "auto_install": False,
     "application": False,
-    "license": "LGPL-3",
+    "license": "Other proprietary",
 }
