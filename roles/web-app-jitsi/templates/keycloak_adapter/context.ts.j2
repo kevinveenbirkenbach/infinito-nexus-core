@@ -14,18 +14,16 @@ function text(value: unknown): string {
 
 export function createContext(userInfo: KeycloakUserInfo) {
   const groups = userInfo[GROUPS_CLAIM];
-  if (!Array.isArray(groups) || !groups.includes(MODERATOR_GROUP)) {
-    throw new Error("not a member of the moderator group");
-  }
+  const moderator = Array.isArray(groups) && groups.includes(MODERATOR_GROUP);
   const name = NAME_CLAIMS.map((claim) => text(userInfo[claim])).find((value) => value) || "";
   return {
     user: {
       id: userInfo.sub,
       name: name,
       email: text(userInfo[EMAIL_CLAIM]),
-      moderator: true,
-      lobby_bypass: true,
-      security_bypass: true,
+      moderator: moderator,
+      lobby_bypass: moderator,
+      security_bypass: moderator,
     },
   };
 }

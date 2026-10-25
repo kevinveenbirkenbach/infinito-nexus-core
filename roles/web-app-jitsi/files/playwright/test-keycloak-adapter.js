@@ -38,15 +38,20 @@ exports.register = function (shared) {
     });
   });
 
-  test("rbac: the keycloak_adapter refuses a JWT to biber without the administrator role", async ({ page }) => {
+  test("rbac: the keycloak_adapter issues biber, without the administrator role, a named member JWT", async ({ page }) => {
     shared.skipUnlessServiceEnabled("sso");
     shared.skipUnlessServiceEnabled("keycloak_adapter");
     test.setTimeout(resolveTimeout(180_000));
+    const roomName = "e2e-biber-jwt-room";
     await shared.runBiberFlow(page, {
       biberInteraction: async (p) => {
-        const params = await requestRoomToken(shared, p, "e2e-biber-jwt-room");
-        expect(params.get("oidc"), "biber MUST NOT receive a moderator JWT").toBe("failed");
-        expect(params.get("jwt"), "biber's redirect MUST carry no JWT").toBeNull();
+        const params = await requestRoomToken(shared, p, roomName);
+        expect(params.get("oidc"), "biber MUST be authorized by the keycloak_adapter").toBe("authorized");
+        const payload = decodeJwtPayload(params.get("jwt"));
+        expect(payload.room, "the JWT must be scoped to the requested room").toBe(roomName);
+        expect(payload.context?.user?.moderator, "biber's JWT MUST NOT mark a moderator").toBe(false);
+        expect(payload.context?.user?.lobby_bypass, "biber MUST wait in the lobby").toBe(false);
+        expect(payload.context?.user?.name, "biber's JWT MUST carry the Keycloak display name").toBeTruthy();
       },
     });
   });

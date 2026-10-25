@@ -11,14 +11,14 @@ This role deploys the official `jitsi/{web,prosody,jicofo,jvb}` images as a sing
 ## Features
 
 - **SSO gate:** With `services.sso.enabled`, oauth2-proxy admits every realm user to the vhost.
-- **Moderators from Keycloak:** With `services.keycloak_adapter.enabled` (on in variant 0), Jitsi's `TOKEN_AUTH_URL` sends the "I am the host" step to the adapter. The adapter signs an HS256 JWT only for members of the `web-app-jitsi` `administrator` group, so they join as moderators. Every other realm user joins through the guest domain and waits for a moderator.
+- **Moderators from Keycloak:** With `services.keycloak_adapter.enabled` (on in variant 0), Jitsi's `TOKEN_AUTH_URL` sends the "I am the host" step to the adapter. The adapter signs an HS256 JWT for every realm user; `context.user.moderator` is true only for members of the `web-app-jitsi` `administrator` group. Prosody's `token_affiliation` module makes them owners and every other token holder a named member, and `ENABLE_AUTO_OWNER=false` keeps jicofo from promoting the first participant, so a non-moderator joins under their Keycloak name and waits in the lobby for a moderator.
 - **LDAP direct-bind variant:** `meta/variants.yml` V3 sets `AUTH_TYPE=ldap`, so prosody binds against `svc-db-openldap` through saslauthd with `LDAP_FILTER` built from `LDAP.FILTERS.USERS.ALL` and `LDAP.USER.ATTRIBUTES.ID`.
 - **Three persona surfaces:** `guest` lands on the public landing without a room, `biber` and `administrator` reach the prejoin lobby behind the SSO gate.
 - **Self-contained Prosody:** Component secrets for jicofo, jvb, jigasi and jibri are pre-generated via `meta/secrets.yml` so XMPP auth is stable across redeploys.
 
 ### Keycloak adapter
 
-The adapter is built from the upstream sources at `services.keycloak_adapter.ref` on the multi-arch `denoland/deno` image, with the role's own [context.ts](./templates/keycloak_adapter/context.ts.j2) baked in. The web container serves `/oidc/{redirect,auth,tokenize}` through [nginx.conf.j2](./templates/keycloak_adapter/nginx.conf.j2) and the callback page `/static/oidc-adapter.html` from [oidc-adapter.html.j2](./templates/keycloak_adapter/oidc-adapter.html.j2). Enabling the switch on an existing inventory needs the `jwt_app_secret` credential, so regenerate the inventory first.
+The adapter is built from the upstream sources at `services.keycloak_adapter.ref` on the multi-arch `denoland/deno` image, with the role's own [context.ts](./templates/keycloak_adapter/context.ts.j2) baked in. [forwarded_scheme.ts](./files/keycloak_adapter/forwarded_scheme.ts) rewrites the upstream `adapter.ts` at build time so the `redirect_uri` carries the scheme from `X-Forwarded-Proto` instead of a hard-coded `https`, and fails the build when upstream moves one of the three rewritten lines. The web container serves `/oidc/{redirect,auth,tokenize}` through [nginx.conf.j2](./templates/keycloak_adapter/nginx.conf.j2) and the callback page `/static/oidc-adapter.html` from [oidc-adapter.html.j2](./templates/keycloak_adapter/oidc-adapter.html.j2). Enabling the switch on an existing inventory needs the `jwt_app_secret` credential, so regenerate the inventory first.
 
 ## Developer Notes
 

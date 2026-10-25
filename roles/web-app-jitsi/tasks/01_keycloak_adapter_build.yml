@@ -5,11 +5,14 @@
     state: directory
     mode: "0755"
 
-- name: "📄 Stage the keycloak_adapter Dockerfile of {{ application_id }}"
+- name: "📄 Stage the keycloak_adapter Dockerfile and scheme patch of {{ application_id }}"
   stack_host_copy:
-    src: keycloak_adapter/Dockerfile
-    dest: "{{ [JITSI_KEYCLOAK_ADAPTER_BUILD_DIR, 'Dockerfile'] | path_join }}"
+    src: "keycloak_adapter/{{ item }}"
+    dest: "{{ [JITSI_KEYCLOAK_ADAPTER_BUILD_DIR, item] | path_join }}"
     mode: "0644"
+  loop:
+    - Dockerfile
+    - forwarded_scheme.ts
 
 - name: "📄 Stage the keycloak_adapter moderator context of {{ application_id }}"
   stack_host_template:
