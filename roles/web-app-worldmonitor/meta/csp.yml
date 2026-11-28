@@ -5,6 +5,8 @@ flags:
   script-src-elem:
     unsafe-inline: true # nocheck: csp-unsafe  Reason: the dashboard boots from six inline scripts that upstream admits by sha256 hash and a static nonce, and those hashes change with every release, and a pinned nonce or hash would make browsers drop the 'unsafe-inline' the platform's injected logout and tracking snippets rely on
 whitelist:
+  script-src-elem:
+    - https://www.youtube.com
   connect-src:
     - "https:"
     - "wss:"
