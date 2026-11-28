@@ -11,6 +11,7 @@
 # distro: a caller INFINITO_DISTRO other than the one `.env` was generated for
 # loads a set generated for that distro instead, and `.env` stays untouched.
 # Param INFINITO_POOL_JOB: id of a held or running pool job (`make <target> job=<id>`); sets DOCKER_HOST and INFINITO_STACK_NAME to its stack.
+# Output INFINITO_ENV_CALLER_KEYS: the keys of the loaded set the caller had set before the first load of this `.env`; `python -m cli.meta.env` keeps only those over the loaded values.
 
 # zsh cannot run this loader's bash-isms (BASH_SOURCE, ${!indirect}, assoc-array
 # key expansion). When sourced from zsh, delegate to bash and import the
@@ -125,6 +126,9 @@ while IFS= read -r _infinito_env_line; do
 	fi
 done <"${_infinito_env_source}"
 unset _infinito_env_line _infinito_env_key
+if [[ "${INFINITO_ENV_LOADED_FILE:-}" != "${_infinito_env_dotenv}" || ! -v INFINITO_ENV_CALLER_KEYS ]]; then # nocheck: env-loader-internal-guard
+	export INFINITO_ENV_CALLER_KEYS="${!_infinito_env_preserved[*]}" # nocheck: env-loader-internal-guard
+fi
 
 set -a
 # shellcheck disable=SC1090

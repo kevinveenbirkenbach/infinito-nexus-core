@@ -50,7 +50,7 @@ Then restart Docker:
 sudo systemctl restart docker
 ```
 
-For a one-off local override of the compose bridge, regenerate `.env` with the desired value and recreate the stack cleanly:
+For a one-off local override of the compose bridge, regenerate `.env` with the desired value and recreate the stack cleanly. The next `make dotenv` without the export restores the default; put the line into `custom.env` to keep it:
 
 ```bash
 INFINITO_OUTER_NETWORK_MTU=1400 make dotenv

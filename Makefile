@@ -474,8 +474,11 @@ diagnose-network:
 # Regenerate .env (SPOT) from default.env + runtime context.
 dotenv:
 	@test -z "$${INFINITO_POOL_JOB:-}" || { echo "make dotenv writes the .env of this checkout and takes no job= or INFINITO_POOL_JOB" >&2; exit 2; }
+	@previous="$$(mktemp)"
+	@trap 'rm -f "$${previous}"' EXIT
+	@[[ ! -f .env ]] || cp .env "$${previous}"
 	@python3 -m cli.meta.env
-	@python3 -m cli.meta.cache
+	@python3 -m cli.meta.cache --fresh-dotenv "$${previous}"
 
 .PHONY: dotenv-force
 # Force a clean .env regeneration in a stripped environment.

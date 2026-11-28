@@ -21,6 +21,7 @@ make dotenv
 
 Override individual values by exporting them before `make dotenv`.
 Already-set env vars take precedence over `default.env` defaults.
+A value that only the previous `.env` carried is no export: the next `make dotenv` takes it from `default.env` again, so keep a lasting override in `custom.env`.
 
 ## Pipeline
 
@@ -39,7 +40,7 @@ Every `docker compose` call MUST go through [stack.py](../../../cli/administrati
   Running stacks, their volumes and their networks are adopted unchanged.
 - Set, `make compose-up`, `compose-exec`, `compose-deploy`, `compose-down`, `test*` and `lint*` address the project `<name>`.
   [load.sh](../../../scripts/meta/env/load.sh) derives `INFINITO_CONTAINER=infinito_nexus_<name>` and `INFINITO_RUNNER_PREFIX=infinito-<name>` from it, so the checkout's default stack stays untouched.
-- Set it per call (`INFINITO_STACK_NAME=<name> make compose-up`) or in `custom.env`; `make dotenv` writes an exported value into `.env` like every other key.
+- Set it per call (`INFINITO_STACK_NAME=<name> make compose-up`) or in `custom.env`; `make dotenv` writes an exported value into `.env` like every other key, until the next `make dotenv` that runs without the export; `custom.env` keeps it.
 - A pool job's stack `runner-<N>` runs on the infra runner's daemon, not on the host: `make <target> job=<id>` addresses it through `INFINITO_POOL_JOB` (see [Runner pool](#runner-pool)), and `INFINITO_STACK_NAME=runner-<N>` without `job=` is refused.
 - The [slot registry](#slot-registry) can hold a slot per stack name, but only `make worktree-up` allocates one, for the default stack.
   A named stack still runs on the checkout's pinned slot, so its subnet and bind IP equal those of the default stack; run one of them at a time.

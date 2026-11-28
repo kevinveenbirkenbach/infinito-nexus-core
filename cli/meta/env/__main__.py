@@ -8,12 +8,28 @@ import sys
 from pathlib import Path
 
 from utils.env.builder import build_env
+from utils.env.loader import loaded_only_values
 from utils.env.parser import parse_static_env_with_comments
 from utils.env.writer import write_dotenv
 
 from . import PROJECT_ROOT as REPO_ROOT
 
 HOST_OWNED_KEY = "INFINITO_DOTENV_HOST_OWNED"  # nocheck: dotenv-host-owned-marker  Reason: set only by compose.yml inside the runner container and by the act wrapper when it binds the checkout; not a configuration key, a .env entry could freeze the host .env
+GENERATING_KEY = "INFINITO_ENV_GENERATING"  # nocheck: env-loader-internal-guard
+
+
+def drop_loaded_values(dotenv: Path) -> None:
+    """
+    Args:
+        dotenv: the `.env` regenerated in place; every key of
+            :func:`loaded_only_values` leaves the process env, and helper
+            shells then skip load.sh.
+    """
+    dropped = loaded_only_values(dotenv, dotenv)
+    for key in dropped:
+        del os.environ[key]
+    if dropped:
+        os.environ[GENERATING_KEY] = "1"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -48,6 +64,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if args.output is None and out_path.is_file():
+        drop_loaded_values(out_path)
     static, static_comments = parse_static_env_with_comments(static_path)
     eb = build_env(static, repo_root=REPO_ROOT, comments=static_comments)
     write_dotenv(eb, out_path)
