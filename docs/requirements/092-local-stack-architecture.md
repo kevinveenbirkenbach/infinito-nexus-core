@@ -27,7 +27,7 @@ Binding; not reopened by this document. D9 to D22 close the open questions O1 to
 
 | # | Decision |
 |---|---|
-| D1 | Cache bounds are fixed absolute caps plus age eviction. Defaults: registry mirror 40 GB, Nexus 20 GB, shared folders (pip, npm, pacman, Playwright) 10 GB, `models/` 30 GB. Entries without access for 30 days are evicted. Every value is overridable through the inventory and the environment. This replaces the "half the free disk" sizing. |
+| D1 | Cache bounds are fixed absolute caps plus age eviction. Defaults: registry mirror 30 GB, Nexus 20 GB, shared folders (pip, npm, pacman, Playwright) 10 GB, `models/` 8 GB. Entries without access for 30 days are evicted. Every value is overridable through the inventory and the environment. This replaces the "half the free disk" sizing. |
 | D2 | Migration: the first apply evicts the oldest entries until each cache is under its cap. Warm data stays; there is no full wipe. |
 | D3 | One long-lived infra runner per machine, built like today's tools lane: a privileged runner container in which a local infinito inventory deploys the cache roles and the tools roles. The workstation host stays untouched (no `/opt/compose`, no systemd units on it); data stays under `/var/cache/infinito`. One cache stack per machine, never one per worktree; every worktree's stack and the test runner attach to its network. Compromise between time and clean architecture: deploy only what is needed. |
 | D4 | Lifecycle classes. Locally always-on: cache (registry, Nexus, frontend), deployed once into the infra runner, restart `unless-stopped`. Locally on demand: tools (LibreTranslate, LiteLLM, Ollama and the rest of the lane), only for i18n and oracle targets. Locally long-lived: the test runner, started on the first test call and kept. CI: no cache stack and no inventory deploy (actions cache and the GHCR mirror). Each stack declares its class; make starts only what a target needs. |
@@ -137,10 +137,10 @@ flowchart LR
 
 | Cache | Path | Cap variable | Infra default | Age eviction | Size eviction |
 |---|---|---|---|---|---|
-| Registry mirror | `DIR_CACHE/registry/mirror` | `INFINITO_CACHE_REGISTRY_MAX_SIZE` (exists) | `40g` | `multi-proxy`: nginx `proxy_cache_path inactive`; `registry`: the image's proxy expiry | `multi-proxy`: nginx cache manager against `max_size`; `registry`: none on servers (D22) |
+| Registry mirror | `DIR_CACHE/registry/mirror` | `INFINITO_CACHE_REGISTRY_MAX_SIZE` (exists) | `30g` | `multi-proxy`: nginx `proxy_cache_path inactive`; `registry`: the image's proxy expiry | `multi-proxy`: nginx cache manager against `max_size`; `registry`: none on servers (D22) |
 | Nexus | `DIR_CACHE/package/data` | `INFINITO_CACHE_PACKAGE_BLOBSTORE_MAX` (exists) | `20g` | a cleanup policy on every proxy repository (last downloaded before the idle window), then blob store compaction | an evictor deletes the least recently downloaded assets until the compacted blob store is under the cap |
 | Shared folders | `DIR_CACHE/shared` (pip, npm, pacman, ms-playwright together, D10) | `INFINITO_CACHE_SHARED_MAX_SIZE` (new) | `10g` | files without access in the idle window | least recently accessed files first |
-| Models | `DIR_CACHE/models` | `INFINITO_TOOLS_MODELS_MAX_SIZE` (new) | `30g` | model units without use in the idle window | least recently used units first |
+| Models | `DIR_CACHE/models` | `INFINITO_TOOLS_MODELS_MAX_SIZE` (new) | `8g` | model units without use in the idle window | least recently used units first |
 | Host build cache | the host Docker daemon's BuildKit store | `INFINITO_BUILD_CACHE_MAX_SIZE` (new) | `20g` | none | a builder prune keeping at most the cap after every image build (D18) |
 | Idle window | the four cache folders | `INFINITO_CACHE_MAX_IDLE_DAYS` (new) | `30` | | |
 
@@ -275,7 +275,7 @@ Proof tiers: `[unit]` a unit test or lint, `[host]` the operator's workstation, 
 
 ### Phase 1: Bounded caches
 
-- [x] `make dotenv` writes `INFINITO_CACHE_REGISTRY_MAX_SIZE=40g`, `INFINITO_CACHE_PACKAGE_BLOBSTORE_MAX=20g`, `INFINITO_CACHE_SHARED_MAX_SIZE=10g`, `INFINITO_TOOLS_MODELS_MAX_SIZE=30g`, `INFINITO_BUILD_CACHE_MAX_SIZE=20g`, `INFINITO_CACHE_MAX_IDLE_DAYS=30` and `INFINITO_CACHE_DISK_FLOOR=15g` unless the environment or `custom.env` sets them, and no written value depends on the free disk space. `[unit]`
+- [x] `make dotenv` writes `INFINITO_CACHE_REGISTRY_MAX_SIZE=30g`, `INFINITO_CACHE_PACKAGE_BLOBSTORE_MAX=20g`, `INFINITO_CACHE_SHARED_MAX_SIZE=10g`, `INFINITO_TOOLS_MODELS_MAX_SIZE=8g`, `INFINITO_BUILD_CACHE_MAX_SIZE=20g`, `INFINITO_CACHE_MAX_IDLE_DAYS=30` and `INFINITO_CACHE_DISK_FLOOR=15g` unless the environment or `custom.env` sets them, and no written value depends on the free disk space. `[unit]`
 - [x] The registry mirror's effective nginx configuration carries `max_size` equal to `INFINITO_CACHE_REGISTRY_MAX_SIZE` and `inactive` equal to the idle window in days. `[unit]`
 - [x] Every Nexus proxy repository the bootstrap creates is attached to a cleanup policy on last download older than the idle window, and Nexus holds scheduled tasks that run the cleanup and a blob store compaction at least once a day. `[unit]`
 - [x] With the Nexus blob store above its cap after the age cleanup, `make cache-evict` deletes the least recently downloaded assets and compacts until the blob store is at or below the cap. `[unit]`

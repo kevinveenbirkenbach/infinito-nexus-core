@@ -11,10 +11,10 @@ from utils.env.builder import build_env
 from utils.env.parser import parse_static_env_with_comments
 
 FIXED = {
-    "INFINITO_CACHE_REGISTRY_MAX_SIZE": "40g",
+    "INFINITO_CACHE_REGISTRY_MAX_SIZE": "30g",
     "INFINITO_CACHE_PACKAGE_BLOBSTORE_MAX": "20g",
     "INFINITO_CACHE_SHARED_MAX_SIZE": "10g",
-    "INFINITO_TOOLS_MODELS_MAX_SIZE": "30g",
+    "INFINITO_TOOLS_MODELS_MAX_SIZE": "8g",
     "INFINITO_BUILD_CACHE_MAX_SIZE": "20g",
     "INFINITO_CACHE_MAX_IDLE_DAYS": "30",
     "INFINITO_CACHE_DISK_FLOOR": "15g",
