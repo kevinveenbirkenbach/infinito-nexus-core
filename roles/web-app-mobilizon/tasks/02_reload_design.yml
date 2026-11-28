@@ -25,10 +25,10 @@
       - "{{ MOBILIZON_LOCAL_CID }}" # nocheck: container-exec-resolver  MOBILIZON_LOCAL_CID resolved at delegate_to runtime
       - /bin/mobilizon
       - rpc
-      - IO.puts(:ok)
+      - IO.puts("{{ mobilizon_rpc_ready }}")
   register: mobilizon_rpc_after_restart
   changed_when: false
   retries: 60
   delay: 10
-  until: mobilizon_rpc_after_restart.rc == 0
+  until: mobilizon_rpc_after_restart.rc == 0 and mobilizon_rpc_ready in mobilizon_rpc_after_restart.stdout_lines
   delegate_to: "{{ MOBILIZON_HOST_NODE }}"
