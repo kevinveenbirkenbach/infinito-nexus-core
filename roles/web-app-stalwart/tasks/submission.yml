@@ -43,14 +43,6 @@
         stalwart_jmap_body: "{{ STALWART_JMAP_RELOAD_SETTINGS }}"
       when: not (stalwart_submission_listener_missing | bool)
 
-- name: "🔄 Bind the new submission listener"
+- name: "🔄 Restart Stalwart so it binds the submission listener"
+  ansible.builtin.include_tasks: submission_restart.yml
   when: stalwart_submission_listener_missing | bool
-  block:
-    - name: "🔄 Defer the restart that binds the submission listener to the OIDC restart"
-      ansible.builtin.set_fact:
-        stalwart_oidc_restart_pending: true
-      when: STALWART_SSO_ENABLED | bool
-
-    - name: "🔄 Restart Stalwart so it binds the submission listener"
-      ansible.builtin.include_tasks: submission_restart.yml
-      when: not (STALWART_SSO_ENABLED | bool)
