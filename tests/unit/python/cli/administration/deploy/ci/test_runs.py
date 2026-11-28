@@ -261,7 +261,10 @@ class TestInputsFromJobs(unittest.TestCase):
         asked: list[int] = []
 
         def fake_gh(
-            args: list[str], repo: str | None = None, errors: list[str] | None = None
+            args: list[str],
+            *_args: object,
+            errors: list[str] | None = None,
+            **_kwargs: object,
         ) -> str:
             self.assertIn("--allow-escape-sequences", args)
             self.assertIsNotNone(errors)
@@ -386,8 +389,8 @@ class TestInputsFromJobs(unittest.TestCase):
             "displayTitle": render({"priority": "web-app-x"}),
         }
 
-        def failing(jobs: list[dict], repo: str, errors: list[str]) -> dict[str, str]:
-            errors.append(self.NOT_FOUND)
+        def failing(*args: list) -> dict[str, str]:
+            args[2].append(self.NOT_FOUND)
             return {}
 
         with (

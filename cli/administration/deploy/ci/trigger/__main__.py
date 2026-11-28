@@ -15,16 +15,46 @@ keep deploying past a failed chunk.
 
 from __future__ import annotations
 
-import argparse
+import contextlib
 import sys
+from typing import TYPE_CHECKING
 
 from cli.administration.deploy.ci import gh, runs, selections
+from cli.administration.deploy.ci.trigger import options as cli_args
+from cli.administration.deploy.ci.trigger import sources as source_runs
 from cli.meta.ci import matrix, query, validate
-from utils.github import run_name
-from utils.github.variant import network, pools, selection, vpn
+from utils.github.variant import axes, network, pools, selection, vpn
+
+if TYPE_CHECKING:
+    import argparse
+
+    from cli.administration.deploy.ci.trigger.sources import Selection, Source
 
 _WORKFLOW = "entry-manual-steer.yml"
-_ALL = "__ALL__"
+_ALL = source_runs.ALL
+REFUSED = 1
+NOTHING_FAILED = 3
+PLAN_ABORTED = 4
+NO_RUN = 5
+SOURCE_FAILED = 6
+
+
+def _axes(config: dict[str, str]) -> dict:
+    """Args:
+    config: the dispatch inputs the axes are resolved from.
+
+    Returns:
+        the axis keywords :func:`matrix.entries_of` and
+        :func:`validate.problems` share.
+    """
+    return {
+        "modes": query.resolve_modes(config.get("mode") or query.ALL_MODES),
+        "lifecycles": config.get("lifecycles", ""),
+        "network_input": network.resolve_network_input(config.get("network")),
+        "vpn_mode": vpn.resolve_vpn_mode(config.get("vpn")),
+        "distros": pools.resolve_distros(config.get("distros")),
+        "filesystems": pools.resolve_filesystems(config.get("filesystem")),
+    }
 
 
 def _ranking(whitelist: str, config: dict[str, str]) -> list[dict[str, str]]:
@@ -35,17 +65,36 @@ def _ranking(whitelist: str, config: dict[str, str]) -> list[dict[str, str]]:
     resolves would abort here, in a helper whose job is to save runner time.
     """
     return matrix.entries_of(
-        modes=query.resolve_modes(config.get("mode") or query.ALL_MODES),
         whitelist="" if whitelist == _ALL else whitelist,
         priority="",
-        lifecycles=config.get("lifecycles", ""),
         sweep=0,
-        network_input=network.resolve_network_input(config.get("network")),
-        vpn_mode=vpn.resolve_vpn_mode(config.get("vpn")),
-        distros=pools.resolve_distros(config.get("distros")),
-        filesystems=pools.resolve_filesystems(config.get("filesystem")),
         architectures=pools.resolve_architectures(config.get("architectures")),
+        **_axes(config),
     )
+
+
+def _planned_priority(
+    whitelist: str, priority: str, config: dict[str, str]
+) -> tuple[int, int]:
+    """Args:
+    whitelist: the whitelist input, ``__ALL__`` for every role.
+    priority: the priority line as dispatched.
+    config: the dispatch inputs, ``offset`` included.
+
+    Returns:
+        the priority rows the planner puts into a chunk, and the priority rows
+        it discovers in total.
+    """
+    entries = matrix.entries_of(
+        whitelist="" if whitelist == _ALL else whitelist,
+        priority=priority,
+        sweep=axes.resolve_sweep(),
+        architectures=pools.resolve_architectures(config.get("architectures")),
+        **_axes(config),
+    )
+    plan = matrix.chunks_of(entries, config.get("offset", ""))
+    planned = sum(row["priority"] == "true" for chunk in plan for row in chunk)
+    return planned, sum(row["priority"] == "true" for row in entries)
 
 
 def _refused(whitelist: str, priority: str, config: dict[str, str]) -> bool:
@@ -67,19 +116,12 @@ def _refused(whitelist: str, priority: str, config: dict[str, str]) -> bool:
         priority: the priority line as dispatched.
         config: the dispatch inputs the axes are resolved from.
     """
+    resolved = _axes(config)
     errors: list[str] = []
     warnings: list[str] = []
     for label, tokens in (("whitelist", whitelist), ("priority", priority)):
         found, warned = validate.problems(
-            tokens,
-            modes=query.resolve_modes(config.get("mode") or query.ALL_MODES),
-            network_input=network.resolve_network_input(config.get("network")),
-            vpn_mode=vpn.resolve_vpn_mode(config.get("vpn")),
-            distros=pools.resolve_distros(config.get("distros")),
-            filesystems=pools.resolve_filesystems(config.get("filesystem")),
-            lifecycles=config.get("lifecycles", ""),
-            label=label,
-            priority=label == "priority",
+            tokens, **resolved, label=label, priority=label == "priority"
         )
         errors += found
         warnings += warned
@@ -97,275 +139,86 @@ def _refused(whitelist: str, priority: str, config: dict[str, str]) -> bool:
     return bool(errors)
 
 
-def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(
-        prog="infinito administration deploy ci trigger",
-        description=(
-            "Dispatch the manual CI workflow for the branch you are on. "
-            "Default: trigger every role. With --failed: the roles that "
-            "failed in the last run form the priority line and the full "
-            "run follows once they are green. With --apps: an explicit "
-            "role list as whitelist. Whenever a source run is read, its "
-            "configuration is carried over so the retrigger reproduces it."
-        ),
+def _resume(
+    whitelist: str,
+    priority: str,
+    config: dict[str, str],
+    sources: list[Source],
+    carried_offset: str,
+) -> None:
+    """Args:
+    whitelist: the whitelist input, ``__ALL__`` for every role.
+    priority: the priority line as dispatched.
+    config: the dispatch inputs; ``offset`` is set or dropped in place.
+    sources: the source runs.
+    carried_offset: the first run's own offset input.
+    """
+    anchor, proven = source_runs.proven(sources)
+    config["offset"] = selections.resume_offset(
+        _ranking(whitelist, config),
+        proven,
+        selection.parse_list(priority),
+        carried=carried_offset,
+        anchor=anchor,
     )
-    group = p.add_mutually_exclusive_group()
-    group.add_argument(
-        "--failed",
-        nargs="?",
-        const=True,
-        default=None,
-        metavar="(ignored)",
-        help=(
-            "Re-trigger what was not green in the source run as the priority "
-            "line, together with the priority entries that run never deployed "
-            "at all; the remaining roles follow once they succeed, starting "
-            "behind the green stretch the run added to the offset it was "
-            "given. Every mode is read, and each failed job comes back as the "
-            "exact selection that failed -- variant, deploy mode and onion "
-            "state included. A leftover scope argument is accepted and "
-            "ignored."
-        ),
-    )
-    group.add_argument(
-        "--apps",
-        default=None,
-        metavar='"app1 app2 ..."',
-        help="Explicit space-separated role ids to trigger.",
-    )
-    p.add_argument(
-        "--run",
-        default=None,
-        metavar="URL|ID",
-        help=(
-            "Run URL or bare run id to reproduce: its configuration (distros, "
-            "mode, lifecycles, filesystem, architectures, chunk_gate, "
-            "workspace, instructions) is carried over, and with --failed its "
-            "results also pick the apps. A bare id resolves against the current "
-            "branch's repo. With --failed and no --run: the latest deploy run "
-            "on the current branch."
-        ),
-    )
-    p.add_argument(
-        "--strict",
-        action="store_true",
-        help=(
-            "With --failed: re-trigger only roles with a hard failure (❌), "
-            "not cancelled/aborted (🚫) or still-running (⏳). Those two never "
-            "reached a verdict, so the regular line owes them their turn "
-            "rather than the priority line owing them a place."
-        ),
-    )
-    p.add_argument(
-        "--roles-only",
-        action="store_true",
-        help=(
-            "With --failed: put the roles that failed outright on the priority "
-            "line by name, letting the rotation assign the axes, instead of "
-            "replaying the exact combination each job failed in. Useful when "
-            "so much is red that covering the role matters more than "
-            "reproducing the row. Only a hard failure collapses: without "
-            "--strict a cancelled or still-running job comes back as the exact "
-            "combination it never finished, and a priority entry the source "
-            "run never deployed keeps its pins either way -- that run holds no "
-            "evidence against the axes they named."
-        ),
-    )
-    p.add_argument(
-        "--any-axes",
-        action="store_true",
-        help=(
-            "With --failed: put every role that did not come out green on the "
-            "priority line by name -- hard failures (❌), cancelled or aborted "
-            "(🚫) and still-running (⏳) jobs alike -- together with the "
-            "priority entries the source run never deployed, their pins "
-            "dropped too. Like any bare priority entry, each role then runs "
-            "in every variant and in every deploy mode, network and mesh "
-            "state the run offers, while distro, filesystem and architecture "
-            "rotate afresh; a cancelled run can therefore fan out to more "
-            "chunk blocks than call-orchestrator.yml declares, which the "
-            "planner refuses. A green role stays off the priority line. "
-            "Cannot be combined with --strict, "
-            "which would leave the unfinished roles out, or --roles-only, "
-            "which this already covers."
-        ),
-    )
-    p.add_argument(
-        "--print",
-        dest="print_only",
-        action="store_true",
-        help=(
-            "With --failed: print the priority line the retrigger would "
-            "dispatch, its tokens separated by single spaces, and exit "
-            "without dispatching. The line is ready to paste into the "
-            "priority input of a manual dispatch."
-        ),
-    )
-    p.add_argument(
-        "--chunk-gate",
-        choices=("true", "false"),
-        default=None,
-        help=(
-            "Override the carried chunk_gate input. 'false' keeps deploying "
-            "the remaining chunks after a failed one instead of stopping the "
-            "chain; 'true' stops at the first failed chunk. Omitted: the "
-            "source run's value, else the workflow default."
-        ),
-    )
-    p.add_argument(
-        "--priority",
-        default=None,
-        metavar='"role#0@compose+clearnet%debian ..."',
-        help=(
-            "Lead the run with these selection tokens. Unlike --failed, which "
-            "derives them from a run's verdicts, this states them: a "
-            "verification run names the combination it wants to see, axis by "
-            "axis. Composes with --apps; --failed builds its own line."
-        ),
-    )
-    p.add_argument(
-        "--workspace",
-        choices=("auto", "true", "false"),
-        default=None,
-        help=(
-            "Override the carried workspace input. 'false' leaves the "
-            "workspace test out, which a run that only has to reach a deploy "
-            "verdict does not need."
-        ),
-    )
-    p.add_argument(
-        "--mode",
-        choices=("auto", "host", "compose", "swarm"),
-        default=None,
-        help="Override the carried deploy mode pool.",
-    )
-    p.add_argument(
-        "--tor",
-        choices=("auto", "enforced", "exclusive", "disabled"),
-        default=None,
-        help="Override the carried tor axis.",
-    )
-    p.add_argument(
-        "--distros",
-        default=None,
-        metavar='"debian arch"',
-        help="Override the carried distro pool.",
-    )
-    p.add_argument(
-        "--filesystem",
-        default=None,
-        metavar='"ext4 btrfs"',
-        help=(
-            "Override the carried filesystem pool. A pool of exactly one is a "
-            "human naming the kind, so a host whose kernel cannot serve it "
-            "fails the row instead of substituting one."
-        ),
-    )
-    args = p.parse_args(argv)
-    if args.strict and args.failed is None:
-        p.error("--strict only applies with --failed")
-    if args.roles_only and args.failed is None:
-        p.error("--roles-only only applies with --failed")
-    if args.any_axes and args.failed is None:
-        p.error("--any-axes only applies with --failed")
-    if args.print_only and args.failed is None:
-        p.error("--print only applies with --failed")
-    if args.any_axes and (args.strict or args.roles_only):
-        p.error("--any-axes cannot be combined with --strict or --roles-only")
-    if args.priority is not None and args.failed is not None:
-        p.error("--priority and --failed both build the priority line")
-
-    branch = gh.current_branch()
-    repo = gh.resolve_repo()
-
-    source = None
-    if args.run:
-        source = gh.fetch_run_ref(args.run, repo)
-    elif args.failed is not None:
-        run = runs.find_last_deploy_run(branch, repo=repo)
-        if run is None:
-            print(
-                f"No CI run with deploy jobs found on {repo}@{branch}.",
-                file=sys.stderr,
-            )
-            return 1
-        source = {"jobs": run["_jobs"], "displayTitle": run.get("displayTitle", "")}
-
-    whitelist = ""
-    priority = ""
-    priority_entries: set[str] = set()
-    if args.apps is not None:
-        apps = " ".join(args.apps.split())
-        if not apps:
-            p.error("--apps was empty")
-        whitelist = apps
-    elif args.failed is not None:
-        failed, untriggered = selections.retrigger_entries(
-            source,
-            repo,
-            strict=args.strict,
-            roles_only=args.roles_only,
-            any_axes=args.any_axes,
-        )
-        if not failed and not untriggered:
-            print("Nothing failed in that run; not triggering.")
-            return 0
-        priority_entries = set(failed) | set(untriggered)
-        if args.print_only:
-            print(" ".join(sorted(priority_entries)))
-            return 0
-        if untriggered:
-            print(f"Priority roles that never deployed: {' '.join(untriggered)}")
+    if config["offset"]:
+        print(f"Regular line resumes at: {config['offset']}")
     else:
-        whitelist = _ALL
+        config.pop("offset")
 
-    config: dict[str, str] = {}
-    carried_offset = ""
-    if source is not None:
-        logged = runs.inputs_from_jobs(source["jobs"], repo)
-        config = runs.config_from_run(
-            source["displayTitle"], logged, jobs=source["jobs"]
-        )
-        carried_offset = logged.get("offset") or run_name.value_from_title(
-            source["displayTitle"], "offset"
-        )
-    carried_whitelist = config.pop("whitelist", "")
-    if not whitelist and carried_whitelist:
-        whitelist = carried_whitelist
-    for name, value in (
-        ("chunk_gate", args.chunk_gate),
-        ("workspace", args.workspace),
-        ("mode", args.mode),
-        ("tor", args.tor),
-        ("distros", args.distros),
-        ("filesystem", args.filesystem),
-    ):
-        if value is not None:
-            config[name] = value
 
-    if args.priority is not None:
-        priority_entries = set(args.priority.split())
-        if not priority_entries:
-            p.error("--priority was empty")
-        priority = " ".join(sorted(priority_entries))
+class _PlanAbortedError(Exception):
+    pass
 
-    if args.failed is not None:
-        ranking = _ranking(whitelist, config)
-        priority = " ".join(sorted(priority_entries))
-        config["offset"] = selections.resume_offset(
-            ranking,
-            selections.proven_rows(source["jobs"]),
-            selection.parse_list(priority),
-            carried=carried_offset,
-        )
-        if config["offset"]:
-            print(f"Regular line resumes at: {config['offset']}")
-        else:
-            config.pop("offset")
 
-    if _refused(whitelist if whitelist != _ALL else "", priority, config):
-        return 1
+def _summary(
+    picked: Selection,
+    whitelist: str,
+    priority: str,
+    config: dict[str, str],
+    target: str,
+) -> None:
+    """Args:
+    picked: the selection, with its per-run counts.
+    whitelist: the whitelist input as dispatched, carried one included.
+    priority: the priority line as dispatched.
+    config: the dispatch inputs, ``offset`` included.
+    target: ``owner/repo@branch`` the dispatch goes to.
 
+    Raises:
+        _PlanAbortedError: the planner refused the line before anything was
+            printed.
+    """
+    try:
+        planned, discovered = _planned_priority(whitelist, priority, config)
+    except SystemExit as exc:
+        raise _PlanAbortedError(str(exc)) from exc
+    for ref, failed, never in picked.per_run:
+        print(f"Run {ref}: {failed} failed, {never} never deployed")
+    tokens = len(priority.split())
+    print(f"Priority tokens: {tokens} (union, deduplicated)")
+    print(f"Priority rows planned: {planned} of {discovered} discovered")
+    if not config.get("offset"):
+        print("Regular line starts at the head")
+    carried = ", ".join(f"{name}={value}" for name, value in config.items())
+    print(f"Carried configuration: {carried or '(workflow defaults)'}")
+    print(f"Dispatch target: {target}")
+
+
+def _dispatch(
+    whitelist: str,
+    priority: str,
+    config: dict[str, str],
+    repo: str,
+    branch: str,
+) -> None:
+    """Args:
+    whitelist: the whitelist input, ``__ALL__`` for every role.
+    priority: the priority line as dispatched.
+    config: the dispatch inputs.
+    repo: ``owner/repo`` the dispatch goes to.
+    branch: the branch the run deploys.
+    """
     if priority:
         label = f"priority {priority}, then the remaining roles"
     elif whitelist == _ALL:
@@ -380,6 +233,128 @@ def main(argv: list[str] | None = None) -> int:
         _WORKFLOW, branch, whitelist, priority=priority, config=config, repo=repo
     )
     print("Dispatched. Watch with: infinito administration deploy ci status")
+
+
+def _prepare(
+    args: argparse.Namespace,
+    sources: list[Source],
+    picked: Selection,
+    target: str,
+) -> tuple[str, str, dict[str, str]] | None:
+    """Args:
+    args: the parsed arguments.
+    sources: the source runs.
+    picked: the selection to dispatch.
+    target: ``owner/repo@branch`` the dispatch goes to.
+
+    Returns:
+        whitelist, priority line and configuration, or ``None`` when the
+        validation refuses the selection.
+    """
+    if picked.untriggered:
+        print(f"Priority roles that never deployed: {' '.join(picked.untriggered)}")
+    config, carried_offset, carried_whitelist = source_runs.carried(args, sources)
+    whitelist = picked.whitelist or carried_whitelist
+    priority = " ".join(sorted(picked.entries))
+    if args.failed is not None:
+        _resume(whitelist, priority, config, sources, carried_offset)
+    if _refused(whitelist if whitelist != _ALL else "", priority, config):
+        return None
+    if args.print_only:
+        _summary(picked, whitelist, priority, config, target)
+    return whitelist, priority, config
+
+
+def _nothing_failed(sources: list[Source]) -> str:
+    """Args:
+    sources: the source runs that were read.
+
+    Returns:
+        the report that nothing is left to retrigger.
+    """
+    runs_read = "that run" if len(sources) == 1 else f"those {len(sources)} runs"
+    return f"Nothing failed in {runs_read}; not triggering."
+
+
+def _read(
+    args: argparse.Namespace, branch: str, repo: str
+) -> tuple[list[Source], Selection] | int:
+    """Args:
+    args: the parsed arguments.
+    branch: the current branch.
+    repo: ``owner/repo`` of the current branch.
+
+    Returns:
+        the source runs and the selection, or the exit status when no run
+        could be read.
+
+    Raises:
+        SystemExit, ValueError: without ``--print``, a run that could not be
+            read fails exactly as its ``gh`` call or URL did.
+    """
+    try:
+        sources = source_runs.load(args, branch, repo)
+        if sources is None:
+            return NO_RUN if args.print_only else 1
+        return sources, source_runs.select(args, sources)
+    except source_runs.SourceError as exc:
+        if not args.print_only:
+            raise exc.cause from None
+        print(f"error: cannot read run {exc}", file=sys.stderr)
+        return SOURCE_FAILED
+
+
+def _print_line(
+    args: argparse.Namespace,
+    sources: list[Source],
+    picked: Selection,
+    target: str,
+) -> int:
+    """Args:
+    args: the parsed arguments.
+    sources: the source runs.
+    picked: the selection to print.
+    target: ``owner/repo@branch`` the dispatch would go to.
+
+    Returns:
+        the exit status ``--print`` documents.
+    """
+    if not picked.entries:
+        print(_nothing_failed(sources), file=sys.stderr)
+        return NOTHING_FAILED
+    try:
+        with contextlib.redirect_stdout(sys.stderr):
+            prepared = _prepare(args, sources, picked, target)
+    except _PlanAbortedError as exc:
+        print(f"error: the planner aborted on this line: {exc}", file=sys.stderr)
+        return PLAN_ABORTED
+    if prepared is None:
+        return REFUSED
+    print(prepared[1])
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = cli_args.parser()
+    args = p.parse_args(argv)
+    cli_args.check(p, args)
+
+    branch = gh.current_branch()
+    repo = gh.resolve_repo()
+    read = _read(args, branch, repo)
+    if isinstance(read, int):
+        return read
+    sources, picked = read
+    target = f"{repo}@{branch}"
+    if args.print_only:
+        return _print_line(args, sources, picked, target)
+    if args.failed is not None and not picked.entries:
+        print(_nothing_failed(sources))
+        return 0
+    prepared = _prepare(args, sources, picked, target)
+    if prepared is None:
+        return REFUSED
+    _dispatch(*prepared, repo, branch)
     return 0
 
 

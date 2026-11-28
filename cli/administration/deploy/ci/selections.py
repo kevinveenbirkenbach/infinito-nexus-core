@@ -115,22 +115,10 @@ def _replayable_architecture(
     """
     if not architecture or not distro:
         return architecture or None
-    if not any(
-        architecture not in narrowed.get(distro, pools.ARCHITECTURES)
-        for narrowed in published_architectures(PROJECT_ROOT).values()
-    ):
+    if not _narrowed(distro, architecture):
         return architecture
-    rounds = matrix.deployed_rounds(app)
-    services = tuple(
-        dict.fromkeys(
-            role
-            for index in variants or (0,)
-            if index < len(rounds)
-            for role in rounds[index]
-        )
-    )
     if (distro, architecture) in axes.row_pairs(
-        app, (distro,), pools.ARCHITECTURES, services
+        app, (distro,), pools.ARCHITECTURES, _row_services(app, variants)
     ):
         return architecture
     print(
@@ -140,6 +128,39 @@ def _replayable_architecture(
         file=sys.stderr,
     )
     return None
+
+
+def _narrowed(distro: str, architecture: str) -> bool:
+    """Args:
+    distro: the distro a failed job's title names.
+    architecture: the architecture it names.
+
+    Returns:
+        whether some package is not published for that pair.
+    """
+    return any(
+        architecture not in narrowed.get(distro, pools.ARCHITECTURES)
+        for narrowed in published_architectures(PROJECT_ROOT).values()
+    )
+
+
+def _row_services(app: str, variants: tuple[int, ...]) -> tuple[str, ...]:
+    """Args:
+    app: role id of the failed job.
+    variants: the variant shards its title names.
+
+    Returns:
+        the roles those shards deploy, in round order, deduplicated.
+    """
+    rounds = matrix.deployed_rounds(app)
+    return tuple(
+        dict.fromkeys(
+            role
+            for index in variants or (0,)
+            if index < len(rounds)
+            for role in rounds[index]
+        )
+    )
 
 
 def collapse_to_roles(tokens: Iterable[str]) -> list[str]:
@@ -312,6 +333,7 @@ def resume_offset(
     proven: set[str],
     leading: Iterable[selection.Pin] = (),
     carried: str = "",
+    anchor: set[str] | None = None,
 ) -> str:
     """Where a retrigger should pick the regular line up again.
 
@@ -348,6 +370,10 @@ def resume_offset(
         leading: the retrigger's priority pins, whose rows leave the regular
             line.
         carried: the source run's own ``offset`` input.
+        anchor: the rows that run itself proved, which place the window when
+            *carried* names no row (:func:`carried_index`); ``None`` uses
+            *proven*. A retrigger of several runs passes the first run's own
+            rows here and the narrower set as *proven*.
 
     Returns:
         the ``role#variant`` token to resume at, or ``''`` when the source run
@@ -361,24 +387,51 @@ def resume_offset(
         the retrigger gets a fresh one, so comparing them row by row is the only
         comparison that survives the rotation.
     """
-    pins = tuple(leading)
-    claimed_apps = {pin.app for pin in pins if not pin.variants}
-    claimed_rows = {(pin.app, variant) for pin in pins for variant in pin.variants}
-
-    def free(entry: Mapping[str, Any]) -> str:
-        app = entry["apps"]
-        variants = _variants(entry)
-        if app in claimed_apps or any((app, v) in claimed_rows for v in variants):
-            return ""
-        return row_identity(entry)
-
-    start = carried_index(regular, carried, proven)
+    claimed = _claimed(tuple(leading))
+    start = carried_index(regular, carried, proven if anchor is None else anchor)
     window = regular[start:]
-    resume = next((token for entry in window if (token := free(entry))), "")
-    if not start:
-        resume = ""
+    resume = ""
+    if start:
+        resume = next(
+            (token for entry in window if (token := _free(entry, *claimed))), ""
+        )
     for entry in window:
         if row_identity(entry) not in proven:
             break
-        resume = free(entry) or resume
+        resume = _free(entry, *claimed) or resume
     return resume
+
+
+def _claimed(
+    pins: tuple[selection.Pin, ...],
+) -> tuple[set[str], set[tuple[str, int]]]:
+    """Args:
+    pins: the retrigger's priority pins.
+
+    Returns:
+        the roles a variant-less pin takes whole, and the ``(role, variant)``
+        pairs a pinned entry takes.
+    """
+    return (
+        {pin.app for pin in pins if not pin.variants},
+        {(pin.app, variant) for pin in pins for variant in pin.variants},
+    )
+
+
+def _free(
+    entry: Mapping[str, Any],
+    claimed_apps: set[str],
+    claimed_rows: set[tuple[str, int]],
+) -> str:
+    """Args:
+    entry: a row of the regular line.
+    claimed_apps: roles a variant-less priority pin takes whole.
+    claimed_rows: ``(role, variant)`` pairs a pinned priority entry takes.
+
+    Returns:
+        the row as ``role#variant``, ``''`` when the priority line claims it.
+    """
+    app = entry["apps"]
+    if app in claimed_apps or any((app, v) in claimed_rows for v in _variants(entry)):
+        return ""
+    return row_identity(entry)

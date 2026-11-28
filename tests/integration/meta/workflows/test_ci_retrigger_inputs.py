@@ -19,19 +19,13 @@ neither is visible in a green run:
 
 from __future__ import annotations
 
-import io
 import unittest
-import unittest.mock as mock
-from contextlib import redirect_stdout
 
-from cli.administration.deploy.ci import gh, runs
-from cli.administration.deploy.ci.trigger import __main__ as trigger
-from cli.meta.ci import matrix
+from cli.administration.deploy.ci import runs
 from tests.utils.ci.job_names import deploy_job_name
+from tests.utils.ci.trigger import run_trigger
 from utils.github.variant.pools import ARCHITECTURES, DISTROS
 
-_REPO = "o/r"
-_BRANCH = "feature/x"
 _RUN_URL = "https://github.com/o/r/actions/runs/55"  # nocheck: url
 
 _VALUES = {
@@ -71,26 +65,13 @@ _JOBS = [
 
 def _dispatch(argv: list[str], logged: dict[str, str]) -> tuple[str, str, dict]:
     """Run the trigger against a source run whose log records *logged*."""
-    seen: list[tuple[str, str, dict]] = []
-    source = {"jobs": _JOBS, "displayTitle": ""}
-    with (
-        mock.patch.object(gh, "current_branch", return_value=_BRANCH),
-        mock.patch.object(gh, "resolve_repo", return_value=_REPO),
-        mock.patch.object(gh, "fetch_run", return_value=source),
-        mock.patch.object(runs, "inputs_from_jobs", return_value=logged),
-        mock.patch.object(matrix, "entries_of", return_value=[]),
-        mock.patch.object(
-            runs,
-            "dispatch_workflow",
-            side_effect=lambda wf, ref, wl="", priority="", config=None, repo=None: (
-                seen.append((wl, priority, config or {}))
-            ),
-        ),
-        redirect_stdout(io.StringIO()),
-    ):
-        assert trigger.main(argv) == 0
-    assert seen, "the trigger dispatched nothing"
-    return seen[0]
+    trial = run_trigger(
+        argv, fetched={"jobs": _JOBS, "displayTitle": ""}, inputs=logged
+    )
+    assert trial.rc == 0
+    assert trial.dispatched, "the trigger dispatched nothing"
+    sent = trial.dispatched[0]
+    return sent["whitelist"], sent["priority"], sent["config"] or {}
 
 
 class TestCarriedInputs(unittest.TestCase):

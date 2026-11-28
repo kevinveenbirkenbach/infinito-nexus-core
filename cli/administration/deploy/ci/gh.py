@@ -113,6 +113,17 @@ def fetch_run(run_id: str, repo: str | None = None) -> dict:
     )
 
 
+def run_repo(run: str, repo: str) -> str:
+    """Args:
+        run: a run URL, or a bare run id that resolves against ``repo``.
+        repo: ``owner/repo`` a bare id belongs to.
+
+    Returns:
+        ``owner/repo`` the run lives in.
+    """
+    return repo if run.isdigit() else slug_from_url(run)
+
+
 def fetch_run_ref(run: str, repo: str) -> dict:
     """Jobs plus the run title of a run given as a URL or a bare id.
 
@@ -120,6 +131,5 @@ def fetch_run_ref(run: str, repo: str) -> dict:
         run: a run URL, or a bare run id that resolves against ``repo``.
         repo: ``owner/repo`` a bare id belongs to.
     """
-    if run.isdigit():
-        return fetch_run(run, repo=repo)
-    return fetch_run(run_id_from_url(run), repo=slug_from_url(run))
+    run_id = run if run.isdigit() else run_id_from_url(run)
+    return fetch_run(run_id, repo=run_repo(run, repo))

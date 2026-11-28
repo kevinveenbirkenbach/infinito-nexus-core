@@ -16,6 +16,8 @@ that still counts as an answer.
 The run this builds differs from a retrigger: a retrigger replays what a run
 already judged, this one asks about rows nobody has judged yet or whose verdict
 is still disputed. It therefore states its axes instead of carrying them over.
+Replaying the failed jobs of a run as they failed is the `i8-ci-retrigger`
+skill, never this one.
 
 ## Scope
 
@@ -30,10 +32,14 @@ is still disputed. It therefore states its axes instead of carrying them over.
 
 Two sources, run verdicts first:
 
-1. The selections of the last finished deploy run on the branch that are not
-   green. `cli.administration.deploy.ci.selections.failed_selections` reads
-   them straight out of the job titles, so each candidate arrives with the
-   variant, mode and onion state it failed in.
+1. The selections that failed hard (❌) in the last finished deploy run on
+   the branch. `python -m cli.administration.deploy.ci.trigger --failed
+   --strict --run <url> --print` reads them straight out of the job titles
+   (one `--run` per run, united), so each candidate arrives with the variant,
+   mode and onion state it failed in. Those tokens are raw candidates, not a
+   line: they leave the filesystem out (step 3 adds it) and are not capped,
+   so they are never dispatched as printed. Cancelled jobs join only when the
+   operator asks; then drop `--strict`.
 2. The root causes that are still open without a run to point at: a fix landed
    whose effect nobody has seen, or a diagnosis that was never confirmed
    against the deployed code.
@@ -136,11 +142,18 @@ row: a run-level pool of one would refuse every token that names the other
 value, and a line that verifies a swarm question and a compose question at once
 needs both open at run level and closed per token.
 
-Then dispatch:
+Then hand the dispatch over: `gh workflow run` is an `ask` rule, so the
+command goes to the operator as one row of the `kvb-org-operator` skill
+(`operator.py add <slug>-trigger --dir <abs worktree> --command "..."
+--reason "dispatch is an ask rule; <N> tokens" --check manual`), never run by
+the agent. A wrong earlier run still deploying on the branch gets its own
+`gh run cancel <id> --repo <repo>` row first. The command carries the final
+line inline, every token pinned on all eight axes; at no more than 20 tokens
+it fits a row, and the row then depends on no scratch file:
 
 ```bash
 python -m cli.administration.deploy.ci.trigger \
-  --priority "<tokens>" \
+  --priority "<the final pinned line>" \
   --workspace false \
   --chunk-gate false
 ```
