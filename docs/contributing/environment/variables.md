@@ -80,8 +80,9 @@ Slot 0 is the primary checkout; the other slots belong to stacks, not to checkou
   The first call builds the image when it is missing and starts the runner; later calls from every checkout with the same hash reuse it.
   No test or lint target starts a deploy stack.
 - The runner mounts every root of `INFINITO_WORKTREE_ROOTS` (colon-separated) at its host path; empty mounts the primary checkout and `~/.local/share/worktrees`.
+  It also mounts the git directory, common directory and object alternates of the checkout that starts it where they lie outside those roots, as for a `git clone --shared`.
   The wrappers exec with the invoking checkout as working directory and `INFINITO_SRC_DIR`, and with a `TMPDIR` of that checkout under `/tmp/infinito-test/` inside the runner.
-  A checkout outside the mounted roots is refused.
+  A checkout is refused when it, or one of those git paths of it, lies outside the roots the runner mounts; `make test-runner-down` then lets the next call start a runner that mounts them.
 - The runner joins the infra network `infinito-infra` and reaches the caches and the tools by name.
 - `make test-runner-down` removes the runner of the checkout's hash; the next call starts a new one with the current roots.
   `make build-cleanup` removes the toolchain images no registered worktree resolves and no container uses.

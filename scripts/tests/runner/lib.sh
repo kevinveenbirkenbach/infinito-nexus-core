@@ -5,11 +5,14 @@
 # per toolchain image (scripts/meta/resolve/image/local.sh), started on first
 # use, mounting every worktree root at its host path.
 # Param INFINITO_WORKTREE_ROOTS: colon-separated roots the runner mounts; empty
-#   mounts the primary checkout and ${HOME}/.local/share/worktrees.
+#   mounts the primary checkout and ${HOME}/.local/share/worktrees. A new runner
+#   also mounts the git directories of the checkout starting it that lie
+#   outside those roots.
 # Param infinito_test_runner_exec <checkout> [docker exec options] -- <command>:
 #   runs <command> in the runner with <checkout> as working directory and
-#   INFINITO_SRC_DIR, and a TMPDIR of its own; refuses a checkout outside the
-#   mounted roots.
+#   INFINITO_SRC_DIR, and a TMPDIR of its own; refuses a checkout that is, or
+#   whose git dir, common dir or object alternates are, outside the mounted
+#   roots.
 
 _infinito_test_runner_repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 _infinito_test_runner_down_target="make test-runner-down"
@@ -27,18 +30,56 @@ infinito_test_runner_name() {
 	printf 'infinito-test-%s\n' "${1##*:}"
 }
 
-infinito_test_runner_roots() {
-	local root
-	if [[ -n "${INFINITO_WORKTREE_ROOTS:-}" ]]; then
-		tr ':' '\n' <<<"${INFINITO_WORKTREE_ROOTS}"
-	else
-		(cd "${_infinito_test_runner_repo}" && bash scripts/meta/resolve/repository/primary.sh)
-		printf '%s\n' "${HOME}/.local/share/worktrees"
-	fi | while IFS= read -r root; do
-		if [[ -n "${root}" && -d "${root}" ]]; then
-			printf '%s\n' "${root%/}"
+infinito_test_runner_git_paths() {
+	local checkout="$1" objects line
+	git -C "${checkout}" rev-parse --git-dir >/dev/null 2>&1 || return 0
+	git -C "${checkout}" rev-parse --path-format=absolute --git-common-dir --git-dir
+	objects="$(git -C "${checkout}" rev-parse --path-format=absolute --git-path objects)"
+	if [[ -f "${objects}/info/alternates" ]]; then
+		while IFS= read -r line; do
+			case "${line}" in
+			'' | '#'*) ;;
+			/*) printf '%s\n' "${line%/}" ;;
+			*) realpath -m "${objects}/${line}" ;;
+			esac
+		done <"${objects}/info/alternates"
+	fi
+}
+
+_infinito_test_runner_covered() {
+	local path="$1" root
+	shift
+	for root in "$@"; do
+		if [[ "${path}" == "${root}" || "${path}" == "${root%/}/"* ]]; then
+			return 0
 		fi
 	done
+	return 1
+}
+
+infinito_test_runner_roots() {
+	local root path
+	local -a found=()
+	while IFS= read -r root; do
+		if [[ -n "${root}" && -d "${root}" ]]; then
+			found+=("${root%/}")
+		fi
+	done < <(
+		if [[ -n "${INFINITO_WORKTREE_ROOTS:-}" ]]; then
+			tr ':' '\n' <<<"${INFINITO_WORKTREE_ROOTS}"
+		else
+			(cd "${_infinito_test_runner_repo}" && bash scripts/meta/resolve/repository/primary.sh)
+			printf '%s\n' "${HOME}/.local/share/worktrees"
+		fi
+	)
+	while IFS= read -r path; do
+		if [[ -d "${path}" ]] && ! _infinito_test_runner_covered "${path}" "${found[@]}"; then
+			found+=("${path%/}")
+		fi
+	done < <(infinito_test_runner_git_paths "${_infinito_test_runner_repo}")
+	if [[ ${#found[@]} -gt 0 ]]; then
+		printf '%s\n' "${found[@]}"
+	fi
 }
 
 infinito_test_runner_network() {
@@ -82,8 +123,8 @@ infinito_test_runner_up() {
 }
 
 infinito_test_runner_exec() {
-	local checkout="$1" image name root roots="" inside="" tmpdir
-	local -a options=()
+	local checkout="$1" image name root path missing="" tmpdir
+	local -a options=() mounted=()
 	shift
 	while [[ $# -gt 0 && "$1" != "--" ]]; do
 		options+=("$1")
@@ -93,10 +134,8 @@ infinito_test_runner_exec() {
 	image="$(infinito_test_runner_image)"
 	name="$(infinito_test_runner_name "${image}")"
 	while IFS= read -r root; do
-		[[ -n "${root}" ]] || continue
-		roots="${roots:+${roots} }${root}"
-		if [[ "${checkout}" == "${root}" || "${checkout}" == "${root%/}/"* ]]; then
-			inside="${root}"
+		if [[ -n "${root}" ]]; then
+			mounted+=("${root}")
 		fi
 	done < <(
 		if docker inspect "${name}" >/dev/null 2>&1; then
@@ -105,8 +144,16 @@ infinito_test_runner_exec() {
 			infinito_test_runner_roots
 		fi
 	)
-	if [[ -z "${inside}" ]]; then
-		echo "Checkout ${checkout} is outside the worktree roots of ${name} (${roots}). Add its root to INFINITO_WORKTREE_ROOTS, run '${_infinito_test_runner_down_target}', and the next test call recreates the runner." >&2
+	while IFS= read -r path; do
+		if ! _infinito_test_runner_covered "${path}" "${mounted[@]}"; then
+			missing="${missing:+${missing} }${path}"
+		fi
+	done < <(
+		printf '%s\n' "${checkout}"
+		infinito_test_runner_git_paths "${checkout}"
+	)
+	if [[ -n "${missing}" ]]; then
+		echo "Checkout ${checkout} needs ${missing} outside the worktree roots of ${name} (${mounted[*]}). Add a checkout outside every root to INFINITO_WORKTREE_ROOTS, run '${_infinito_test_runner_down_target}' once no job uses ${name}, and the next test call recreates the runner with the git directories of its checkout." >&2
 		return 2
 	fi
 	infinito_test_runner_up "${image}" "${name}"

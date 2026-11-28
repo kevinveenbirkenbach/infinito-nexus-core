@@ -95,6 +95,9 @@ class TestWrapperSharedRunner(unittest.TestCase):
         git(cls.primary, "worktree", "add", "--quiet", "--detach", str(cls.linked))
         cls.outside = cls.base / "elsewhere"
         git(cls.primary, "worktree", "add", "--quiet", "--detach", str(cls.outside))
+        cls.clone = cls.worktrees / "clone"
+        git(cls.base, "clone", "--quiet", "--shared", str(cls.primary), str(cls.clone))
+        cls.objects = cls.primary / ".git" / "objects"
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -260,6 +263,53 @@ class TestWrapperSharedRunner(unittest.TestCase):
         self.assertEqual(done.returncode, 2)
         self.assertIn(f"({self.primary})", done.stderr)
         self.assertFalse([call for call in calls if call.startswith("docker exec")])
+
+    def test_a_runner_started_from_a_shared_clone_mounts_its_object_alternates(
+        self,
+    ) -> None:
+        done, calls = self._test_run(self.clone)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        run = next(call for call in calls if call.startswith("docker run "))
+        self.assertIn(f"-v {self.objects}:{self.objects} ", run)
+        self.assertIn(
+            f"nexus.infinito.worktree-roots={self.clone}:{self.worktrees}:{self.objects} ",
+            run,
+        )
+
+    def test_a_runner_started_from_a_shared_clone_refuses_a_linked_worktree(
+        self,
+    ) -> None:
+        done, calls = self._test_run(
+            self.linked,
+            STUB_RUNNER_STATE="true",
+            STUB_RUNNER_ROOTS=f"{self.clone}:{self.worktrees}:{self.objects}",
+        )
+        self.assertEqual(done.returncode, 2, done.stderr)
+        git_dir = self.primary / ".git"
+        self.assertIn(
+            f"needs {git_dir} {git_dir}/worktrees/{self.linked.name} outside",
+            done.stderr,
+        )
+        self.assertIn("make test-runner-down", done.stderr)
+        self.assertFalse([call for call in calls if call.startswith("docker exec")])
+
+    def test_a_running_runner_refuses_a_shared_clone_without_its_alternates(
+        self,
+    ) -> None:
+        done, calls = self._test_run(
+            self.clone, STUB_RUNNER_STATE="true", STUB_RUNNER_ROOTS=str(self.worktrees)
+        )
+        self.assertEqual(done.returncode, 2, done.stderr)
+        self.assertIn(f"needs {self.objects} outside", done.stderr)
+        self.assertFalse([call for call in calls if call.startswith("docker exec")])
+
+    def test_a_shared_clone_reuses_a_runner_mounting_its_alternates(self) -> None:
+        _, calls = self._test_run(
+            self.clone,
+            STUB_RUNNER_STATE="true",
+            STUB_RUNNER_ROOTS=f"{self.primary}:{self.worktrees}",
+        )
+        self.assertIn(f"--workdir {self.clone} ", self._runner_exec(calls))
 
     def test_the_lint_wrapper_execs_in_the_same_runner(self) -> None:
         _, test_calls = self._test_run(self.linked)
