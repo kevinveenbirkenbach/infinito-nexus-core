@@ -42,10 +42,16 @@ RELAY = {
     "password": "s3cr3t",
     "domain": DOMAIN,
     "auth": False,
+    "auth_mechanism": "off",
     "start_tls": True,
     "tls": False,
 }
-SUBMISSION = dict(RELAY, port=465, auth=True, start_tls=False, tls=True)
+SUBMISSION = dict(
+    RELAY, port=465, auth=True, auth_mechanism="on", start_tls=False, tls=True
+)
+INTERNAL_SUBMISSION = dict(
+    RELAY, port=587, auth=True, auth_mechanism="plain", start_tls=False, tls=False
+)
 
 
 def _render(email: dict, ca_file: str = "") -> str:
@@ -90,8 +96,14 @@ class TestGitlabSmtpSettings(unittest.TestCase):
         self.assertIn(f'user_name: "no-reply@{DOMAIN}"', rendered)
         self.assertIn("authentication: :login", rendered)
 
+    def test_plaintext_internal_submission_authenticates_with_auth_plain(self):
+        rendered = _render(INTERNAL_SUBMISSION)
+        self.assertIn(f'user_name: "no-reply@{DOMAIN}"', rendered)
+        self.assertIn("authentication: :plain", rendered)
+        self.assertNotIn(":login", rendered)
+
     def test_tls_and_starttls_are_never_both_on(self):
-        for email in (RELAY, SUBMISSION):
+        for email in (RELAY, SUBMISSION, INTERNAL_SUBMISSION):
             rendered = _render(email)
             tls = re.search(r"^\s*tls:\s*(\w+)", rendered, re.MULTILINE).group(1)
             starttls = re.search(

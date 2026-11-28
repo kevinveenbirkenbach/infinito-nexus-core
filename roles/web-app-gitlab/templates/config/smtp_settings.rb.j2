@@ -6,7 +6,7 @@ ActionMailer::Base.smtp_settings = {
 {% if GITLAB_EMAIL.auth | bool %}
   user_name: {{ GITLAB_EMAIL.username | ruby_dq }},
   password: {{ GITLAB_EMAIL.password | ruby_dq }},
-  authentication: :login,
+  authentication: :{{ 'plain' if GITLAB_EMAIL.auth_mechanism == 'plain' else 'login' }},
 {% endif %}
   domain: {{ GITLAB_EMAIL.domain | ruby_dq }},
 {% if GITLAB_EMAIL_CA_FILE | length > 0 %}
