@@ -17,7 +17,9 @@ const { awaitSession, espoApi } = require("./_shared");
 
 const SEED_PREFIX = "Design showcase";
 const WIDE_VIEWPORT = { width: 1440, height: 900 };
-const ACCOUNT_LIST_READY = "#main .list-container table tbody tr, #main .list-container .no-data";
+const LIST_VIEW = "#main > .list-container";
+const LIST_VIEW_ROWS = `${LIST_VIEW} table tbody tr`;
+const ACCOUNT_LIST_READY = `${LIST_VIEW_ROWS}, ${LIST_VIEW} .no-data`;
 
 function baseUrl() {
   return decodeDotenvQuotedValue(process.env.APP_BASE_URL).replace(/\/$/, "");
@@ -168,7 +170,7 @@ exports.register = function () {
     skipUnlessServiceEnabled("design");
     await signIn(page);
     await seed(page, "Account", [{ name: `${SEED_PREFIX} GmbH`, type: "Customer", industry: "Software" }]);
-    await openSignedIn(page, "Account", "#main .list-container table tbody tr");
+    await openSignedIn(page, "Account", LIST_VIEW_ROWS);
     for (const mode of ["light", "dark"]) {
       await page.emulateMedia({ colorScheme: mode });
       const label = `espocrm account list ${mode}`;
@@ -177,12 +179,12 @@ exports.register = function () {
       }
       await assertToken(page, "#navbar .navbar", "background-color", "--design-frame", label);
       await assertToken(page, "#navbar .navbar ul.tabs > li.tab > a", "color", "--design-on-frame", label);
-      await assertToken(page, "#main .list-container .list", "background-color", "--design-surface-2", label);
-      await assertToken(page, "#main .list-container table tbody tr td", "border-top-color", "--design-border", label);
+      await assertToken(page, `${LIST_VIEW} .list`, "background-color", "--design-surface-2", label);
+      await assertToken(page, `${LIST_VIEW_ROWS} td`, "border-top-color", "--design-border", label);
     }
     await page.emulateMedia({ colorScheme: null });
-    await assertLightAndDark(page, "#main .list-container .list", "espocrm account list");
-    const listOnSurfaces = ["#navbar .navbar ul.tabs > li.tab > a", "#main .list-container table tbody a"];
+    await assertLightAndDark(page, `${LIST_VIEW} .list`, "espocrm account list");
+    const listOnSurfaces = ["#navbar .navbar ul.tabs > li.tab > a", `${LIST_VIEW} table tbody a`];
     await assertReadable(
       page,
       isServiceEnabled("cosmos") ? listOnSurfaces : [...listOnSurfaces, "#main .page-header"],
@@ -220,7 +222,7 @@ exports.register = function () {
     skipUnlessServiceEnabled("design");
     await signIn(page);
     await page.emulateMedia({ colorScheme: "light" });
-    await openSignedIn(page, "Account", "#main .list-container");
+    await openSignedIn(page, "Account", LIST_VIEW);
     await expect(page.locator("body")).toHaveAttribute("data-theme-name", roleTheme());
     await expect(page.locator("html")).not.toHaveAttribute("data-design-theme", /.+/);
     const lightSurface = await tokenValue(page, "--design-surface-1", "background-color");
@@ -371,16 +373,16 @@ exports.register = function () {
     try {
       await captureDesignGallery(page, [
         readyView("home", `${base}/#Home`, "#main .dashboard-layout, #main .dashlet"),
-        readyView("account-list", `${base}/#Account`, "#main .list-container table tbody tr"),
+        readyView("account-list", `${base}/#Account`, LIST_VIEW_ROWS),
         readyView("account-detail", `${base}/#Account/view/${accountId}`, "#main .record .detail"),
         readyView("account-edit", `${base}/#Account/edit/${accountId}`, "#main .record .edit input[data-name='name']"),
         readyView("account-create", `${base}/#Account/create`, "#main .record .edit input[data-name='name']"),
-        readyView("contact-list", `${base}/#Contact`, "#main .list-container table tbody tr"),
+        readyView("contact-list", `${base}/#Contact`, LIST_VIEW_ROWS),
         readyView("contact-detail", `${base}/#Contact/view/${contactId}`, "#main .record .detail"),
-        readyView("lead-list", `${base}/#Lead`, "#main .list-container table tbody tr"),
-        readyView("opportunity-list", `${base}/#Opportunity`, "#main .list-container table tbody tr"),
-        readyView("case-list", `${base}/#Case`, "#main .list-container table tbody tr"),
-        readyView("task-list", `${base}/#Task`, "#main .list-container table tbody tr"),
+        readyView("lead-list", `${base}/#Lead`, LIST_VIEW_ROWS),
+        readyView("opportunity-list", `${base}/#Opportunity`, LIST_VIEW_ROWS),
+        readyView("case-list", `${base}/#Case`, LIST_VIEW_ROWS),
+        readyView("task-list", `${base}/#Task`, LIST_VIEW_ROWS),
         readyView("calendar", `${base}/#Calendar`, "#main .fc"),
         readyView("stream", `${base}/#Stream`, "#main .list-container, #main .no-data"),
         readyView("preferences", `${base}/#Preferences/edit/${userId}`, "#main .record .edit"),
@@ -388,14 +390,14 @@ exports.register = function () {
         readyView("admin-index", `${base}/#Admin`, "#main .admin-tables-container table.table-admin-panel"),
         readyView("admin-settings", `${base}/#Admin/settings`, "#main .record .edit"),
         readyView("admin-user-interface", `${base}/#Admin/userInterface`, "#main .record .edit"),
-        readyView("admin-users", `${base}/#User`, "#main .list-container table tbody tr"),
+        readyView("admin-users", `${base}/#User`, LIST_VIEW_ROWS),
         readyView("admin-entity-manager", `${base}/#Admin/entityManager`, "#main table tbody tr"),
         readyView("admin-extensions", `${base}/#Admin/extensions`, "#main input[type='file']"),
         {
           name: "menu-open",
           url: `${base}/?menu#Account`,
           prepare: async (current) => {
-            await expect(current.locator("#main .list-container")).toBeVisible({ timeout: resolveTimeout(10_000) });
+            await expect(current.locator(LIST_VIEW)).toBeVisible({ timeout: resolveTimeout(10_000) });
             const toggle = current.locator("#navbar .navbar-toggle");
             const opened = (await toggle.isVisible())
               ? current.locator("#navbar .navbar-body.in ul.tabs").first()
