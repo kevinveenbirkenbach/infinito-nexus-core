@@ -426,7 +426,7 @@ exports.register = function (shared) {
       if (isServiceEnabled("cosmos")) await assertSky(page, SKY_CLEARED, SKY_LEGIBLE_BLOCKS, `home ${mode}`);
       await assertToken(page, HEADER, "background-color", "--design-frame", `header ${mode}`);
       await assertToken(page, HEADER, "color", "--design-on-frame", `header ${mode}`);
-      await assertToken(page, HOME_MESSAGE, "color", "--design-text", `empty library state ${mode}`);
+      await assertToken(page, HOME_MESSAGE, "color", isServiceEnabled("cosmos") ? "--cosmos-text" : "--design-text", `empty library state ${mode}`);
       await assertToken(page, HOME_LINK, "color", "--design-link", `link ${mode}`);
       await assertToken(page, `${HEADER_TAB}.emby-tab-button-active`, "color", "--design-on-frame", `selected tab ${mode}`);
       expect(await computed(page, `${HEADER_TAB}:not(.emby-tab-button-active)`, "color"), `unselected tab ${mode}: ${HEADER_TAB_MUTED}`).toBe(
