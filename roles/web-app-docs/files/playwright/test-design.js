@@ -276,6 +276,7 @@ test("design: pages take surface, text, link and dividers from the palette", asy
       await pinLegible(page, "top");
       await assertToken(page, CONTENT_LINK, "color", "--design-link", `content link on the surface ${mode}`);
       await pinLegible(page, "all");
+      await assertToken(page, CODE, "background-color", "--design-surface-1", `code block surface on the sky ${mode}`);
     } else {
       await assertToken(page, CONTENT_LINK, "color", "--design-link", `content link ${mode}`);
     }

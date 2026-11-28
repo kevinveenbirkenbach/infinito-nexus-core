@@ -22,8 +22,11 @@
 {{ COSMOS_SKY_SELECTOR }} nav[aria-label="breadcrumbs"] :is(a, li, span) {
   color: inherit;
 }
-{{ COSMOS_SKY_SELECTOR }} code:not(pre code),
+{{ COSMOS_SKY_SELECTOR }} code:not(pre code) {
+  color: var(--design-text);
+}
 {{ COSMOS_SKY_SELECTOR }} div.highlight pre {
+  background-color: var(--design-surface-1);
   color: var(--design-text);
 }
 {{ COSMOS_LEGIBLE_TOP_SELECTOR }} main,
