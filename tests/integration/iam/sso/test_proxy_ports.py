@@ -167,7 +167,7 @@ class TestSsoProxyPorts(unittest.TestCase):
     def test_negative_control_an_onion_served_role_without_its_port_fails(
         self,
     ) -> None:
-        role = "web-app-worldmonitor"
+        role = "web-app-gitea"
         services = copy.deepcopy(_gated_services(ROLES_DIR / role))
         self.assertIsNotNone(services)
         networks = load_yaml(

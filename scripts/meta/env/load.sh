@@ -127,7 +127,7 @@ while IFS= read -r _infinito_env_line; do
 done <"${_infinito_env_source}"
 unset _infinito_env_line _infinito_env_key
 if [[ "${INFINITO_ENV_LOADED_FILE:-}" != "${_infinito_env_dotenv}" || ! -v INFINITO_ENV_CALLER_KEYS ]]; then # nocheck: env-loader-internal-guard
-	export INFINITO_ENV_CALLER_KEYS="${!_infinito_env_preserved[*]}" # nocheck: env-loader-internal-guard
+	export INFINITO_ENV_CALLER_KEYS="${!_infinito_env_preserved[*]}"                                            # nocheck: env-loader-internal-guard
 fi
 
 set -a
