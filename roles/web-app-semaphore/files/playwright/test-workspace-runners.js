@@ -1206,7 +1206,7 @@ exports.register = function (shared) {
         const deployName = requireDotenvValue(process.env.SEMAPHORE_DEPLOY_PROJECT_NAME, "SEMAPHORE_DEPLOY_PROJECT_NAME");
         deployRunners.push(runnerOf(await soleProjectId(page, deployName), `the deploy project "${deployName}"`).name);
       }
-      const { start } = await shared.appControlTemplates(page, appControlId, shared.env.appControlTargetId);
+      const { start } = await shared.appControlTemplates(page, appControlId, "all");
       const taskId = await startTask(page, appControlId, start.id, {}, {});
       let used;
       try {
