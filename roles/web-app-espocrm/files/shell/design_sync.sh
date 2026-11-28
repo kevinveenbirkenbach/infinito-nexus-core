@@ -48,15 +48,25 @@ sync_tree() {
 	changed=true
 }
 
+espo_command() {
+	espo_rc=0
+	espo_out="$(php command.php "$@")" || espo_rc=$?
+	if [ "$espo_rc" -ne 0 ]; then
+		printf 'design_sync: command.php %s exited %s: %s\n' "$1" "$espo_rc" "$espo_out" >&2
+		return "$espo_rc"
+	fi
+	printf '%s\n' "$espo_out"
+}
+
 sync_tree "$stage/module" "$module"
 sync_tree "$stage/assets" "$assets"
 
-current_theme="$(php command.php config:get theme)"
+current_theme="$(espo_command config:get theme)"
 if [ "$state" = present ] && [ "$current_theme" = "$upstream_theme" ]; then
-	php command.php config:set theme "$theme" >/dev/null
+	espo_command config:set theme "$theme" >/dev/null
 	changed=true
 elif [ "$state" = absent ] && [ "$current_theme" = "$theme" ]; then
-	php command.php config:set theme "$upstream_theme" >/dev/null
+	espo_command config:set theme "$upstream_theme" >/dev/null
 	changed=true
 fi
 
@@ -64,14 +74,14 @@ desired_title="$upstream_title"
 if [ "$state" = present ] && [ -n "$title" ]; then
 	desired_title="$title"
 fi
-current_title="$(php command.php config:get applicationName)"
+current_title="$(espo_command config:get applicationName)"
 if [ "$current_title" != "$desired_title" ] && { [ "$current_title" = "$upstream_title" ] || [ "$current_title" = "$applied_title" ]; }; then
-	php command.php config:set applicationName "$desired_title" >/dev/null
+	espo_command config:set applicationName "$desired_title" >/dev/null
 	changed=true
 fi
 
 if [ "$changed" = true ]; then
-	php command.php clear-cache >/dev/null
-	php command.php update-app-timestamp >/dev/null
+	espo_command clear-cache >/dev/null
+	espo_command update-app-timestamp >/dev/null
 	echo CHANGED
 fi
