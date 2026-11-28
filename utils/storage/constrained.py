@@ -187,6 +187,10 @@ def _store_bytes(applications: dict, service_registry: dict, rows: list[dict]) -
     walked = {row["role"] for row in rows}
     if STORE_ROLE in walked or not walked & store_consumers(PROJECT_ROOT / "roles"):
         return 0
+    return _store_floor(applications, service_registry)
+
+
+def _store_floor(applications: dict, service_registry: dict) -> int:
     store_rows: list[dict] = []
     collect_role_resources(
         role_name=STORE_ROLE,
@@ -306,6 +310,42 @@ def closure_storage(
         return declared
 
     return measure
+
+
+def closure_store_bytes(
+    roles_dir: Path,
+    roles: Iterable[str],
+    variants: dict[str, int],
+    *,
+    store_nodes: int,
+) -> int:
+    """
+    Args:
+        roles_dir: the roles tree the declarations are read from.
+        roles: a closure a resolver already settled, as ``closure_storage``'s
+            measure takes it.
+        variants: the round's per-app variant index.
+        store_nodes: as in shared_disk_storage_bytes.
+
+    Returns:
+        The model store copies ``closure_storage`` leaves out of the closure:
+        ``store_nodes`` times the min_storage of STORE_ROLE when a listed role
+        seeds the store, one copy fewer when STORE_ROLE is listed and so
+        counted once already, and 0 when no listed role seeds it.
+    """
+    listed = set(roles)
+    listed_store = STORE_ROLE in listed
+    if not listed_store and not listed & store_consumers(roles_dir):
+        return 0
+    applications = with_variants(
+        load_applications_from_roles_dir(roles_dir),
+        get_variants(roles_dir=str(roles_dir)),
+        variants,
+    )
+    copies = store_nodes - int(listed_store)
+    return copies * _store_floor(
+        applications, build_service_registry_from_applications(applications)
+    )
 
 
 def is_constrained(*, free_bytes: int, required_bytes: int) -> bool:

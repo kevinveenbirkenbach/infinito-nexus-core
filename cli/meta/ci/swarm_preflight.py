@@ -34,11 +34,14 @@ from humanfriendly import format_size
 
 from cli.meta.ci.host_rows import ROLES_DIR, swarm_closure
 from utils.storage.constrained import (
+    STORE_ROLE,
     StorageDeclarationError,
     closure_storage,
+    closure_store_bytes,
     is_constrained,
     resolved_docker_root_free_bytes,
 )
+from utils.tests.swarm.extend_inventory import SWARM_NODES
 from utils.tests.swarm.watchdog import DISK_FLOOR_MB, STORAGE_ROOTS, lowest_free_mb
 
 FLOOR_BYTES = DISK_FLOOR_MB * 2**20
@@ -70,23 +73,32 @@ def _size(value: int) -> str:
     return format_size(value, binary=True)
 
 
-def report(token: str, declared: dict[str, int], *, free_bytes: int) -> list[str]:
+def report(
+    token: str, declared: dict[str, int], *, store_bytes: int, free_bytes: int
+) -> list[str]:
     """Return the totals line, then every declaring role, heaviest first.
 
     Args:
         token: the row, as app#variant.
         declared: the closure's roles mapped to their declared bytes.
+        store_bytes: the model store copies the lab nodes hold beyond
+            ``declared``, as closure_store_bytes counts them.
         free_bytes: free space, as free_space measures it.
     """
     heaviest = sorted(declared.items(), key=lambda item: (-item[1], item[0]))
     header = (
         f"=== swarm pre-flight {token}: {len(declared)} roles declare "
-        f"{_size(sum(declared.values()))} + {_size(FLOOR_BYTES)} watchdog floor, "
+        f"{_size(sum(declared.values()))} + {_size(store_bytes)} model store "
+        f"copies on {len(SWARM_NODES)} nodes + {_size(FLOOR_BYTES)} watchdog floor, "
         f"{_size(free_bytes)} free on the fullest of Docker's data root and "
         f"{', '.join(STORAGE_ROOTS)} ==="
     )
+    store_line = (
+        [f"  {_size(store_bytes):>10}  {STORE_ROLE} copies"] if store_bytes else []
+    )
     return [
         header,
+        *store_line,
         *(f"  {_size(size):>10}  {role}" for role, size in heaviest if size),
     ]
 
@@ -119,11 +131,19 @@ def main(argv: list[str] | None = None) -> int:
     closure = swarm_closure(args.app, args.variant)
     try:
         declared = closure_storage(ROLES_DIR)(closure.roles, closure.variants)
+        store_bytes = closure_store_bytes(
+            ROLES_DIR, closure.roles, closure.variants, store_nodes=len(SWARM_NODES)
+        )
         free_bytes = free_space()
     except (RuntimeError, StorageDeclarationError) as exc:
         raise SystemExit(f"swarm pre-flight {token}: {exc}; {BYPASS}") from exc
-    print("\n".join(report(token, declared, free_bytes=free_bytes)), flush=True)
-    if fits(declared_bytes=sum(declared.values()), free_bytes=free_bytes):
+    print(
+        "\n".join(
+            report(token, declared, store_bytes=store_bytes, free_bytes=free_bytes)
+        ),
+        flush=True,
+    )
+    if fits(declared_bytes=sum(declared.values()) + store_bytes, free_bytes=free_bytes):
         return 0
     print(refusal(token), file=sys.stderr)
     return 1

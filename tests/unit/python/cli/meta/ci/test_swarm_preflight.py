@@ -10,10 +10,15 @@ from pathlib import Path
 from cli.meta.ci import swarm_preflight
 from cli.meta.ci.host_rows import Closure
 from cli.meta.ci.swarm_preflight import FLOOR_BYTES, fits, report
+from utils.roles.mapping import ROLE_FILE_TASKS_MAIN
+from utils.storage.constrained import STORE_ROLE, closure_store_bytes
+from utils.tests.swarm.extend_inventory import SWARM_NODES
 
 from . import _host_fixture
 
 _GIB = 2**30
+_STORE = 5 * _GIB
+_SEEDER = Closure(("web-app-seeder",), {"web-app-seeder": 0})
 _HEAVY = Closure(
     ("web-app-bulky", "svc-bkp-vault", "svc-ai-heavy"), {"web-app-bulky": 0}
 )
@@ -40,16 +45,26 @@ class TestFits(unittest.TestCase):
 
 class TestReport(unittest.TestCase):
     def test_roles_are_listed_heaviest_first(self) -> None:
-        lines = report("web-app-a#0", {"svc-a": 1, "svc-b": 3}, free_bytes=9)
+        lines = report(
+            "web-app-a#0", {"svc-a": 1, "svc-b": 3}, store_bytes=0, free_bytes=9
+        )
         self.assertEqual([line.split()[-1] for line in lines[1:]], ["svc-b", "svc-a"])
 
     def test_roles_declaring_nothing_are_left_out(self) -> None:
-        lines = report("web-app-a#0", {"svc-a": 1, "svc-b": 0}, free_bytes=9)
+        lines = report(
+            "web-app-a#0", {"svc-a": 1, "svc-b": 0}, store_bytes=0, free_bytes=9
+        )
         self.assertNotIn("svc-b", "\n".join(lines))
 
     def test_header_counts_every_closure_role(self) -> None:
-        lines = report("web-app-a#0", {"svc-a": 1, "svc-b": 0}, free_bytes=9)
+        lines = report(
+            "web-app-a#0", {"svc-a": 1, "svc-b": 0}, store_bytes=0, free_bytes=9
+        )
         self.assertIn("web-app-a#0: 2 roles", lines[0])
+
+    def test_store_copies_lead_the_listing(self) -> None:
+        lines = report("web-app-a#0", {"svc-a": 1}, store_bytes=7, free_bytes=9)
+        self.assertEqual(lines[1].split()[-2:], [STORE_ROLE, "copies"])
 
 
 class TestMainOverFixtureRoles(unittest.TestCase):
@@ -102,6 +117,55 @@ class TestMainOverFixtureRoles(unittest.TestCase):
         message = self._refused(_LIGHT, side_effect=RuntimeError("no daemon"))
         self.assertIn("no daemon", message)
         self.assertIn("preflight=false", message)
+
+    def _seed_store(self) -> None:
+        _host_fixture.build_role(
+            self.roles_dir,
+            STORE_ROLE,
+            f"models:\n{_host_fixture.SWARM}  enabled: true\n  min_storage: 5GiB\n",
+        )
+        _host_fixture.build_role(
+            self.roles_dir,
+            "web-app-seeder",
+            f"seeder:\n{_host_fixture.SWARM}  enabled: true\n  min_storage: 1GiB\n",
+        )
+        (self.roles_dir / "web-app-seeder" / ROLE_FILE_TASKS_MAIN).parent.mkdir()
+        (self.roles_dir / "web-app-seeder" / ROLE_FILE_TASKS_MAIN).write_text(
+            f"- ansible.builtin.include_role:\n    name: {STORE_ROLE}\n",
+            encoding="utf-8",
+        )
+
+    def _store_copies(self, roles: tuple[str, ...]) -> int:
+        return closure_store_bytes(
+            self.roles_dir, roles, {}, store_nodes=len(SWARM_NODES)
+        )
+
+    def test_a_store_consumer_counts_one_store_per_node(self) -> None:
+        self._seed_store()
+        self.assertEqual(self._store_copies(_SEEDER.roles), len(SWARM_NODES) * _STORE)
+
+    def test_a_listed_store_role_is_counted_once_already(self) -> None:
+        self._seed_store()
+        self.assertEqual(
+            self._store_copies((*_SEEDER.roles, STORE_ROLE)),
+            (len(SWARM_NODES) - 1) * _STORE,
+        )
+
+    def test_a_closure_without_a_consumer_counts_no_store(self) -> None:
+        self._seed_store()
+        self.assertEqual(self._store_copies(_LIGHT.roles), 0)
+
+    def test_the_store_copies_refuse_a_closure_its_roles_alone_fit(self) -> None:
+        self._seed_store()
+        rc, out, err = self._run(_SEEDER, free_bytes=2 * _GIB + FLOOR_BYTES)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("REFUSED: web-app-seeder#0", err)
+
+    def test_the_closure_fits_once_the_store_copies_fit(self) -> None:
+        self._seed_store()
+        free = 1 * _GIB + len(SWARM_NODES) * _STORE + FLOOR_BYTES
+        rc, _out, err = self._run(_SEEDER, free_bytes=free)
+        self.assertEqual(rc, 0, err)
 
     def test_unparsable_declaration_is_refused_by_name(self) -> None:
         _host_fixture.build_role(
