@@ -1,3 +1,10 @@
 ---
 - name: "🏃 Stage the Semaphore runner for {{ application_id }}"
   include_tasks: utils/runner.yml
+
+- name: "🗂️ Check and write the provision catalogs the provision runner binds"
+  include_tasks:
+    file: utils/catalog.yml
+    apply:
+      delegate_to: "{{ STACK_HOST }}"
+      run_once: true

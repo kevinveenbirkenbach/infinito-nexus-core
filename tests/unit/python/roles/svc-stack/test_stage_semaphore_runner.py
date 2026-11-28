@@ -15,6 +15,7 @@ ROLE = "web-app-semaphore"
 BRIDGE = "tasks/utils/stack.yml"
 RUNNER = "utils/runner.yml"
 PRUNE = "utils/runner/prune.yml"
+CATALOG = "utils/catalog.yml"
 RUNNER_REGISTERS = ("semaphore_runner_compose", "semaphore_runner_held")
 
 
@@ -23,6 +24,10 @@ class TestStageSemaphoreRunner(unittest.TestCase):
         self.assertTrue((PROJECT_ROOT / "roles" / ROLE / BRIDGE).is_file())
         self.assertIn(RUNNER, _includes(ROLE, STAGE))
         self.assertNotIn(RUNNER, _includes(ROLE, CORE))
+
+    def test_the_catalogs_bind_source_is_written_before_the_bridged_backend(self) -> None:  # nocheck: test.text-presence -- asserts on the include targets of the parsed stage and core task files  # fmt: skip
+        self.assertIn(CATALOG, _includes(ROLE, STAGE))
+        self.assertNotIn(CATALOG, _includes(ROLE, CORE))
 
     def test_the_prune_stays_after_the_backend(self) -> None:  # nocheck: test.text-presence -- asserts on the include targets of the parsed stage and core task files  # fmt: skip
         self.assertIn(PRUNE, _includes(ROLE, CORE))

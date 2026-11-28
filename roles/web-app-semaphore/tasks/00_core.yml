@@ -30,13 +30,6 @@
   delegate_to: "{{ STACK_HOST }}"
   run_once: true
 
-- name: "🗂️ Check and write the provision catalogs of this deployment"
-  include_tasks:
-    file: utils/catalog.yml
-    apply:
-      delegate_to: "{{ STACK_HOST }}"
-      run_once: true
-
 - name: "🌐 Run the tasks of the deployment's DNS flavor"
   include_tasks: "flavors/dns/{{ SEMAPHORE_DNS_FLAVOR }}.yml"
 
