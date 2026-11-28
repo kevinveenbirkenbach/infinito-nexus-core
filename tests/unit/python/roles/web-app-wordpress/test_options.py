@@ -23,7 +23,7 @@ from utils.cache.reset import _reset_cache_for_tests
 from utils.cache.yaml import load_yaml_any
 from utils.roles.applications.config import AppConfigKeyError
 from utils.roles.applications.converge import values
-from utils.roles.applications.forms import is_sso_source
+from utils.roles.applications.source_kinds import is_sso_source
 from utils.roles.mapping import (
     ROLE_FILE_META_FORMS,
     ROLE_FILE_META_SERVICES,

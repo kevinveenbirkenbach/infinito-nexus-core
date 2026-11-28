@@ -126,8 +126,33 @@ class TestFieldLocks(unittest.TestCase):
 
     def test_a_role_with_neither_locks_nothing(self):
         self.assertEqual(
-            {"locks": [], "languages": None, "profile": {}},
+            {"locks": [], "languages": None, "profile": {}, "rbac": {}},
             self._run(_application(profile=False, managed=False)),
+        )
+
+    def test_an_rbac_flag_locks_with_the_profile_entry_and_stays_off_the_guards(self):
+        application = copy.deepcopy(_application(profile=True, managed=False))
+        application["forms"]["profile"]["fields"]["administrator"] = {
+            "source": "rbac.administrator",
+            "mode": "enforced",
+            "selector": "#admin[data-locked]",
+        }
+
+        result = self._run(application)
+
+        self.assertEqual(PROFILE, result["profile"])
+        self.assertEqual({"administrator": "#admin[data-locked]"}, result["rbac"])
+        self.assertEqual(
+            [
+                {
+                    "page": "/profile",
+                    "selector": ",".join([*PROFILE.values(), "#admin[data-locked]"]),
+                    "label": None,
+                    "path": None,
+                    "secret": False,
+                }
+            ],
+            result["locks"],
         )
 
     def test_the_profile_languages_cut_the_catalogue(self):

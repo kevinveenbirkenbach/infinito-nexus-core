@@ -11,7 +11,13 @@ from utils.annotations.suppress import is_suppressed_at
 from utils.cache.applications import get_application_defaults
 from utils.cache.files import read_text
 from utils.cache.users import get_user_defaults
-from utils.roles.applications import form_schema, forms, sso_fields
+from utils.roles.applications import (
+    form_schema,
+    forms,
+    rbac_fields,
+    source_kinds,
+    sso_fields,
+)
 from utils.roles.mapping import (
     ROLE_FILE_META_FORMS,
     ROLE_FILE_META_SECRETS,
@@ -137,6 +143,9 @@ def findings(
                 )
             )
             errors.extend(sso_fields.errors(role.name, data))
+            errors.extend(
+                rbac_fields.errors(role.name, data, defaults.get(role.name, {}))
+            )
     return errors
 
 
@@ -162,7 +171,11 @@ def convergence_findings(roles: list[Path]) -> list[str]:
             continue
         data = load_role_meta(role / ROLE_FILE_META_FORMS)
         declared = (
-            {form for form, block in data.items() if not sso_fields.only_sso(block)}
+            {
+                form
+                for form, block in data.items()
+                if not source_kinds.only_identity(block)
+            }
             if isinstance(data, dict)
             else set()
         )
@@ -339,7 +352,7 @@ def sink_findings(roles: list[Path]) -> list[str]:
             for form, block in data.items()
             if isinstance(block, dict)
             and "sinks" not in block
-            and not sso_fields.only_sso(block)
+            and not source_kinds.only_identity(block)
         )
         for name, naming in _sinks_by_name(data).items():
             where = f"{role.name}: sink {name}"
@@ -366,7 +379,7 @@ def _spellings(field: str) -> set[str]:
 def _script_fields(data: dict[str, Any]) -> dict[str, frozenset[str]]:
     sinks: dict[str, set[str]] = {}
     for form, name, spec in forms.iter_fields(data):
-        if forms.is_sso_source(spec.get("source")):
+        if source_kinds.is_identity_source(spec.get("source")):
             continue
         named = data.get(form, {}).get("sinks")
         sinks.setdefault(name, set()).update(
@@ -470,7 +483,7 @@ def _locked_forms(data: dict[str, Any]) -> list[str]:
             form
             for form, _field, spec in forms.iter_fields(data)
             if spec.get("mode") == "enforced"
-            and not forms.is_sso_source(spec.get("source"))
+            and not source_kinds.is_identity_source(spec.get("source"))
             and forms.renders_lock(data[form])
         }
     )

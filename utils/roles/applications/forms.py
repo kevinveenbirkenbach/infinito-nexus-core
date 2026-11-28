@@ -7,6 +7,11 @@ from typing import TYPE_CHECKING, Any
 from ansible.module_utils.parsing.convert_bool import boolean
 
 from utils.cache.yaml import load_yaml_any
+from utils.roles.applications.source_kinds import (
+    is_identity_source,
+    is_rbac_source,
+    is_sso_source,
+)
 from utils.roles.mapping import ROLE_FILE_META_SECRETS
 
 if TYPE_CHECKING:
@@ -17,7 +22,6 @@ LOCK_PENDING = "pending"
 NEGATION = "!"
 MAP_SCALARS = (str, int, float, bool)
 USERS_ROOT = "users"
-SSO_ROOT = "sso"
 SERVICES_ROOT = "services"
 SERVICE_VALUE_START = 2
 USER_SOURCE_PARTS = 3
@@ -97,15 +101,6 @@ def _is_user_path(parts: list[str]) -> bool:
     return parts[0] == USERS_ROOT
 
 
-def is_sso_source(source: Any) -> bool:
-    """Whether a field's ``source`` names an ``OIDC.ATTRIBUTES`` key of the SSO sign-in.
-
-    Args:
-        source: the field's ``source``.
-    """
-    return isinstance(source, str) and source.split(".", 1)[0] == SSO_ROOT
-
-
 def is_native(block: Any) -> bool:
     """Whether the application locks a form's fields itself.
 
@@ -162,12 +157,16 @@ def resolve(source: str, application: Mapping, users: Mapping) -> Any:
     Raises:
         SourceError: when the source is no dotted path, names nothing, names
             a user path of another shape or a refused user attribute, or is
-            an ``sso`` source; the message never repeats the source.
+            an ``sso`` or ``rbac`` source; the message never repeats the source.
     """
     if not (isinstance(source, str) and _PATH.fullmatch(source)):
         raise SourceError("the source is no dotted inventory path")
     if is_sso_source(source):
         raise SourceError("an sso source has no deploy-time value")
+    if is_rbac_source(source):
+        raise SourceError(
+            "an rbac source has no deploy-time value; the RBAC sync writes it"
+        )
     parts = source.split(".")
     if not _is_user_path(parts):
         return _walk(application, parts, source)
@@ -245,8 +244,9 @@ def source_errors(
         One finding per refused or unresolved path, naming the
         ``<form>.<field>.<key>`` or ``<form>.record.source`` coordinate and
         never the path itself; an ``sso.<ATTRIBUTE>`` field source is left to
-        ``sso_fields.errors``, while a record source is refused under
-        ``users``, ``secrets.credentials`` or ``sso``, with a last segment
+        ``sso_fields.errors`` and an ``rbac.<ROLE>`` one to
+        ``rbac_fields.errors``, while a record source is refused under
+        ``users``, ``secrets.credentials``, ``sso`` or ``rbac``, with a last segment
         matching ``SECRET_SEGMENT`` or with a segment named like a declared
         credential.
     """
@@ -258,7 +258,7 @@ def source_errors(
         ):
             if not (isinstance(path, str) and _PATH.fullmatch(path)):
                 continue
-            if key == "source" and is_sso_source(path):
+            if key == "source" and is_identity_source(path):
                 continue
             where = f"{role}: {form}.{field}.{key}"
             parts = path.split(".")
@@ -336,7 +336,7 @@ def _record_source_errors(
             continue
         where = f"{role}: {form}.record.source"
         parts = source.split(".")
-        if is_sso_source(source) or _secret_path(parts, credentials, parts[-1:]):
+        if is_identity_source(source) or _secret_path(parts, credentials, parts[-1:]):
             errors.append(f"{where} must name no secret; every page carries its ids")
         elif not declares(source, application, users, credentials):
             errors.append(f"{where} names nothing in the inventory")
@@ -438,7 +438,8 @@ def locks(
 
     Returns:
         First one profile lock per form ``page`` path that holds
-        ``sso.<ATTRIBUTE>`` fields: their ``selector`` parts joined by commas,
+        ``sso.<ATTRIBUTE>`` or ``rbac.<ROLE>`` fields, which the sign-in or
+        the RBAC sync overwrites: their ``selector`` parts joined by commas,
         with the ``label`` and ``path`` ``None`` and never ``secret``. Then
         one entry per other ``enforced`` field whose ``when`` holds and, for
         an ``optional`` field, whose source is not ``false``, in YAML
@@ -468,7 +469,7 @@ def locks(
     ]
     profile: dict[str, list[str]] = {}
     for _form, page, _field, spec in enforced:
-        if is_sso_source(spec["source"]):
+        if is_identity_source(spec["source"]):
             profile.setdefault(page, []).append(spec["selector"])
     return [
         {
@@ -489,5 +490,5 @@ def locks(
             **_record(forms[form], application, users),
         }
         for form, page, field, spec in enforced
-        if not is_sso_source(spec["source"])
+        if not is_identity_source(spec["source"])
     ]

@@ -184,7 +184,21 @@ class TestSchema(unittest.TestCase):
             _with_field("general", "email", {**spec, "optional": True}),
         )
         self.assertEqual(1, len(errors))
-        self.assertIn("email.optional takes no sso.<ATTRIBUTE> source", errors[0])
+        self.assertIn(
+            "email.optional takes no sso.<ATTRIBUTE> or rbac.<ROLE> source", errors[0]
+        )
+
+    def test_an_rbac_field_takes_no_optional(self):
+        spec = {"source": "rbac.administrator", "mode": "enforced", "selector": "#a"}
+        errors = form_schema.schema_errors(
+            "web-app-x",
+            _with_field("general", "administrator", {**spec, "optional": True}),
+        )
+        self.assertEqual(1, len(errors))
+        self.assertIn(
+            "administrator.optional takes no sso.<ATTRIBUTE> or rbac.<ROLE> source",
+            errors[0],
+        )
 
     def test_an_env_name_passes(self):
         spec = {**_field("general", "blogname"), "env": "FTLCONF_webserver_domain"}
@@ -425,8 +439,8 @@ class TestSchema(unittest.TestCase):
             [
                 "web-app-x: general.native takes no record; the application locks it",
                 (
-                    "web-app-x: general.native holds no sso.<ATTRIBUTE> field; the shared"
-                    " renderer shows its warning"
+                    "web-app-x: general.native holds no sso.<ATTRIBUTE> or rbac.<ROLE>"
+                    " field; the shared renderer shows its warning"
                 ),
             ],
             form_schema.schema_errors("web-app-x", data),
@@ -496,8 +510,8 @@ class TestSchema(unittest.TestCase):
         self.assertEqual(
             [
                 (
-                    "web-app-x: general.lock pending holds no sso.<ATTRIBUTE> field; the"
-                    " shared renderer shows its warning"
+                    "web-app-x: general.lock pending holds no sso.<ATTRIBUTE> or"
+                    " rbac.<ROLE> field; the shared renderer shows its warning"
                 )
             ],
             form_schema.schema_errors("web-app-x", data),

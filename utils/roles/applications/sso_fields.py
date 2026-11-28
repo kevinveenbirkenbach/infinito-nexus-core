@@ -4,12 +4,8 @@ from collections.abc import Mapping
 
 from utils import PROJECT_ROOT
 from utils.cache.yaml import load_yaml_any
-from utils.roles.applications.forms import (
-    SSO_ROOT,
-    SourceError,
-    is_sso_source,
-    iter_fields,
-)
+from utils.roles.applications.forms import SourceError, iter_fields
+from utils.roles.applications.source_kinds import SSO_ROOT, is_sso_source
 
 OIDC_VARS = PROJECT_ROOT / "group_vars" / "all" / "11_oidc.yml"
 OIDC_DEFAULTS = "defaults_oidc"
@@ -94,20 +90,3 @@ def selectors(forms: Mapping) -> dict[str, str]:
         for _, field, spec in iter_fields(forms)
         if is_sso_source(spec.get("source")) and isinstance(spec.get("selector"), str)
     }
-
-
-def only_sso(block: Mapping) -> bool:
-    """Whether every field of one form names an ``sso.<ATTRIBUTE>`` source.
-
-    Args:
-        block: one form of ``meta/forms.yml``.
-    """
-    fields = block.get("fields") if isinstance(block, Mapping) else None
-    return (
-        isinstance(fields, Mapping)
-        and bool(fields)
-        and all(
-            isinstance(spec, Mapping) and is_sso_source(spec.get("source"))
-            for spec in fields.values()
-        )
-    )

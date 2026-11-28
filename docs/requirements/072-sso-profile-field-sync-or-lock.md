@@ -45,6 +45,28 @@ flowchart LR
 3. Joomla keeps overwriting groups from Keycloak and locks its profile fields.
 4. A field overwritten by a timer or a deploy counts as overwritten, the same as one overwritten at login.
 
+## Decisions for RBAC flags (2026-11-28)
+
+Operator pick (hub decision 99c7280d3c5e7177): admin and role flags get a source kind of their own instead of a pretended `sso.<ATTRIBUTE>` or an inventory path.
+
+1. A `meta/forms.yml` field declares `source: rbac.<ROLE>`. `<ROLE>` is a role key of the role's `meta/rbac.yml` or the implicit `administrator` that `utils/roles/rbac/catalogue.py` appends, so it names the Keycloak group `RBAC.GROUP.NAME/<application_id>/<ROLE>` (per tenant for a tenant-scoped role) that the `RBAC.GROUP.CLAIM` claim carries. No other vocabulary exists: an unknown role, another application's role or a deeper path fails the forms lint.
+2. The field holds the application's view of that membership: an admin flag, a role select, a team membership or an active flag. A control that shows several roles at once is declared once per role, with the same selector.
+3. The RBAC convergence of the role writes the field: `tasks/utils/rbac/sync.yml` with the role in `rbac_sync_roles`, or the role's own login mapping of `RBAC.GROUP.CLAIM`. `lookup('form_values', ...)` leaves an `rbac.<ROLE>` field out and resolving one fails, so no deploy writes it a second time; a form of `sso.<ATTRIBUTE>` and `rbac.<ROLE>` fields only needs neither a converge nor `sinks`.
+4. An `rbac.<ROLE>` field is `enforced`, takes no `when`, no `optional` and no `record`, and its form is neither `native` nor `lock: pending`; `utils/roles/applications/rbac_fields.py` and `utils/roles/applications/form_schema.py` hold the rules.
+5. The profile lock lint treats it like an `sso.<ATTRIBUTE>` field: it covers an overwritten field, its selector carries the role's managed-account marker in every part, the role declares `services.sso.profile.languages`, loads the shared renderer and proves the lock in `files/playwright/test-profile-lock.js`. The marker is one the application or the role's server side renders only for accounts the RBAC sync converges; a selector never serves as its own marker. The renderer locks the field in the page's profile entry, with the profile warning and without an unlock, because the next RBAC sync overwrites any edit.
+
+```yaml
+members:
+  path: /admin/users
+  fields:
+    administrator:
+      source: rbac.administrator
+      mode: enforced
+      selector: "body.infinito-rbac-managed #role-menu"
+```
+
+`utils/roles/applications/rbac_fields.py` and `tests/unit/python/utils/roles/applications/test_rbac_fields.py` hold the source kind; no role uses it yet. `web-app-fider` was the intended pilot and stays pending: its admin member list (`/admin/users`, Fider v0.41.0 `ManageMembers.page.tsx`) renders no marker that tells an SSO-managed account from the bootstrap administrator, whom `roles/web-app-fider/files/sql/reconcile-roles.sql` never syncs.
+
 ## Profile field inventory (2026-11-01)
 
 | Role | Field | Editable in app | Overwritten (login, timer or deploy) | Written back | Existing lock | Treatment | Evidence |
@@ -287,6 +309,16 @@ Open classification:
 - web-app-checkmk: whether the user's own profile page respects the LDAP lock is unverified.
 - web-app-gitea: the per-login re-sync of the admin flag comes from helper functions; the function that applies it was not read.
 - web-app-wordpress: nickname set only at creation is unverified at the pinned plugin version.
+
+Open treatment:
+
+- web-app-jenkins: full name and email have no SSO marker in the page and no server guard; the role configures Jenkins only through JCasC and plugins, so a lock needs a plugin or a marker of its own first (roles/web-app-jenkins/templates/casc.yaml.j2).
+- web-app-litellm: the UI is the svc-ai-litellm proxy UI behind this role, which ships no code of its own to render a marker or a guard (roles/svc-ai-litellm/templates/env.j2).
+- web-app-jitsi: upstream `readOnlyName` and `disableProfile` are global and hit guests too, and no token-participant marker exists to scope a lock to SSO participants (roles/web-app-jitsi/templates/keycloak_adapter/context.ts.j2).
+
+## Known Gaps
+
+- web-app-matrix stays pending (operator pick 8ac704fb38b8cac8). Synapse v1.166.0 with `enable_set_displayname: false` refuses the display name change of appservice bridges with 403 as well (`synapse/handlers/profile.py`, `synapse/rest/client/profile.py`), so the native lock would break every bridge. Revisit when Synapse exempts appservices from the setting.
 
 ## Settings field inventory (2026-11-04)
 

@@ -10,9 +10,9 @@ from utils.roles.applications.forms import (
     MAP_SCALARS,
     MODES,
     _holds_template,
-    is_sso_source,
     when_path,
 )
+from utils.roles.applications.source_kinds import is_identity_source
 from utils.roles.mapping import ROLE_FILE_META_FORMS
 
 TYPES = (
@@ -126,11 +126,11 @@ def _optional_errors(where: str, spec: Mapping) -> list[str]:
                 " is a value the app stores"
             )
         ]
-    if is_sso_source(spec.get("source")):
+    if is_identity_source(spec.get("source")):
         return [
             (
-                f"{where}.optional takes no sso.<ATTRIBUTE> source; such a source has"
-                " no deploy-time value"
+                f"{where}.optional takes no sso.<ATTRIBUTE> or rbac.<ROLE> source;"
+                " such a source has no deploy-time value"
             )
         ]
     return []
@@ -204,18 +204,18 @@ def _native_errors(where: str, block: Mapping) -> list[str]:
     errors = []
     if "record" in block:
         errors.append(f"{where}.native takes no record; the application locks it")
-    if _holds_sso_field(block):
+    if _holds_identity_field(block):
         errors.append(
-            f"{where}.native holds no sso.<ATTRIBUTE> field; the shared renderer"
-            " shows its warning"
+            f"{where}.native holds no sso.<ATTRIBUTE> or rbac.<ROLE> field; the"
+            " shared renderer shows its warning"
         )
     return errors
 
 
-def _holds_sso_field(block: Mapping) -> bool:
+def _holds_identity_field(block: Mapping) -> bool:
     fields = block.get("fields")
     return isinstance(fields, Mapping) and any(
-        isinstance(spec, Mapping) and is_sso_source(spec.get("source"))
+        isinstance(spec, Mapping) and is_identity_source(spec.get("source"))
         for spec in fields.values()
     )
 
@@ -239,10 +239,10 @@ def _lock_errors(where: str, block: Mapping) -> list[str]:
             f"{where}.lock {LOCK_PENDING} and native exclude each other; the"
             " application locks a native form"
         )
-    if _holds_sso_field(block):
+    if _holds_identity_field(block):
         errors.append(
-            f"{where}.lock {LOCK_PENDING} holds no sso.<ATTRIBUTE> field; the shared"
-            " renderer shows its warning"
+            f"{where}.lock {LOCK_PENDING} holds no sso.<ATTRIBUTE> or rbac.<ROLE>"
+            " field; the shared renderer shows its warning"
         )
     return errors
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from utils.roles.applications import forms, sso_fields
+from utils.roles.applications import forms, source_kinds, sso_fields
 from utils.roles.applications.converge import values
 
 FORMS = {
@@ -144,9 +144,9 @@ class TestSelectors(unittest.TestCase):
         )
 
     def test_a_form_of_sso_fields_only_is_recognised(self):
-        self.assertTrue(sso_fields.only_sso(FORMS["profile"]))
-        self.assertFalse(sso_fields.only_sso(FORMS["general"]))
-        self.assertFalse(sso_fields.only_sso({"path": "/x", "fields": {}}))
+        self.assertTrue(source_kinds.only_identity(FORMS["profile"]))
+        self.assertFalse(source_kinds.only_identity(FORMS["general"]))
+        self.assertFalse(source_kinds.only_identity({"path": "/x", "fields": {}}))
 
 
 class TestTheFormsMachinery(unittest.TestCase):

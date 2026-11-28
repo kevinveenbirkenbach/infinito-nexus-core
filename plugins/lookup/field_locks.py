@@ -2,16 +2,17 @@
 
     {{ lookup('field_locks', application_id).locks | to_inline_js }}
 
-Returns ``{"locks": [...], "languages": [...] | None, "profile": {...}}`` for
-``roles/sys-front-inj-javascript/templates/profile_lock.js.j2``, its catalogue
-and the server guards. ``locks`` holds the entry
-``utils.roles.applications.forms.locks`` builds for every ``enforced`` field of
-the role's ``meta/forms.yml``; an ``sso.<ATTRIBUTE>`` field comes without
-``path``, so the renderer shows the profile warning and offers no unlock, and a
-role without the file locks nothing. ``languages`` is the role's
-``services.sso.profile.languages``, or ``None`` for a role that declares none,
-whose page then carries every catalogue language. ``profile`` maps each
-``sso.<ATTRIBUTE>`` field to its selector.
+Returns ``{"locks": [...], "languages": [...] | None, "profile": {...},
+"rbac": {...}}`` for ``roles/sys-front-inj-javascript/templates/profile_lock.js.j2``,
+its catalogue, the server guards and the Playwright proofs. ``locks`` holds the
+entry ``utils.roles.applications.forms.locks`` builds for every ``enforced``
+field of the role's ``meta/forms.yml``; an ``sso.<ATTRIBUTE>`` or
+``rbac.<ROLE>`` field comes without ``path``, so the renderer shows the profile
+warning and offers no unlock, and a role without the file locks nothing.
+``languages`` is the role's ``services.sso.profile.languages``, or ``None`` for
+a role that declares none, whose page then carries every catalogue language.
+``profile`` maps each ``sso.<ATTRIBUTE>`` field to its selector, and ``rbac``
+each ``rbac.<ROLE>`` field.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from ansible.plugins.loader import lookup_loader
 from ansible.plugins.lookup import LookupBase
 
 from utils.cache import ROLES_DIR
-from utils.roles.applications import forms, sso_fields
+from utils.roles.applications import forms, rbac_fields, sso_fields
 
 PROFILE_PATH = ("services", "sso", "profile")
 
@@ -80,5 +81,6 @@ class LookupModule(LookupBase):
                 "locks": entries,
                 "languages": _node(application, (*PROFILE_PATH, "languages")),
                 "profile": sso_fields.selectors(managed),
+                "rbac": rbac_fields.selectors(managed),
             }
         ]

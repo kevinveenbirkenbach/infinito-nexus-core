@@ -6,11 +6,11 @@ from utils.roles.applications.forms import (
     SourceError,
     _applies,
     _holds_template,
-    is_sso_source,
     iter_fields,
     mapped,
     resolve,
 )
+from utils.roles.applications.source_kinds import is_identity_source
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -45,7 +45,8 @@ def values(
     Returns:
         Each field whose ``when`` holds mapped to the value its ``source``
         resolves to, passed through its ``map``, in YAML order; an
-        ``sso.<ATTRIBUTE>`` field and an ``optional`` field whose source is
+        ``sso.<ATTRIBUTE>`` or ``rbac.<ROLE>`` field, which the sign-in or the
+        RBAC sync writes, and an ``optional`` field whose source is
         ``false`` are left out.
 
     Raises:
@@ -57,7 +58,7 @@ def values(
         field: _value(field, spec, application, users)
         for name, field, spec in iter_fields(forms)
         if name == form
-        and not is_sso_source(spec.get("source"))
+        and not is_identity_source(spec.get("source"))
         and (mode is None or spec.get("mode") == mode)
         and _applies(name, field, spec, application, users)
     }

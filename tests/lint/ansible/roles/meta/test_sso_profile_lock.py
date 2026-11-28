@@ -29,8 +29,10 @@ Every role with a potentially enabled ``sso`` or ``ldap`` service, a custom
 inventory list of this file or by its own ``overwritten`` or ``none_needed``.
 ``OVERWRITTEN`` names the fields a treated role's login, timer or deploy
 overwrites without writing them back, and each of them, like each field of a
-role's own ``overwritten``, MUST be an ``sso.<ATTRIBUTE>`` field or appear in
-``write_back``;
+role's own ``overwritten``, MUST be an ``sso.<ATTRIBUTE>`` field, an
+``rbac.<ROLE>`` field naming a role of the role's ``meta/rbac.yml`` or the
+implicit ``administrator``, whose group the RBAC sync converges, or appear in
+``write_back``; both kinds take the same marker, renderer and proof;
 ``NONE_NEEDED`` names the roles whose inventory rows need no treatment;
 ``PENDING`` is the only exemption, the roles not treated yet with the fields
 still open. A custom role ships from its own repository, so it classifies
@@ -51,7 +53,7 @@ from utils.cache.files import read_text
 from utils.cache.yaml import load_yaml
 from utils.i18n.keyed import keyed_catalogue
 from utils.i18n.languages import SOURCE_LANGUAGE, domain_languages, load_languages
-from utils.roles.applications import sso_fields
+from utils.roles.applications import rbac_fields, sso_fields
 from utils.roles.applications.services.sso import is_potentially_enabled
 from utils.roles.mapping import (
     ROLE_FILE_META_FORMS,
@@ -150,7 +152,7 @@ PENDING: dict[str, str] = {
     "web-app-discourse": "name, email (upstream lock); admin/moderator flags",
     "web-app-erpnext": "first name, last name; phone, mobile (LDAP); email (identity key); roles",
     "web-app-espocrm": "first/middle/last name, email, phone, gender; teams, user type",
-    "web-app-fider": "role",
+    "web-app-fider": "role; no SSO-only marker in the admin member list",
     "web-app-funkwhale": "email; first/last name, username (if editable); permission flags",
     "web-app-gitea": "full name, email (upstream lock); avatar (LDAP); admin/restricted flag",
     "web-app-gitlab": "name, email (upstream lock); admin/external flags",
@@ -165,7 +167,7 @@ PENDING: dict[str, str] = {
     "web-app-magento": "admin active state",
     "web-app-mastodon": "role",
     "web-app-matomo": "superuser, site access",
-    "web-app-matrix": "display name",
+    "web-app-matrix": "display name: Synapse refuses appservice bridges with 403 under enable_set_displayname false (072 Known Gaps)",
     "web-app-mattermost": "first/last name, username (upstream lock); email (if editable); system_admin",
     "web-app-mediawiki": "real name, email, language, time zone (upstream lock); groups",
     "web-app-mobilizon": "role",
@@ -264,7 +266,9 @@ def _forms(role: Path) -> dict[str, Any]:
 
 
 def _locked(forms: Any) -> dict[str, Any]:
-    return sso_fields.selectors(forms) if isinstance(forms, dict) else {}
+    if not isinstance(forms, dict):
+        return {}
+    return {**sso_fields.selectors(forms), **rbac_fields.selectors(forms)}
 
 
 def _block(services: dict[str, Any], key: str) -> dict[str, Any]:
@@ -343,8 +347,8 @@ def _marker_errors(
         errors.append(f"{where}.marker duplicates MANAGED_MARKER[{role!r}]; keep one")
     if not locked:
         errors.append(
-            f"{where}.marker needs the sso.<ATTRIBUTE> fields of {ROLE_FILE_META_FORMS}, "
-            "the selectors it checks"
+            f"{where}.marker needs the sso.<ATTRIBUTE> or rbac.<ROLE> fields of "
+            f"{ROLE_FILE_META_FORMS}, the selectors it checks"
         )
     marker = profile["marker"]
     if not isinstance(marker, str) or not marker.strip():
@@ -619,8 +623,8 @@ class TestSsoProfileLock(unittest.TestCase):
             {},
             uncovered_fields(self.services, self.forms),
             "declare these fields in the role's meta/forms.yml with source "
-            "sso.<ATTRIBUTE>, or under services.sso.profile.write_back in its "
-            "meta/services.yml",
+            "sso.<ATTRIBUTE> or rbac.<ROLE>, or under services.sso.profile.write_back "
+            "in its meta/services.yml",
         )
 
     def test_every_role_with_sso_or_ldap_is_classified(self) -> None:

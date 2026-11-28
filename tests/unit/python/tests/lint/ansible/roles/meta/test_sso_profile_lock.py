@@ -198,7 +198,7 @@ class TestSchema(unittest.TestCase):
         profile = {"overwritten": ["name"], "write_back": ["name"], "marker": MARKER}
 
         self.assertIn(
-            "marker needs the sso.<ATTRIBUTE> fields of meta/forms.yml",
+            "marker needs the sso.<ATTRIBUTE> or rbac.<ROLE> fields of meta/forms.yml",
             self.errors(CUSTOM, profile),
         )
 
@@ -225,6 +225,69 @@ class TestMarker(unittest.TestCase):
         roles = {CUSTOM: services(without(LOCKING, "marker"))}
 
         self.assertEqual([], lint.marker_errors(roles))
+
+
+FLAG_PROFILE: dict[str, Any] = {
+    "overwritten": ["administrator"],
+    "languages": ["en"],
+    "marker": MARKER,
+}
+
+
+def flag_forms(source: str, selector: str = "body.cst-sso #level") -> dict[str, Any]:
+    """A parsed ``meta/forms.yml`` with one ``administrator`` field of *source*.
+
+    Args:
+        source: the field's ``source``.
+        selector: the field's ``selector``.
+    """
+    return {
+        "members": {
+            "path": "/admin/users",
+            "fields": {
+                "administrator": {
+                    "source": source,
+                    "mode": "enforced",
+                    "selector": selector,
+                }
+            },
+        }
+    }
+
+
+class TestRbacFlag(unittest.TestCase):
+    def test_an_rbac_field_covers_an_overwritten_flag(self) -> None:
+        roles = {CUSTOM: services(FLAG_PROFILE)}
+        locks = {CUSTOM: flag_forms("rbac.administrator")}
+
+        self.assertNotIn(CUSTOM, lint.uncovered_fields(roles, locks))
+        self.assertEqual([], lint.schema_errors(roles, locks))
+        self.assertEqual([], lint.marker_errors(roles, locks))
+
+    def test_a_flag_field_without_an_rbac_source_still_fails(self) -> None:
+        roles = {CUSTOM: services(FLAG_PROFILE)}
+        locks = {CUSTOM: flag_forms("services.app.admin")}
+
+        self.assertEqual(["administrator"], lint.uncovered_fields(roles, locks)[CUSTOM])
+
+    def test_an_rbac_field_without_the_marker_fails(self) -> None:
+        roles = {CUSTOM: services(FLAG_PROFILE)}
+        locks = {CUSTOM: flag_forms("rbac.administrator", "#level")}
+
+        self.assertEqual(
+            [f"{CUSTOM}: administrator: #level"], lint.marker_errors(roles, locks)
+        )
+
+    def test_an_rbac_field_without_languages_fails(self) -> None:
+        roles = {CUSTOM: services(without(FLAG_PROFILE, "languages"))}
+        locks = {CUSTOM: flag_forms("rbac.administrator")}
+
+        self.assertTrue(
+            any(
+                "languages must list" in error
+                for error in lint.schema_errors(roles, locks)
+            )
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover
