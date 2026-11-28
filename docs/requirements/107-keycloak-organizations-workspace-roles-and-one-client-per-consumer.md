@@ -194,7 +194,7 @@ Rejected:
 
 ### Users of a deployed Keycloak
 
-- [ ] The store manages no user of a deployed instance; the criteria of the read-only count of its active people are those of [130](130-workspace-usage-metering.md); this requirement adds none of its own.
+- [x] The store manages no user of a deployed instance; the criteria of the read-only count of its active people are those of [130](130-workspace-usage-metering.md); this requirement adds none of its own. Proof: the box defers in full to 130, whose user story states that no store or platform credential can change an instance's users and whose criteria, among them the `view-users`-only client of `test_the_usage_client_holds_view_users_only`, track that proof.
 
 ### Documentation
 
