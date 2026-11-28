@@ -13,10 +13,17 @@ module ::InfinitoRbacLogin
   KEPT_ADMINISTRATOR = ENV.fetch("INFINITO_RBAC_KEPT_ADMINISTRATOR")
 
   # @param auth_token [OmniAuth::AuthHash] the token the OIDC strategy hands the authenticator
-  # @return [Array<String>, nil] the groups claim, nil when the token carries no list under it
+  # @return [Array<String>, nil] the groups claim, an empty list when the claims carry none,
+  #   nil when the token carries no claims or a groups claim that is no list
   def self.groups_from(auth_token)
-    claim = SiteSetting.openid_connect_groups_claim
-    groups = auth_token.extra&.dig(:raw_info, claim) || auth_token.extra&.dig(:id_token_info, claim)
+    claim = SiteSetting.openid_connect_groups_claim.to_s
+    raw_info = auth_token.extra&.dig(:raw_info)
+    id_token_info = auth_token.extra&.dig(:id_token_info)
+    return nil if claim.empty? || (raw_info.nil? && id_token_info.nil?)
+
+    groups = raw_info&.dig(claim) || id_token_info&.dig(claim)
+    return [] if groups.nil?
+
     groups.map(&:to_s) if groups.is_a?(Array)
   end
 

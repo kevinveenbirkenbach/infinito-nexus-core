@@ -268,11 +268,18 @@ class DiscourseRbacLoginPluginTest < Minitest::Test
     assert_equal ["groups=#{[ADMINISTRATOR_GROUP, MODERATOR_GROUP].inspect}", "admin=true moderator=true"], lines
   end
 
-  def test_a_missing_groups_claim_changes_nothing
+  def test_a_sign_in_after_the_last_group_left_revokes_both_flags
     lines, stderr, status = sign_in(user: account("biber", admin: true, moderator: true), extra: extra(nil))
 
     assert_predicate status, :success?, stderr
-    assert_equal ["groups=nil", "admin=true moderator=true"], lines
+    assert_equal ["revoked_admin=biber", "revoked_moderator=biber", "groups=[]", "admin=false moderator=false"], lines
+  end
+
+  def test_the_kept_administrator_without_any_group_keeps_admin_but_loses_moderation
+    lines, stderr, status = sign_in(user: account("administrator", admin: true, moderator: true), extra: extra(nil))
+
+    assert_predicate status, :success?, stderr
+    assert_equal ["revoked_moderator=administrator", "groups=[]", "admin=true moderator=false"], lines
   end
 
   def test_a_token_without_extra_section_changes_nothing
@@ -324,7 +331,7 @@ class DiscourseRbacLoginPluginTest < Minitest::Test
     lines, stderr, status = sign_in(user: nil, extra: extra(nil), signup: account("mapache"))
 
     assert_predicate status, :success?, stderr
-    assert_equal ["groups=nil", "associated=mapache", "admin=false moderator=false"], lines
+    assert_equal ["groups=[]", "associated=mapache", "admin=false moderator=false"], lines
   end
 
   def test_a_missing_group_variable_stops_the_plugin_load

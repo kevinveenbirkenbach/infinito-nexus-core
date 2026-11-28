@@ -129,6 +129,17 @@ async function withMailbox(username, body) {
   return withLdapAttributes(dn, { [attribute]: address }, body);
 }
 
+/**
+ * Args:
+ *   now: epoch milliseconds the marker encodes.
+ *
+ * Returns:
+ *   a base36 marker without the digit 0, which the Keycloak username policy refuses.
+ */
+function throwawayMarker(now) {
+  return now.toString(36).replace(/0/g, "z");
+}
+
 async function withSignedIn(browser, username, password, body) {
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   try {
@@ -201,6 +212,16 @@ exports.register = function () {
     test.setTimeout(resolveTimeout(300_000));
     expect(env.moderatorGroup, "DISCOURSE_RBAC_MODERATOR_GROUP must be set").toBeTruthy();
     const requestContext = await browser.newContext({ ignoreHTTPSErrors: true });
+    const leaveModeratorGroup = () =>
+      keycloakRemoveUserFromGroupViaRest(
+        requestContext.request,
+        env.keycloakBaseUrl,
+        env.realmName,
+        env.superAdminUsername,
+        env.superAdminPassword,
+        env.moderatorGroup,
+        env.biberUsername,
+      );
     let joined = false;
     try {
       joined = await keycloakAdminAddUserToGroup(
@@ -223,17 +244,18 @@ exports.register = function () {
         associatedGroups.map((group) => `${group.provider_name}:${group.name}`),
         `expected biber's login to register ${env.moderatorGroup} from the groups claim`,
       ).toContain(`oidc:${env.moderatorGroup}`);
+      if (joined) {
+        await leaveModeratorGroup();
+        joined = false;
+        const after = await withSignedIn(browser, env.biberUsername, env.biberPassword, currentUser);
+        expect(
+          after.moderator,
+          `expected the sign-in after leaving ${env.moderatorGroup} to drop biber's Discourse moderator flag`,
+        ).toBe(false);
+      }
     } finally {
       if (joined) {
-        await keycloakRemoveUserFromGroupViaRest(
-          requestContext.request,
-          env.keycloakBaseUrl,
-          env.realmName,
-          env.superAdminUsername,
-          env.superAdminPassword,
-          env.moderatorGroup,
-          env.biberUsername,
-        ).catch((err) => console.warn(`Removing biber from ${env.moderatorGroup} failed: ${err}`));
+        await leaveModeratorGroup().catch((err) => console.warn(`Removing biber from ${env.moderatorGroup} failed: ${err}`));
       }
       await requestContext.close().catch(() => {});
     }
@@ -244,7 +266,7 @@ exports.register = function () {
     test.setTimeout(resolveTimeout(360_000));
     expect(env.superAdminUsername, "SUPER_ADMIN_USERNAME must be set").toBeTruthy();
     expect(env.superAdminPassword, "SUPER_ADMIN_PASSWORD must be set").toBeTruthy();
-    const marker = Date.now().toString(36);
+    const marker = throwawayMarker(Date.now());
     const throwaway = {
       username: `rename${marker}`,
       email: `rename${marker}@${new URL(env.discourseBaseUrl).hostname}`,
