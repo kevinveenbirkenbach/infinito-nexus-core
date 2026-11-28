@@ -358,25 +358,32 @@ function pixelfedChannelActions(page, account) {
 
 const OOB_REDIRECT = "urn:ietf:wg:oauth:2.0:oob";
 
+async function signInToPixelfed(page, label) {
+  await gotoOnion(page, `${env.pixelfedBaseUrl}${LOGIN_PATH}`, { waitUntil: "domcontentloaded" });
+  const password = page.locator('input[name="password"]');
+  await expect(password, `${label}: expected Pixelfed's sign-in form`).toBeVisible({ timeout: resolveTimeout(60_000) });
+  await page.locator('input[name="email"]').fill(env.adminEmail);
+  await password.fill(env.adminPassword);
+  await page.locator("form").filter({ has: password }).locator('button[type="submit"]').click();
+  await expect
+    .poll(() => new URL(page.url()).pathname, {
+      timeout: resolveTimeout(60_000),
+      message: `${label}: Pixelfed must leave its sign-in page after the login`,
+    })
+    .not.toBe(LOGIN_PATH);
+}
+
+function isPixelfedAuthorize(url) {
+  return url.origin === new URL(env.pixelfedBaseUrl).origin && url.pathname === "/oauth/authorize";
+}
+
 async function pixelfedAuthorizationCode(page, label, redirectedCode) {
   await expect
-    .poll(() => page.url(), { timeout: resolveTimeout(60_000), message: `${label}: expected Pixelfed's sign-in or consent page` })
+    .poll(() => page.url(), { timeout: resolveTimeout(60_000), message: `${label}: expected Pixelfed's consent page` })
     .toContain(env.pixelfedBaseUrl);
-  const password = page.locator('input[name="password"]');
   const authorize = page.getByRole("button", { name: /^authorize$/i });
   const codeShown = async () => (await page.locator("body").innerText()).includes('"code"');
   const consented = async () => Boolean(redirectedCode()) || (await codeShown()) || (await authorize.isVisible());
-  await expect
-    .poll(async () => (await consented()) || (await password.isVisible()), {
-      timeout: resolveTimeout(60_000),
-      message: `${label}: expected Pixelfed's sign-in form, consent screen or authorization code`,
-    })
-    .toBe(true);
-  if (!(await consented()) && (await password.isVisible())) {
-    await page.locator('input[name="email"]').fill(env.adminEmail);
-    await password.fill(env.adminPassword);
-    await page.locator("form").filter({ has: password }).locator('button[type="submit"]').click();
-  }
   await expect
     .poll(consented, {
       timeout: resolveTimeout(60_000),
@@ -401,17 +408,26 @@ async function pixelfedAuthorizationCode(page, label, redirectedCode) {
 async function connectPixelfedAccount(page, label) {
   const account = { handle: `@${env.adminUsername}` };
   let redirected = "";
-  const capture = (response) => {
-    const location = response.headers().location || "";
-    if (location.startsWith(OOB_REDIRECT)) {
-      redirected = new URLSearchParams(location.split("?")[1] || "").get("code") || "";
+  const capture = async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
     }
+    const response = await route.fetch({ maxRedirects: 0 });
+    const location = response.headers().location || "";
+    if (!location.startsWith(OOB_REDIRECT)) {
+      await route.fulfill({ response });
+      return;
+    }
+    redirected = new URLSearchParams(location.split("?")[1] || "").get("code") || "";
+    await route.fulfill({ status: 200, contentType: "text/plain", body: "" });
   };
-  page.on("response", capture);
+  await signInToPixelfed(page, label);
+  await page.route(isPixelfedAuthorize, capture);
   const dialog = await openPixelfedConnectDialog(page, label);
   await dialog.getByRole("button", { name: /^connect$/i }).click();
   const code = await pixelfedAuthorizationCode(page, label, () => redirected);
-  page.off("response", capture);
+  await page.unroute(isPixelfedAuthorize, capture);
   expect(code, `${label}: Pixelfed must issue an authorization code`).toBeTruthy();
   const codeDialog = await openPixelfedConnectDialog(page, label);
   await codeDialog.getByRole("button", { name: /^code$/i }).click();
