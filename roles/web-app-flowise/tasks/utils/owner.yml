@@ -38,7 +38,7 @@
 - name: "✅ Accept a 400 only when Flowise already has its one organization"
   ansible.builtin.assert:
     that: flowise_owner.status != 400 or 'only have one organization' in flowise_owner.content
-    fail_msg: "account/register returned {{ flowise_owner.status }}"
+    fail_msg: "account/register returned {{ flowise_owner.status }}: {{ flowise_owner.content }}"
     quiet: true
   run_once: true
 
